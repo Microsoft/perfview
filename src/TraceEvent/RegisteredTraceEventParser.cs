@@ -313,7 +313,10 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
                             {
                                 EVENT_PROPERTY_INFO* propertyInfo = &propertyInfos[j];
                                 var propertyName = new string((char*)(&eventInfoBuff[propertyInfo->NameOffset]));
+                                // Remove anything that does not look like an ID (.e.g space)
+                                propertyName = Regex.Replace(propertyName, "[^A-Za-z0-9_]", "");
                                 propertyNames[j] = propertyName;
+
                                 var enumAttrib = "";
 
                                 // Deal with any maps (bit fields or enumerations)
@@ -371,8 +374,6 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
                                     }
                                 }
 
-                                // Remove anything that does not look like an ID (.e.g space)
-                                propertyName = Regex.Replace(propertyName, "[^A-Za-z0-9_]", "");
                                 TdhInputType propertyType = propertyInfo->InType;
                                 string countOrLengthAttrib = "";
 
