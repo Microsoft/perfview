@@ -129,9 +129,9 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
                 }
             }
 
-            for (byte ver = 0; ver <= 255; ver++)
+            for (int ver = 0; ver <= 255; ver++)
             {
-                eventRecord.EventHeader.Version = ver;
+                eventRecord.EventHeader.Version = (byte)ver;
                 int count;
                 int status;
                 for (; ; )
