@@ -315,8 +315,7 @@ internal class TraceParserGen
     {
         foreach (var keyValue in m_eventsByName)
         {
-            var evntName = keyValue.Key;
-            evntName = Regex.Replace(evntName, "[^a-zA-Z0-9_]+", "", RegexOptions.Compiled);
+            var evntName = ToCSharpName(keyValue.Key);
             Debug.Assert(0 < keyValue.Value.Count);
             var evnt = keyValue.Value[0];
 
@@ -386,12 +385,7 @@ internal class TraceParserGen
             foreach (FieldInfo fieldInfo in allFields)
             {
                 string name = fieldInfo.Name;
-                string safeName = "";
-
-                if (!reservedKeywords.TryGetValue(fieldInfo.Name, out safeName))
-                {
-                    safeName = fieldInfo.Name;
-                }
+                string safeName = ToCSharpName(fieldInfo.Name);
 
                 if (SkipPadOrReservedFields(fieldInfo))
                 {
@@ -513,12 +507,7 @@ internal class TraceParserGen
             output.WriteLine("             Prefix(sb);");
             foreach (FieldInfo fieldInfo in allFields)
             {
-                string safeName = "";
-
-                if (!reservedKeywords.TryGetValue(fieldInfo.Name, out safeName))
-                {
-                    safeName = fieldInfo.Name;
-                }
+                string safeName = ToCSharpName(fieldInfo.Name);
 
                 if (!SkipPadOrReservedFields(fieldInfo) && (fieldInfo.GetType() != typeof(StructInfo)) && (fieldInfo.VarSizedArrayCountPropertyName == null))
                 {
@@ -546,12 +535,8 @@ internal class TraceParserGen
             bool first = true;
             foreach (FieldInfo fieldInfo in allFields)
             {
-                string safeName = "";
+                string safeName = ToCSharpName(fieldInfo.Name);
 
-                if (!reservedKeywords.TryGetValue(fieldInfo.Name, out safeName))
-                {
-                    safeName = fieldInfo.Name;
-                }
                 if (!SkipPadOrReservedFields(fieldInfo) && (fieldInfo.GetType() != typeof(StructInfo)))
                 {
                     if (!first)
@@ -577,12 +562,8 @@ internal class TraceParserGen
             int fieldNum = 0;
             foreach (FieldInfo fieldInfo in allFields)
             {
-                string safeName = "";
+                string safeName = ToCSharpName(fieldInfo.Name);
 
-                if (!reservedKeywords.TryGetValue(fieldInfo.Name, out safeName))
-                {
-                    safeName = fieldInfo.Name;
-                }
                 if (!SkipPadOrReservedFields(fieldInfo) && (fieldInfo.GetType() != typeof(StructInfo)) && (fieldInfo.VarSizedArrayCountPropertyName == null))
                 {
                     output.WriteLine("                case " + fieldNum + ":");
@@ -710,7 +691,7 @@ internal class TraceParserGen
 
             if (targetNumber >= Int32.MaxValue)
             {
-                output.WriteLine("        {0} = unchecked((int)  0x{1:x}),", keyValue.Value, keyValue.Key);
+                output.WriteLine("        {0} = unchecked((int)  0x{1:x}),", ToCSharpName(keyValue.Value), keyValue.Key);
             }
             else
             {
@@ -945,20 +926,16 @@ internal class TraceParserGen
     /// </summary>
     public static string ToCSharpName(string input)
     {
-        if (input == null)
-        {
-            return null;
-        }
+        if (String.IsNullOrEmpty(input))
+            return input;
 
-        for (int i = 0; i < input.Length; i++)
-        {
-            char c = input[i];
-            if (!Char.IsLetter(c) && !Char.IsDigit(c) && c != '_')
-            {
-                return Regex.Replace(input, @"[^\w\d_]", "");          //Simply remove them.    
-            }
-        }
-        return input;
+        string output = Regex.Replace(input, @"[^\w\d_]", "");
+
+        if (Char.IsDigit(output[0]))
+            output = "_" + output;
+
+        output = CS_provider.CreateValidIdentifier(output);
+        return output;
     }
 
     private string MergeType(string type1, string type2, bool triedSwap)
@@ -1327,6 +1304,10 @@ internal class TraceParserGen
     /// </summary>
     private SortedDictionary<string, List<Event>> m_eventsByName;
 
-    private static Dictionary<string, string> reservedKeywords = new Dictionary<string, string> { { "object", "Object" }, { "new", "New" }, { "protected", "Protected" } };
+    /// <summary>
+    ///  Used in the generation of C#-valid identifiers
+    /// </summary>
+    static private Microsoft.CSharp.CSharpCodeProvider CS_provider = new Microsoft.CSharp.CSharpCodeProvider();
+
     #endregion
 }
