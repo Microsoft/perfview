@@ -536,6 +536,11 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
             // TODO FIX NOW beef this up.
             name = name.Replace(" ", "");
             name = name.Replace("-", "_");
+            name = name.Replace(".", "_");
+            name = name.Replace("/", "_");
+            name = name.Replace(":", "_");
+            name = name.Replace("(", "_");
+            name = name.Replace(")", "_");
             return name;
         }
 
