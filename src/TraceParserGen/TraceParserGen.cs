@@ -1307,7 +1307,7 @@ internal class TraceParserGen
     /// <summary>
     ///  Used in the generation of C#-valid identifiers
     /// </summary>
-    static private Microsoft.CSharp.CSharpCodeProvider CS_provider = new Microsoft.CSharp.CSharpCodeProvider();
+    private static readonly Microsoft.CSharp.CSharpCodeProvider CS_provider = new Microsoft.CSharp.CSharpCodeProvider();
 
     #endregion
 }
