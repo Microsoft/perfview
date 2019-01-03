@@ -931,7 +931,7 @@ internal class TraceParserGen
 
         string output = Regex.Replace(input, @"[^\w\d_]", "");
 
-        if (Char.IsDigit(output[0]))
+        if (char.IsDigit(output[0]))
             output = "_" + output;
 
         output = CS_provider.CreateValidIdentifier(output);
