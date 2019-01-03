@@ -926,7 +926,7 @@ internal class TraceParserGen
     /// </summary>
     public static string ToCSharpName(string input)
     {
-        if (String.IsNullOrEmpty(input))
+        if (string.IsNullOrEmpty(input))
             return input;
 
         string output = Regex.Replace(input, @"[^\w\d_]", "");
