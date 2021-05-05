@@ -667,15 +667,15 @@ namespace Microsoft.Diagnostics.Symbols
                 // 3 checksum generated with the SHA256 hashing algorithm.
                 if (sourceFile.checksumType == 1)
                 {
-                    _hashAlgorithm = System.Security.Cryptography.MD5.Create();
+                    try { _hashAlgorithm = System.Security.Cryptography.MD5.Create(); } catch (Exception) { }
                 }
                 else if (sourceFile.checksumType == 2)
                 {
-                    _hashAlgorithm = System.Security.Cryptography.SHA1.Create();
+                    try { _hashAlgorithm = System.Security.Cryptography.SHA1.Create(); } catch (Exception) { }
                 }
                 else if (sourceFile.checksumType == 3)
                 {
-                    _hashAlgorithm = System.Security.Cryptography.SHA256.Create();
+                    try { _hashAlgorithm = System.Security.Cryptography.SHA256.Create(); } catch (Exception) { }
                 }
 
                 if (_hashAlgorithm != null)

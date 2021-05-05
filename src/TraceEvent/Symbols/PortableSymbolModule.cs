@@ -97,11 +97,11 @@ namespace Microsoft.Diagnostics.Symbols
                 Guid hashAlgorithmGuid = _portablePdb._metaData.GetGuid(_sourceFileDocument.HashAlgorithm);
                 if (hashAlgorithmGuid == HashAlgorithmSha1)
                 {
-                    _hashAlgorithm = System.Security.Cryptography.SHA1.Create();
+                    try { _hashAlgorithm = System.Security.Cryptography.SHA1.Create(); } catch (Exception) { }
                 }
                 else if (hashAlgorithmGuid == HashAlgorithmSha256)
                 {
-                    _hashAlgorithm = System.Security.Cryptography.SHA256.Create();
+                    try { _hashAlgorithm = System.Security.Cryptography.SHA256.Create(); } catch (Exception) { }
                 }
 
                 if (_hashAlgorithm != null)
