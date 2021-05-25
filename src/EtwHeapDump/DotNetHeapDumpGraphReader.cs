@@ -182,6 +182,12 @@ public class DotNetHeapDumpGraphReader
             }
         };
 
+        source.Clr.GCGenAwareStart += delegate (GenAwareBeginTraceData data)
+        {
+            m_seenStart = true;
+            m_ignoreEvents = false;
+        };
+
         source.Clr.GCStart += delegate (GCStartTraceData data)
         {
             // If this GC is not part of a heap dump, ignore it.  
@@ -231,8 +237,6 @@ public class DotNetHeapDumpGraphReader
             }
         };
 
-
-
         source.Clr.GCStop += delegate (GCEndTraceData data)
         {
             if (m_ignoreEvents || data.ProcessID != m_processId)
@@ -259,6 +263,17 @@ public class DotNetHeapDumpGraphReader
             else
             {
                 m_log.WriteLine("Found a GC Stop at {0:n3} but id {1} != {2} Target ID", data.TimeStampRelativeMSec, data.Count, m_gcID);
+            }
+        };
+
+        source.Clr.GCGenAwareEnd += delegate (GenAwareEndTraceData data)
+        {
+            m_ignoreEvents = true;
+            if (m_nodeBlocks.Count == 0 && m_typeBlocks.Count == 0 && m_edgeBlocks.Count == 0)
+            {
+                m_log.WriteLine("Found no node events, looking for another GC");
+                m_seenStart = false;
+                return;
             }
         };
 
@@ -473,6 +488,9 @@ public class DotNetHeapDumpGraphReader
                     break;
                 case 3:
                     segment.Gen3End = end;
+                    break;
+                case 4:
+                    segment.Gen4End = end;
                     break;
                 default:
                     throw new Exception("Invalid generation in GCGenerationRangeTraceData");

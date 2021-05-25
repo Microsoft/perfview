@@ -5,7 +5,7 @@ using Visual Studio 2017. If you don't already have Visual Studio 2017, you
 can get the community edition for free from 
 [this link](https://www.visualstudio.com/vs/community/).
 This section also goes through important routine tasks like getting the latest 
-changes from GitHub and submitting a pull request to the master branch.
+changes from GitHub and submitting a pull request to the main branch.
 
 It will show you how to do this using just Visual Studio 2017. Older versions 
 of Visual Studio as well as other IDEs are possible, but not covered here.  
@@ -38,8 +38,8 @@ they really are the same commit.   Thus combining two repos is simply a matter o
 a union of all the commits in the two component repos.    
 
 This ability to easily combine two repositories makes GIT well suited for 'distributed'
-source code control, where there is no 'master' repository that all 'clients' work 
-from. Instead each repository can be thought of as the 'master', and a repository
+source code control, where there is no 'main' repository that all 'clients' work 
+from. Instead each repository can be thought of as the 'main', and a repository
 like GitHub is only special in the sense that it is a well known publishing point.   
 
 Indeed, when working with GitHub you NEVER have just one repository. At the minimum
@@ -60,15 +60,15 @@ over time lead to a particular place. Thus a commit can be thought of not just
 as one snapshot, but in fact the complete history that is 'reachable' by following
 predecessor links. GIT has a concept of a pointer to a commit (history) called
 a *branch*. Most GIT commands have the concept of a 'current branch', and 
-when a repo is created, typically it creates a branch called 'master' which typically
-is used to represent the 'master' or maximally shared history of code (you may 
+when a repo is created, typically it creates a branch called 'main' which typically
+is used to represent the 'main' or maximally shared history of code (you may 
 have other branches that represent releases or other specialized versions of the
 code base)
 
-While it is possible to commit your changes directly to the 'master' branch, 
+While it is possible to commit your changes directly to the 'main' branch, 
 branches in GIT are very cheap and GIT encourages you to make a new branch (derived
-from 'master') whenever independent work is being done.   These independent branches 
-can then be merged into 'master' (or used as pull requests) independently
+from 'main') whenever independent work is being done.   These independent branches 
+can then be merged into 'main' (or used as pull requests) independently
 of each other. 
 
 ## Two Possible Repository Setups
@@ -140,7 +140,7 @@ Thus the typical flow for an open source project is
  to the latest revision of the branch. Hopefully after enough discussion and updates, the maintainers accept
  the pull request and merge your branch from your GitHub fork into the main repository.  
 
- 5. The next time you update your fork from the main repository, your master branch will have your pull request reflected in 
+ 5. The next time you update your fork from the main repository, your main branch will have your pull request reflected in 
  the branch.  
    
 ### To Fork or not to Fork?

@@ -71,7 +71,7 @@ namespace Utilities
         public string ElementName
         {
             get { return m_elementName; }
-            set { ElementName = value; }
+            set { m_elementName = value; }
         }
         public void Write(string xmlFileName)
         {

@@ -1,7 +1,6 @@
 //     Copyright (c) Microsoft Corporation.  All rights reserved.
 using System.Collections.Generic;
 using System.Diagnostics;
-using Address = System.UInt64;
 
 namespace Microsoft.Diagnostics.Tracing.Utilities
 {
@@ -11,11 +10,11 @@ namespace Microsoft.Diagnostics.Tracing.Utilities
     /// over time (eg Process IDs, thread IDs).  Thus it takes a handle AND A TIME, and finds the value
     /// associated with that handle at that time.   
     /// </summary>
-    internal class HistoryDictionary<T>
+    internal class HistoryDictionary<TKey, TValue>
     {
         public HistoryDictionary(int initialSize)
         {
-            entries = new Dictionary<long, HistoryValue>(initialSize);
+            entries = new Dictionary<TKey, HistoryValue>(initialSize);
         }
         /// <summary>
         /// Adds the association that 'id' has the value 'value' from 'startTime100ns' ONWARD until
@@ -23,10 +22,10 @@ namespace Microsoft.Diagnostics.Tracing.Utilities
         /// I did Add(58, 1000, MyValue1), and add(58, 500, MyValue2) 'TryGetValue(58, 750, out val) will return
         /// MyValue2 (since that value is 'in force' between time 500 and 1000.   
         /// </summary>
-        public void Add(Address id, long startTime, T value, bool isEndRundown = false)
+        public void Add(TKey id, long startTime, TValue value, bool isEndRundown = false)
         {
             HistoryValue entry;
-            if (!entries.TryGetValue((long)id, out entry))
+            if (!entries.TryGetValue(id, out entry))
             {
                 // rundown events are 'last chance' events that we only add if we don't already have an entry for it.  
                 if (isEndRundown)
@@ -34,7 +33,7 @@ namespace Microsoft.Diagnostics.Tracing.Utilities
                     startTime = 0;
                 }
 
-                entries.Add((long)id, new HistoryValue(startTime, id, value));
+                entries.Add(id, new HistoryValue(startTime, id, value));
             }
             else
             {
@@ -85,10 +84,10 @@ namespace Microsoft.Diagnostics.Tracing.Utilities
         }
         // TryGetValue will return the value associated with an id that was placed in the stream 
         // at time100ns OR BEFORE.  
-        public bool TryGetValue(Address id, long time, out T value)
+        public bool TryGetValue(TKey id, long time, out TValue value)
         {
             HistoryValue entry;
-            if (entries.TryGetValue((long)id, out entry))
+            if (entries.TryGetValue(id, out entry))
             {
                 // The entries are sorted smallest to largest.  
                 // We want the last entry that is smaller (or equal) to the target time) 
@@ -123,7 +122,7 @@ namespace Microsoft.Diagnostics.Tracing.Utilities
                     return true;
                 }
             }
-            value = default(T);
+            value = default(TValue);
             return false;
         }
         public IEnumerable<HistoryValue> Entries
@@ -154,10 +153,10 @@ namespace Microsoft.Diagnostics.Tracing.Utilities
         /// <summary>
         /// Remove all entries associated with a given key (over all time).  
         /// </summary>
-        public void Remove(Address id)
+        public void Remove(TKey id)
         {
             HistoryValue entry;
-            if (entries.TryGetValue((long)id, out entry))
+            if (entries.TryGetValue(id, out entry))
             {
                 // Fix up the count by the number of entries we remove.  
                 while (entry != null)
@@ -166,15 +165,15 @@ namespace Microsoft.Diagnostics.Tracing.Utilities
                     --count;
                     entry = entry.next;
                 }
-                entries.Remove((long)id);
+                entries.Remove(id);
             }
         }
 
         public class HistoryValue
         {
-            public Address Key { get { return key; } }
+            public TKey Key { get { return key; } }
             public long StartTime { get { return startTime; } }
-            public T Value { get { return value; } }
+            public TValue Value { get { return value; } }
             #region private
             internal HistoryValue(HistoryValue entry)
             {
@@ -183,16 +182,16 @@ namespace Microsoft.Diagnostics.Tracing.Utilities
                 value = entry.value;
                 next = entry.next;
             }
-            internal HistoryValue(long startTime100ns, Address key, T value)
+            internal HistoryValue(long startTime100ns, TKey key, TValue value)
             {
                 this.key = key;
                 startTime = startTime100ns;
                 this.value = value;
             }
 
-            internal Address key;
+            internal TKey key;
             internal long startTime;
-            internal T value;
+            internal TValue value;
             internal HistoryValue next;
             // To improve getting to the end quickly, we allow nodes to store values that 'skip ahead'.
             // Today we only use this field for the first node to skip to the end (for fast append) 
@@ -201,7 +200,7 @@ namespace Microsoft.Diagnostics.Tracing.Utilities
             #endregion
         }
         #region private
-        private Dictionary<long, HistoryValue> entries;
+        private Dictionary<TKey, HistoryValue> entries;
         private int count;
         #endregion
     }

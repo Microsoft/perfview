@@ -1,5 +1,4 @@
-﻿using Microsoft.Diagnostics.Tracing;
-using Microsoft.Diagnostics.Tracing.Parsers;
+﻿using Microsoft.Diagnostics.Tracing.Parsers;
 using Microsoft.Diagnostics.Tracing.Session;
 using System;
 using System.Collections.Generic;
@@ -11,6 +10,7 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 using Triggers;
+using Utilities;
 
 // TODO use or delete
 namespace PerfView
@@ -464,6 +464,11 @@ namespace PerfView
                 return;
             }
 
+            if (!PopulateCommandLineArgs())
+            {
+                return;
+            }
+
             bool shouldClose = true;
             try
             {
@@ -472,331 +477,6 @@ namespace PerfView
                     m_mainWindow.StatusBar.LogError("No command given.");
                     return;
                 }
-
-                if (!m_isCollect)
-                {
-                    m_args.CommandLine = CommandToRunTextBox.Text;
-
-                    if (CommandToRunTextBox.AddToHistory(m_args.CommandLine))
-                    {
-                        StringBuilder sb = new StringBuilder();
-                        foreach (string item in CommandToRunTextBox.Items)
-                        {
-                            // Since we save the Run history as a single string using ";" as a separator,
-                            // we choose not to save any item that contains a ";". If this is a real problem,
-                            // perhaps we can store a set of strings instead of a single string.
-                            if ((item != "") && !item.Contains(";"))
-                            {
-                                if (sb.Length != 0)
-                                {
-                                    sb.Append(';');
-                                }
-
-                                sb.Append(item);
-                            }
-                        }
-                        App.ConfigData["CommandToRunHistory"] = sb.ToString();
-                    }
-                }
-                else
-                {
-                    if (FocusProcessCheckBox.IsChecked ?? false)
-                    {
-                        int processId;
-                        if (!Int32.TryParse(FocusProcessTextBox.Text, out processId))
-                        {
-                            if (!FocusProcessTextBox.Text.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
-                            {
-                                m_mainWindow.StatusBar.LogError("[ERROR: FocusProcess must be either PID or process name with .exe suffix]");
-                                return;
-                            }
-                        }
-                        m_args.FocusProcess = FocusProcessTextBox.Text;
-                    }
-                }
-
-                m_args.DataFile = DataFileNameTextBox.Text;
-
-                if (!int.TryParse(RundownTimeoutTextBox.Text, out m_args.RundownTimeout))
-                {
-                    m_mainWindow.StatusBar.LogError("Could not parse rundown timeout value: " + RundownTimeoutTextBox.Text);
-                    return;
-                }
-
-                if (!float.TryParse(SampleIntervalTextBox.Text, out m_args.CpuSampleMSec))
-                {
-                    m_mainWindow.StatusBar.LogError("Could not parse sample interval timeout value: " + SampleIntervalTextBox.Text);
-                    return;
-                }
-
-                if (MaxCollectTextBox.Text.Length == 0)
-                {
-                    m_args.MaxCollectSec = 0;
-                }
-                else if (!int.TryParse(MaxCollectTextBox.Text, out m_args.MaxCollectSec))
-                {
-                    m_mainWindow.StatusBar.LogError("Could not parse max collection value: " + MaxCollectTextBox.Text);
-                    return;
-                }
-
-                if (StopTriggerTextBox.Text.Length == 0)
-                {
-                    m_args.StopOnPerfCounter = null;
-                }
-                else
-                {
-                    try
-                    {
-                        (new PerformanceCounterTrigger(StopTriggerTextBox.Text, 0, m_mainWindow.StatusBar.LogWriter, null)).Dispose();
-                    }
-                    catch (Exception ex)
-                    {
-                        m_mainWindow.StatusBar.LogError("Error in StopTrigger: {0}" + ex.Message);
-                        return;
-                    }
-                    m_args.StopOnPerfCounter = StopTriggerTextBox.Text.Split(',');
-                }
-
-                if (m_args.CpuSampleMSec < .125F)
-                {
-                    m_args.CpuSampleMSec = .125F;
-                    SampleIntervalTextBox.Text = "0.125";
-                    m_mainWindow.StatusBar.LogError("Sample interval below the .125 miniumum, setting to .125MSec.");
-                }
-
-                if (!int.TryParse(CircularTextBox.Text, out m_args.CircularMB))
-                {
-                    m_mainWindow.StatusBar.LogError("Could not parse circular value: " + CircularTextBox.Text);
-                    return;
-                }
-
-                try
-                {
-                    Environment.CurrentDirectory = CurrentDirTextBox.Text;
-                }
-                catch (Exception)
-                {
-                    m_mainWindow.StatusBar.LogError("Could not set current directory to " + CurrentDirTextBox.Text);
-                    return;
-                }
-
-                if (KernelBaseCheckBox.IsChecked ?? false)
-                {
-                    m_args.KernelEvents = (KernelTraceEventParser.Keywords)(KernelTraceEventParser.Keywords.Default - KernelTraceEventParser.Keywords.Profile);
-                }
-
-                if (CpuSamplesCheckBox.IsChecked ?? false)
-                {
-                    m_args.KernelEvents |= KernelTraceEventParser.Keywords.Profile;
-                }
-
-                if (ThreadTimeCheckbox.IsChecked ?? false)
-                {
-                    m_args.KernelEvents |= KernelTraceEventParser.Keywords.ThreadTime;
-                }
-
-                if (MemoryCheckBox.IsChecked ?? false)
-                {
-                    m_args.KernelEvents |= KernelTraceEventParser.Keywords.MemoryHardFaults | KernelTraceEventParser.Keywords.Memory;
-                }
-
-                if (FileIOCheckBox.IsChecked ?? false)
-                {
-                    m_args.KernelEvents |= KernelTraceEventParser.Keywords.FileIOInit;
-                }
-
-                if (RegistryCheckBox.IsChecked ?? false)
-                {
-                    m_args.KernelEvents |= KernelTraceEventParser.Keywords.Registry;
-                }
-
-                if (VirtualAllocCheckBox.IsChecked ?? false)
-                {
-                    m_args.KernelEvents |= KernelTraceEventParser.Keywords.VirtualAlloc | KernelTraceEventParser.Keywords.VAMap;
-                }
-
-                if (RefSetCheckBox.IsChecked ?? false)
-                {
-                    m_args.KernelEvents |= KernelTraceEventParser.Keywords.ReferenceSet;
-                }
-
-                if (HandleCheckBox.IsChecked ?? false)
-                {
-                    m_args.KernelEvents |= KernelTraceEventParser.Keywords.Handle;
-                }
-
-                if (!(ClrCheckBox.IsChecked ?? true))
-                {
-                    m_args.ClrEvents = ClrTraceEventParser.Keywords.None;
-                }
-                else if (m_args.ClrEvents == ClrTraceEventParser.Keywords.None)
-                {
-                    m_args.ClrEvents = ClrTraceEventParser.Keywords.Default;
-                }
-
-                if (!(TplCaptureCheckBox.IsChecked ?? true))
-                {
-                    m_args.TplEvents = TplEtwProviderTraceEventParser.Keywords.None;
-                }
-                else if (m_args.TplEvents == TplEtwProviderTraceEventParser.Keywords.None)
-                {
-                    m_args.TplEvents = TplEtwProviderTraceEventParser.Keywords.Default;
-                }
-
-                m_args.NoNGenRundown = NoNGenRundownCheckBox.IsChecked ?? false;
-                m_args.DotNetAlloc = DotNetAllocCheckBox.IsChecked ?? false;
-                m_args.DotNetCalls = DotNetCallsCheckBox.IsChecked ?? false;
-                m_args.DotNetAllocSampled = DotNetAllocSampledCheckBox.IsChecked ?? false;
-                if (ETWDotNetAllocSampledCheckBox.IsChecked ?? false)
-                {
-                    m_args.ClrEvents |= ClrTraceEventParser.Keywords.GCSampledObjectAllocationHigh;
-                }
-                else
-                {
-                    m_args.ClrEvents &= ~ClrTraceEventParser.Keywords.GCSampledObjectAllocationHigh;
-                }
-
-                m_args.JITInlining = JITInliningCheckBox.IsChecked ?? false;
-                if (m_args.JITInlining)
-                {
-                    m_args.ClrEvents |= ClrTraceEventParser.Keywords.JitTracing;
-                }
-
-                m_args.NetMonCapture = NetMonCheckBox.IsChecked ?? false;
-                m_args.NetworkCapture = NetCaptureCheckBox.IsChecked ?? false;
-
-                if (OSHeapExeTextBox.Text.Length > 0)
-                {
-                    m_args.OSHeapExe = OSHeapExeTextBox.Text;
-                }
-                else
-                {
-                    m_args.OSHeapExe = null;
-                }
-
-                if (OSHeapProcessTextBox.Text.Length > 0)
-                {
-                    if (!int.TryParse(OSHeapProcessTextBox.Text, out m_args.OSHeapProcess))
-                    {
-                        m_mainWindow.StatusBar.LogError("Could parse OS Heap Process ID '" + OSHeapProcessTextBox.Text + "' as an integer ");
-                        return;
-                    }
-                }
-                else
-                {
-                    m_args.OSHeapProcess = 0;
-                }
-
-                // TODO this logic is cloned.  We need it in only one place. 
-                if (GCOnlyCheckBox.IsChecked ?? false)
-                {
-                    m_args.GCOnly = true;
-
-                    // For stack parsing.  
-                    m_args.KernelEvents = KernelTraceEventParser.Keywords.Process | KernelTraceEventParser.Keywords.Thread | KernelTraceEventParser.Keywords.ImageLoad;
-                    m_args.ClrEvents = ClrTraceEventParser.Keywords.GC | ClrTraceEventParser.Keywords.GCHeapSurvivalAndMovement | ClrTraceEventParser.Keywords.Stack |
-                                ClrTraceEventParser.Keywords.Jit | ClrTraceEventParser.Keywords.Loader | ClrTraceEventParser.Keywords.Exception | ClrTraceEventParser.Keywords.Type | ClrTraceEventParser.Keywords.GCHeapAndTypeNames;
-                }
-                if (GCCollectOnlyCheckBox.IsChecked ?? false)
-                {
-                    m_args.GCCollectOnly = true;
-
-                    CommandLineArgs.ConfigureForGCCollectOnly(m_args);
-
-                    if (!m_args.Merge.HasValue)
-                    {
-                        m_args.Merge = false;
-                    }
-                }
-
-                string cpuCounters = CpuCountersTextBox.Text;
-                if (cpuCounters.Length != 0)
-                {
-                    m_args.CpuCounters = cpuCounters.Split(' ');
-                }
-
-                if (AdditionalProvidersTextBox.Text.Length > 0)
-                {
-                    if (AdditionalProvidersTextBox.AddToHistory(AdditionalProvidersTextBox.Text))
-                    {
-                        StringBuilder sb = new StringBuilder();
-                        foreach (string item in AdditionalProvidersTextBox.Items)
-                        {
-                            if ((item != "") && !item.Contains(";"))
-                            {
-                                if (sb.Length != 0)
-                                {
-                                    sb.Append(';');
-                                }
-
-                                sb.Append(item);
-                            }
-                        }
-                        App.ConfigData["AdditionalProvidersHistory"] = sb.ToString();
-                    }
-                }
-
-                var providers = AdditionalProvidersTextBox.Text;
-                if ((IISCheckBox.IsChecked ?? false) && providers.IndexOf("Microsoft-Windows-IIS", StringComparison.OrdinalIgnoreCase) < 0)
-                {
-                    if (providers.Length != 0)
-                    {
-                        providers += ",";
-                    }
-
-                    providers += "Microsoft-Windows-IIS";
-                }
-                if ((StressCheckBox.IsChecked ?? false) && providers.IndexOf("ClrStress", StringComparison.OrdinalIgnoreCase) < 0)
-                {
-                    if (providers.Length != 0)
-                    {
-                        providers += ",";
-                    }
-
-                    providers += "ClrStress";
-                }
-                if ((MemInfoCheckBox.IsChecked ?? false) && providers.IndexOf("Microsoft-Windows-Kernel-Memory", StringComparison.OrdinalIgnoreCase) < 0)
-                {
-                    if (providers.Length != 0)
-                    {
-                        providers += ",";
-                    }
-
-                    providers += "Microsoft-Windows-Kernel-Memory";
-                }
-
-                if ((BackgroundJITCheckBox.IsChecked ?? false) && providers.IndexOf("ClrPrivate", StringComparison.OrdinalIgnoreCase) < 0)
-                {
-                    // currently we turn on CLRPrvate events at full verbosity.  If we change this please take a look in 
-                    // JitProcess.Collect (search for StartupPrestubWorkerStart) and fix the logic by which we detect that
-                    // background JIT events are on.  
-                    if (providers.Length != 0)
-                    {
-                        providers += ",";
-                    }
-
-                    providers += "ClrPrivate";
-                }
-
-                m_args.CCWRefCount = CCWRefCountCheckBox.IsChecked ?? false;
-                m_args.RuntimeLoading = RuntimeLoadingCheckBox.IsChecked ?? false;
-
-                m_args.DumpHeap = HeapSnapshotCheckBox.IsChecked ?? false;
-
-                if (providers.Length > 0)
-                {
-                    m_args.Providers = providers.Split(',');
-                }
-                else
-                {
-                    m_args.Providers = null;
-                }
-
-                // These three we don't copy back when you start collection and instead do it when we end collection
-                // m_args.NoRundown = !(RundownCheckBox.IsChecked ?? false);
-                // m_args.Merge = MergeCheckBox.IsChecked;
-                // m_args.Zip = ZipCheckBox.IsChecked;
-                m_args.Message = MarkTextBox.Text;
 
                 string fullPath;
                 try
@@ -814,11 +494,11 @@ namespace PerfView
                     StartCollection();
                     shouldClose = false;
                     m_mainWindow.ExecuteCommand("Collecting data " + fullPath, App.CommandProcessor.Collect, null, delegate ()
-                        {
-                            m_timer.IsEnabled = false;
-                            Hide();
-                            m_continuation?.Invoke();
-                        },
+                    {
+                        m_timer.IsEnabled = false;
+                        Hide();
+                        m_continuation?.Invoke();
+                    },
                         delegate
                         {
                             Close();
@@ -827,8 +507,6 @@ namespace PerfView
                 }
                 else
                 {
-                    m_args.Zip = ZipCheckBox.IsChecked;
-                    m_args.Merge = ZipCheckBox.IsChecked;
                     shouldClose = false;
                     Close();
                     m_mainWindow.ExecuteCommand("Running: " + App.CommandLineArgs.CommandLine + "...  See log for output.",
@@ -843,6 +521,368 @@ namespace PerfView
                 }
             }
         }
+
+        private void CopyCommandLineButtonClick(object sender, RoutedEventArgs e)
+        {
+            if (!PopulateCommandLineArgs())
+            {
+                return;
+            }
+
+            var saveNoGui = m_args.NoGui;
+
+            try
+            {
+                m_args.NoGui = true;
+
+                var commandLine = "PerfView.exe " + CommandProcessor.ParsedArgsAsString(m_isCollect ? "collect" : "run", m_args);
+
+                Clipboard.SetText(commandLine);
+            }
+            finally
+            {
+                m_args.NoGui = saveNoGui;
+            }
+        }
+
+        private bool PopulateCommandLineArgs()
+        {
+            if (!m_isCollect)
+            {
+                m_args.CommandLine = CommandToRunTextBox.Text;
+
+                if (CommandToRunTextBox.AddToHistory(m_args.CommandLine))
+                {
+                    StringBuilder sb = new StringBuilder();
+                    foreach (string item in CommandToRunTextBox.Items)
+                    {
+                        // Since we save the Run history as a single string using ";" as a separator,
+                        // we choose not to save any item that contains a ";". If this is a real problem,
+                        // perhaps we can store a set of strings instead of a single string.
+                        if ((item != "") && !item.Contains(";"))
+                        {
+                            if (sb.Length != 0)
+                            {
+                                sb.Append(';');
+                            }
+
+                            sb.Append(item);
+                        }
+                    }
+                    App.ConfigData["CommandToRunHistory"] = sb.ToString();
+                }
+            }
+            else
+            {
+                if (FocusProcessCheckBox.IsChecked ?? false)
+                {
+                    int processId;
+                    if (!Int32.TryParse(FocusProcessTextBox.Text, out processId))
+                    {
+                        if (!FocusProcessTextBox.Text.EndsWith(".exe", StringComparison.OrdinalIgnoreCase))
+                        {
+                            m_mainWindow.StatusBar.LogError("[ERROR: FocusProcess must be either PID or process name with .exe suffix]");
+                            return false;
+                        }
+                    }
+                    m_args.FocusProcess = FocusProcessTextBox.Text;
+                }
+            }
+
+            m_args.DataFile = DataFileNameTextBox.Text;
+
+            if (!int.TryParse(RundownTimeoutTextBox.Text, out m_args.RundownTimeout))
+            {
+                m_mainWindow.StatusBar.LogError("Could not parse rundown timeout value: " + RundownTimeoutTextBox.Text);
+                return false;
+            }
+
+            if (!float.TryParse(SampleIntervalTextBox.Text, out m_args.CpuSampleMSec))
+            {
+                m_mainWindow.StatusBar.LogError("Could not parse sample interval timeout value: " + SampleIntervalTextBox.Text);
+                return false;
+            }
+
+            if (MaxCollectTextBox.Text.Length == 0)
+            {
+                m_args.MaxCollectSec = 0;
+            }
+            else if (!int.TryParse(MaxCollectTextBox.Text, out m_args.MaxCollectSec))
+            {
+                m_mainWindow.StatusBar.LogError("Could not parse max collection value: " + MaxCollectTextBox.Text);
+                return false;
+            }
+
+            if (StopTriggerTextBox.Text.Length == 0)
+            {
+                m_args.StopOnPerfCounter = null;
+            }
+            else
+            {
+                try
+                {
+                    (new PerformanceCounterTrigger(StopTriggerTextBox.Text, 0, m_mainWindow.StatusBar.LogWriter, null)).Dispose();
+                }
+                catch (Exception ex)
+                {
+                    m_mainWindow.StatusBar.LogError("Error in StopTrigger: {0}" + ex.Message);
+                    return false;
+                }
+                m_args.StopOnPerfCounter = StopTriggerTextBox.Text.Split(',');
+            }
+
+            if (m_args.CpuSampleMSec < .125F)
+            {
+                m_args.CpuSampleMSec = .125F;
+                SampleIntervalTextBox.Text = "0.125";
+                m_mainWindow.StatusBar.LogError("Sample interval below the .125 miniumum, setting to .125MSec.");
+            }
+
+            if (!int.TryParse(CircularTextBox.Text, out m_args.CircularMB))
+            {
+                m_mainWindow.StatusBar.LogError("Could not parse circular value: " + CircularTextBox.Text);
+                return false;
+            }
+
+            try
+            {
+                Environment.CurrentDirectory = CurrentDirTextBox.Text;
+            }
+            catch (Exception)
+            {
+                m_mainWindow.StatusBar.LogError("Could not set current directory to " + CurrentDirTextBox.Text);
+                return false;
+            }
+
+            if (KernelBaseCheckBox.IsChecked ?? false)
+            {
+                m_args.KernelEvents = (KernelTraceEventParser.Keywords)(KernelTraceEventParser.Keywords.Default - KernelTraceEventParser.Keywords.Profile);
+            }
+
+            if (CpuSamplesCheckBox.IsChecked ?? false)
+            {
+                m_args.KernelEvents |= KernelTraceEventParser.Keywords.Profile;
+            }
+
+            if (ThreadTimeCheckbox.IsChecked ?? false)
+            {
+                m_args.KernelEvents |= KernelTraceEventParser.Keywords.ThreadTime;
+            }
+
+            if (MemoryCheckBox.IsChecked ?? false)
+            {
+                m_args.KernelEvents |= KernelTraceEventParser.Keywords.MemoryHardFaults | KernelTraceEventParser.Keywords.Memory;
+            }
+
+            if (FileIOCheckBox.IsChecked ?? false)
+            {
+                m_args.KernelEvents |= KernelTraceEventParser.Keywords.FileIOInit;
+            }
+
+            if (RegistryCheckBox.IsChecked ?? false)
+            {
+                m_args.KernelEvents |= KernelTraceEventParser.Keywords.Registry;
+            }
+
+            if (VirtualAllocCheckBox.IsChecked ?? false)
+            {
+                m_args.KernelEvents |= KernelTraceEventParser.Keywords.VirtualAlloc | KernelTraceEventParser.Keywords.VAMap;
+            }
+
+            if (RefSetCheckBox.IsChecked ?? false)
+            {
+                m_args.KernelEvents |= KernelTraceEventParser.Keywords.ReferenceSet;
+            }
+
+            if (HandleCheckBox.IsChecked ?? false)
+            {
+                m_args.KernelEvents |= KernelTraceEventParser.Keywords.Handle;
+            }
+
+            if (!(ClrCheckBox.IsChecked ?? true))
+            {
+                m_args.ClrEvents = ClrTraceEventParser.Keywords.None;
+            }
+            else if (m_args.ClrEvents == ClrTraceEventParser.Keywords.None)
+            {
+                m_args.ClrEvents = ClrTraceEventParser.Keywords.Default;
+            }
+
+            if (!(TplCaptureCheckBox.IsChecked ?? true))
+            {
+                m_args.TplEvents = TplEtwProviderTraceEventParser.Keywords.None;
+            }
+            else if (m_args.TplEvents == TplEtwProviderTraceEventParser.Keywords.None)
+            {
+                m_args.TplEvents = TplEtwProviderTraceEventParser.Keywords.Default;
+            }
+
+            m_args.NoNGenRundown = NoNGenRundownCheckBox.IsChecked ?? false;
+            m_args.DotNetAlloc = DotNetAllocCheckBox.IsChecked ?? false;
+            m_args.DotNetCalls = DotNetCallsCheckBox.IsChecked ?? false;
+            m_args.DotNetAllocSampled = DotNetAllocSampledCheckBox.IsChecked ?? false;
+
+            if (ETWDotNetAllocSampledCheckBox.IsChecked ?? false)
+            {
+                m_args.ClrEvents |= ClrTraceEventParser.Keywords.GCSampledObjectAllocationHigh;
+            }
+            else
+            {
+                m_args.ClrEvents &= ~ClrTraceEventParser.Keywords.GCSampledObjectAllocationHigh;
+            }
+
+            m_args.JITInlining = JITInliningCheckBox.IsChecked ?? false;
+            if (m_args.JITInlining)
+            {
+                m_args.ClrEvents |= ClrTraceEventParser.Keywords.JitTracing;
+            }
+
+            m_args.NetMonCapture = NetMonCheckBox.IsChecked ?? false;
+            m_args.NetworkCapture = NetCaptureCheckBox.IsChecked ?? false;
+
+            if (OSHeapExeTextBox.Text.Length > 0)
+            {
+                m_args.OSHeapExe = OSHeapExeTextBox.Text;
+            }
+            else
+            {
+                m_args.OSHeapExe = null;
+            }
+
+            if (OSHeapProcessTextBox.Text.Length > 0)
+            {
+                if (!int.TryParse(OSHeapProcessTextBox.Text, out m_args.OSHeapProcess))
+                {
+                    m_mainWindow.StatusBar.LogError("Could parse OS Heap Process ID '" + OSHeapProcessTextBox.Text + "' as an integer ");
+                    return false;
+                }
+            }
+            else
+            {
+                m_args.OSHeapProcess = 0;
+            }
+
+            // TODO this logic is cloned.  We need it in only one place. 
+            if (GCOnlyCheckBox.IsChecked ?? false)
+            {
+                m_args.GCOnly = true;
+
+                // For stack parsing.  
+                m_args.KernelEvents = KernelTraceEventParser.Keywords.Process | KernelTraceEventParser.Keywords.Thread | KernelTraceEventParser.Keywords.ImageLoad;
+                m_args.ClrEvents = ClrTraceEventParser.Keywords.GC | ClrTraceEventParser.Keywords.GCHeapSurvivalAndMovement | ClrTraceEventParser.Keywords.Stack |
+                            ClrTraceEventParser.Keywords.Jit | ClrTraceEventParser.Keywords.Loader | ClrTraceEventParser.Keywords.Exception | ClrTraceEventParser.Keywords.Type | ClrTraceEventParser.Keywords.GCHeapAndTypeNames;
+            }
+
+            if (GCCollectOnlyCheckBox.IsChecked ?? false)
+            {
+                m_args.GCCollectOnly = true;
+
+                CommandLineArgs.ConfigureForGCCollectOnly(m_args);
+
+                if (!m_args.Merge.HasValue)
+                {
+                    m_args.Merge = false;
+                }
+            }
+
+            string cpuCounters = CpuCountersTextBox.Text;
+            if (cpuCounters.Length != 0)
+            {
+                m_args.CpuCounters = cpuCounters.Split(' ');
+            }
+
+            if (AdditionalProvidersTextBox.Text.Length > 0)
+            {
+                if (AdditionalProvidersTextBox.AddToHistory(AdditionalProvidersTextBox.Text))
+                {
+                    StringBuilder sb = new StringBuilder();
+                    foreach (string item in AdditionalProvidersTextBox.Items)
+                    {
+                        if ((item != "") && !item.Contains(";"))
+                        {
+                            if (sb.Length != 0)
+                            {
+                                sb.Append(';');
+                            }
+
+                            sb.Append(item);
+                        }
+                    }
+                    App.ConfigData["AdditionalProvidersHistory"] = sb.ToString();
+                }
+            }
+
+            var providers = AdditionalProvidersTextBox.Text;
+            if ((IISCheckBox.IsChecked ?? false) && providers.IndexOf("Microsoft-Windows-IIS", StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                if (providers.Length != 0)
+                {
+                    providers += ",";
+                }
+
+                providers += "Microsoft-Windows-IIS";
+            }
+            if ((StressCheckBox.IsChecked ?? false) && providers.IndexOf("ClrStress", StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                if (providers.Length != 0)
+                {
+                    providers += ",";
+                }
+
+                providers += "ClrStress";
+            }
+            if ((MemInfoCheckBox.IsChecked ?? false) && providers.IndexOf("Microsoft-Windows-Kernel-Memory", StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                if (providers.Length != 0)
+                {
+                    providers += ",";
+                }
+
+                providers += "Microsoft-Windows-Kernel-Memory";
+            }
+
+            if ((BackgroundJITCheckBox.IsChecked ?? false) && providers.IndexOf("ClrPrivate", StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                // currently we turn on CLRPrvate events at full verbosity.  If we change this please take a look in 
+                // JitProcess.Collect (search for StartupPrestubWorkerStart) and fix the logic by which we detect that
+                // background JIT events are on.  
+                if (providers.Length != 0)
+                {
+                    providers += ",";
+                }
+
+                providers += "ClrPrivate";
+            }
+
+            m_args.CCWRefCount = CCWRefCountCheckBox.IsChecked ?? false;
+            m_args.RuntimeLoading = RuntimeLoadingCheckBox.IsChecked ?? false;
+
+            m_args.DumpHeap = HeapSnapshotCheckBox.IsChecked ?? false;
+
+            if (providers.Length > 0)
+            {
+                m_args.Providers = providers.Split(',');
+            }
+            else
+            {
+                m_args.Providers = null;
+            }
+
+            // These three we don't copy back when you start collection and instead do it when we end collection
+            // m_args.NoRundown = !(RundownCheckBox.IsChecked ?? false);
+            // m_args.Merge = MergeCheckBox.IsChecked;
+            // m_args.Zip = ZipCheckBox.IsChecked;
+            m_args.Message = MarkTextBox.Text;
+
+            if (!m_isCollect)
+            {
+                m_args.Zip = ZipCheckBox.IsChecked;
+                m_args.Merge = ZipCheckBox.IsChecked;
+            }
+
+            return true;
+        }
+
         private void CancelButtonClick(object sender, RoutedEventArgs e)
         {
             if (m_mainWindow.StatusBar.IsWorking)

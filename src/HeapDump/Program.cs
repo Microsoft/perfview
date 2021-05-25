@@ -46,7 +46,6 @@ internal class Program
             float decayToZeroHours = 0;
             bool forceGC = false;
             bool processDump = false;
-            bool dumpSerializedException = false;
             string inputSpec = null;
             var dumper = new GCHeapDumper(Console.Out);
 
@@ -154,10 +153,6 @@ internal class Program
                         }
                         Console.WriteLine("Generation To Trigger: " + dumper.GenerationToTrigger);
                     }
-                    else if (arg.StartsWith("/dumpSerializedException:", StringComparison.OrdinalIgnoreCase))
-                    {
-                        dumpSerializedException = true;
-                    }
                     else
                     {
                         Console.WriteLine("Unknown qualifier: {0}", arg);
@@ -206,12 +201,7 @@ internal class Program
                 }
             }
 
-            if (dumpSerializedException)
-            {
-                outputFile = null;
-                dumper.DumpSerializedExceptionFromProcessDump(inputSpec, outputFile);
-            }
-            else if (processDump)
+            if (processDump)
             {
                 Console.WriteLine("Creating heap dump {0} from process dump {1}.", outputFile, inputSpec);
 
@@ -242,7 +232,7 @@ internal class Program
                 dumper.DumpLiveHeap(processID, outputFile);
             }
 
-            if (!dumpSerializedException && !File.Exists(outputFile))
+            if (!File.Exists(outputFile))
             {
                 Console.WriteLine("No output file {0} created.", outputFile);
                 return 2;

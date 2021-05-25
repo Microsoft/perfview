@@ -481,9 +481,6 @@ namespace PerfView
                         dataSource.ConfigureStackWindow(stackWindow);
                         stackWindow.StartTextBox.Text = startTimeRelativeMSec.ToString();
                         stackWindow.EndTextBox.Text = endTimeRelativeMSec.ToString();
-                        stackWindow.GroupRegExTextBox.Text = "";
-                        stackWindow.FoldPercentTextBox.Text = "";
-                        stackWindow.CallTreeTab.IsSelected = true;
                         stackWindow.Show();
                         stackWindow.SetStackSource(stackSource);
                     });
@@ -512,7 +509,7 @@ namespace PerfView
                 return;
             }
             Update();
-            
+
             string templatePath = Path.Combine(SupportFiles.SupportFileDir, "EventCounterVisualization.html");
             string template = File.ReadAllText(templatePath);
 
@@ -764,16 +761,16 @@ namespace PerfView
         }
         private void DoColumnsToDisplayListClick(object sender, RoutedEventArgs e)
         {
-            var eventFilter = new List<string>();
-            foreach (var item in EventTypes.SelectedItems)
-            {
-                eventFilter.Add((string)item);
-            }
-
-            if (eventFilter.Count == 0)
+            if (EventTypes.SelectedItems.Count == 0)
             {
                 StatusBar.LogError("No event types selected.");
                 return;
+            }
+
+            var eventFilter = new List<string>(EventTypes.SelectedItems.Count);
+            foreach (var item in EventTypes.SelectedItems)
+            {
+                eventFilter.Add((string)item);
             }
 
             var columns = m_source.AllColumnNames(eventFilter);
@@ -895,7 +892,7 @@ namespace PerfView
         }
         private void DoCopyTimeRange(object sender, ExecutedRoutedEventArgs e)
         {
-            Clipboard.SetText(StartTextBox.Text + " " + EndTextBox.Text);
+            Clipboard.SetText(RangeUtilities.ToString(StartTextBox.Text, EndTextBox.Text));
         }
         private void DoHistogramSelectionChanged(object sender, RoutedEventArgs e)
         {
@@ -1154,14 +1151,10 @@ namespace PerfView
             }
             else
             {
-                var match = Regex.Match(StartTextBox.Text, @"^\s*([\d\.,]+)\s+([\d\.,]+)\s*$");
-                if (match.Success)
+                if (RangeUtilities.TryParse(StartTextBox.Text, out var startTimeRelativeMSec, out var endTimeRelativeMSec))
                 {
-                    m_source.StartTimeRelativeMSec = 0;
-                    double.TryParse(match.Groups[1].Value, out m_source.StartTimeRelativeMSec);
-
-                    m_source.EndTimeRelativeMSec = m_source.MaxEventTimeRelativeMsec;
-                    double.TryParse(match.Groups[2].Value, out m_source.EndTimeRelativeMSec);
+                    m_source.StartTimeRelativeMSec = startTimeRelativeMSec;
+                    m_source.EndTimeRelativeMSec = endTimeRelativeMSec;
                 }
                 else
                 {
@@ -1205,7 +1198,7 @@ namespace PerfView
                 return;
             }
 
-            var eventFilter = new List<string>();
+            var eventFilter = new List<string>(EventTypes.SelectedItems.Count);
             foreach (var item in EventTypes.SelectedItems)
             {
                 eventFilter.Add((string)item);

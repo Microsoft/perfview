@@ -892,7 +892,7 @@ namespace Microsoft.Diagnostics.Tracing
                 }
                 else
                 {
-                    if (eventRecord->ExtendedDataCount > 0)
+                    if (eventRecord->ExtendedData != null)
                     {
                         return traceEventSource.GetRelatedActivityID(eventRecord);
                     }
@@ -2984,8 +2984,8 @@ namespace Microsoft.Diagnostics.Tracing
                 Debug.Assert(GetProviderName() == null);         // Static parsers (providerName != null) don't support OnNewEventDefintion. 
                 if (cur.m_eventToObserve != null)
                 {
-                    var responce = cur.m_eventToObserve(template.ProviderName, template.EventName);
-                    if (responce == EventFilterResponse.RejectProvider)
+                    var response = cur.m_eventToObserve(template.ProviderName, template.EventName);
+                    if (response == EventFilterResponse.RejectProvider)
                     {
                         continue;
                     }
@@ -2996,7 +2996,7 @@ namespace Microsoft.Diagnostics.Tracing
                         combinedResponse = EventFilterResponse.RejectEvent;
                     }
 
-                    if (responce == EventFilterResponse.RejectEvent)
+                    if (response == EventFilterResponse.RejectEvent)
                     {
                         continue;
                     }

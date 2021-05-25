@@ -29,8 +29,8 @@ namespace System.IO.Compression2
         private const int LazyMatchThreshold = 6;
 
         // Hashtable structure
-        private ushort[] prev;     // next most recent occurance of chars with same hash value 
-        private ushort[] lookup;   // hash table to find most recent occurance of chars with same hash value
+        private ushort[] prev;     // next most recent occurrence of chars with same hash value 
+        private ushort[] lookup;   // hash table to find most recent occurrence of chars with same hash value
 
         public FastEncoderWindow()
         {
@@ -168,7 +168,7 @@ namespace System.IO.Compression2
         //
         // insert strings into hashtable
         // Arguments: 
-        //     hash     : intial hash value
+        //     hash     : initial hash value
         //     matchLen : 1 + number of strings we need to insert.
         //
         private void InsertStrings(ref uint hash, int matchLen)

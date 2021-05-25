@@ -37,7 +37,7 @@ using Address = System.UInt64;
 // CREATING A NEW PERFVIEW EXTENSION
 // 
 // PerView has a speical command called CreateExtentionTemplate that make creating a new extension 
-// very easy (assuming you have Visual Studio 2010 or later installed).   To make a new extention
+// very easy (assuming you have Visual Studio 2010 or later installed).   To make a new extension
 // Simply invoke the command
 //
 //     PerfView CreateExtensionProject EXTENSION_NAME
@@ -48,7 +48,7 @@ using Address = System.UInt64;
 //     Create/Update PerfViewExtentions\Extensions.SLN to include all extensions projects in the
 //          PerfViewExtensions directory.  
 //
-// If EXTENSION_NAME is not given the extention name 'Global' is assumed 
+// If EXTENSION_NAME is not given the extension name 'Global' is assumed 
 // 
 // Thus to get going you simply need to run 
 //

@@ -299,7 +299,6 @@ namespace PerfView
 
                         // Create an object to represent the pinned objects.
                         PinningRoot pinnedRoot = new PinningRoot(GCHandleKind.Pinned);
-                        List<Address> objectAddresses = new List<Address>();
 
                         // Get the address of the OverlappedData and add it to the list of pinned objects.
                         Address pinnedObjectAddress = memoryGraph.GetAddress(pinnedObjectNodeIndex);

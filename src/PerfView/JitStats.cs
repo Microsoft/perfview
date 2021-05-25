@@ -154,7 +154,7 @@ namespace Stats
                 writer.WriteLine("<LI> Summary of jitting time by module:</P>");
                 writer.WriteLine("<Center>");
                 writer.WriteLine("<Table Border=\"1\">");
-                writer.WriteLine("<TR>" +
+                writer.Write("<TR>" +
                     "<TH Title=\"The name of the module\">Name</TH>" +
                     "<TH Title=\"The total CPU time spent jitting for all methods in this module\">JitTime<BR/>msec</TH>" +
                     "<TH Title=\"The number of times the JIT was invoked for methods in this module\">Num Compilations</TH>" +
@@ -162,8 +162,16 @@ namespace Stats
                     "<TH Title=\"The total amount of native code produced by the JIT for all methods in this module\">Native Size</TH>" +
                     "<TH Title=\"Time spent jitting synchronously to produce code for methods that were just invoked. These compilations often consume time at startup.\">" + GetLongNameForThreadClassification(CompilationThreadKind.Foreground) + "<BR/>msec</TH>" +
                     "<TH Title=\"Time spent jitting asynchronously to produce code for methods the runtime speculates will be invoked in the future.\">" + GetLongNameForThreadClassification(CompilationThreadKind.MulticoreJitBackground) + "<BR/>msec</TH>" +
-                    "<TH Title=\"Time spent jitting asynchronously to produce code for methods that is more optimized than their initial code.\">" + GetLongNameForThreadClassification(CompilationThreadKind.TieredCompilationBackground) + "<BR/>msec</TH>" +
-                    "</TR>");
+                    "<TH Title=\"Time spent jitting asynchronously to produce code for methods that is more optimized than their initial code.\">" + GetLongNameForThreadClassification(CompilationThreadKind.TieredCompilationBackground) + "<BR/>msec</TH>");
+
+                if (runtime.JIT.Stats().IsJitAllocSizePresent)
+                {
+                    writer.Write("<TH Title=\"The total amount of heap memory requested for the code produced by the JIT for all methods in this module.  \">JIT Hotcode request size</TH>");
+                    writer.Write("<TH Title=\"The total amount of heap memory requested for the read-only data of code produced by the JIT for all methods in this module.  \">JIT RO-data request size</TH>");
+                    writer.Write("<TH Title=\"The total amount of heap memory allocated for the code produced by the JIT for all methods in this module. \">Allocated size for JIT code</TH>");
+                }
+
+                writer.WriteLine("</TR>");
 
                 string moduleTableRow = "<TR>" +
                     "<TD Align=\"Left\">{0}</TD>" +
@@ -173,9 +181,9 @@ namespace Stats
                     "<TD Align=\"Center\">{4:n0}</TD>" +
                     "<TD Align=\"Center\">{5:n1}</TD>" +
                     "<TD Align=\"Center\">{6:n1}</TD>" +
-                    "<TD Align=\"Center\">{7:n1}</TD>" +
-                    "</TR>";
-                writer.WriteLine(moduleTableRow,
+                    "<TD Align=\"Center\">{7:n1}</TD>";
+                
+                writer.Write(moduleTableRow,
                     "TOTAL",
                     runtime.JIT.Stats().TotalCpuTimeMSec,
                     runtime.JIT.Stats().Count,
@@ -184,10 +192,26 @@ namespace Stats
                     runtime.JIT.Stats().TotalForegroundCpuTimeMSec,
                     runtime.JIT.Stats().TotalBackgroundMultiCoreJitCpuTimeMSec,
                     runtime.JIT.Stats().TotalBackgroundTieredCompilationCpuTimeMSec);
+
+                string allocSizeColumns = "";
+                if (runtime.JIT.Stats().IsJitAllocSizePresent)
+                {
+                    allocSizeColumns +=
+                       "<TD Align=\"Center\">{0:n0}</TD>" +
+                       "<TD Align=\"Center\">{1:n0}</TD>" +
+                       "<TD Align=\"Center\">{2:n0}</TD>";
+
+                    writer.Write(allocSizeColumns,
+                        runtime.JIT.Stats().TotalHotCodeAllocSize,
+                        runtime.JIT.Stats().TotalRODataAllocSize,
+                        runtime.JIT.Stats().TotalAllocSizeForJitCode);
+                }
+                writer.WriteLine();
+
                 foreach (string moduleName in moduleNames)
                 {
                     JITStats info = statsEx.TotalModuleStats[moduleName];
-                    writer.WriteLine(moduleTableRow,
+                    writer.Write(moduleTableRow,
                         moduleName.Length == 0 ? "&lt;UNKNOWN&gt;" : moduleName,
                         info.TotalCpuTimeMSec,
                         info.Count,
@@ -196,6 +220,17 @@ namespace Stats
                         info.TotalForegroundCpuTimeMSec,
                         info.TotalBackgroundMultiCoreJitCpuTimeMSec,
                         info.TotalBackgroundTieredCompilationCpuTimeMSec);
+
+                    if (runtime.JIT.Stats().IsJitAllocSizePresent)
+                    {
+                        writer.Write(allocSizeColumns,
+                            info.TotalHotCodeAllocSize,
+                            info.TotalRODataAllocSize,
+                            info.TotalAllocSizeForJitCode);
+                    }
+
+                    writer.WriteLine("</TR>");
+
                 }
                 writer.WriteLine("</Table>");
                 writer.WriteLine("</Center>");
@@ -225,13 +260,24 @@ namespace Stats
                 "<TH>Jit Time<BR/>(msec)</TH>" +
                 "<TH>IL<BR/>Size</TH>" +
                 "<TH>Native<BR/>Size</TH>");
+
+            if (runtime.JIT.Stats().IsJitAllocSizePresent)
+            {
+                writer.Write(
+                    "<TH>JIT Hotcode<BR/>request size</TH>" +
+                    "<TH>JIT RO-data<BR/>request size</TH>" +
+                    "<TH>Allocated size<BR/>for JIT code</TH>" +
+                    "<TH>JIT Allocation<BR/>Flags</TH>"
+                    );
+            }
+
             if (showOptimizationTiers)
             {
                 writer.Write("<TH Title=\"The optimization tier at which the method was jitted.\">Optimization<BR/>Tier</TH>");
             }
             writer.Write(
                 "<TH>Method Name</TH>" +
-                "<TH Title=\"Is Jit compilation occuring in the background for Multicore JIT (MC), in the background for tiered compilation (TC), or in the foreground on first execution of a method (FG).\">Trigger</TH>" +
+                "<TH Title=\"Is Jit compilation occurring in the background for Multicore JIT (MC), in the background for tiered compilation (TC), or in the foreground on first execution of a method (FG).\">Trigger</TH>" +
                 "<TH>Module</TH>");
             if (backgroundJitEnabled)
             {
@@ -253,6 +299,21 @@ namespace Stats
                     _event.CompileCpuTimeMSec,
                     _event.ILSize,
                     _event.NativeSize);
+
+                if (_event.IsJitAllocSizePresent)
+                {
+                    writer.Write(
+                        "<TD Align=\"Center\">{0}</TD>" +
+                        "<TD Align=\"Center\">{1}</TD>" +
+                        "<TD Align=\"Center\">{2}</TD>" +
+                        "<TD Align=\"Center\">{3}</TD>",
+                        _event.JitHotCodeRequestSize,
+                        _event.JitRODataRequestSize,
+                        _event.AllocatedSizeForJitCode,
+                        _event.JitAllocFlag
+                        );
+                }
+
                 if (showOptimizationTiers)
                 {
                     writer.Write(
@@ -378,6 +439,10 @@ namespace Stats
             using (var writer = File.CreateText(filePath))
             {
                 writer.Write("Start MSec{0}JitTime MSec{0}ThreadID{0}IL Size{0}Native Size", listSeparator);
+                if (runtime.JIT.Stats().IsJitAllocSizePresent)
+                {
+                    writer.Write("{0}JIT HotCode request size{0}JIT RO-data request size{0}Allocated size for JIT code{0}JIT Allocation Flag", listSeparator);
+                }
                 if (showOptimizationTiers)
                 {
                     writer.Write("{0}OptimizationTier", listSeparator);
@@ -397,6 +462,17 @@ namespace Stats
                         _event.ThreadID,
                         _event.ILSize,
                         _event.NativeSize);
+
+                    if (_event.IsJitAllocSizePresent)
+                    {
+                        writer.Write("{0}{1}{0}{2}{0}{3}{0}{4}",
+                            listSeparator,
+                            _event.JitHotCodeRequestSize,
+                            _event.JitRODataRequestSize,
+                            _event.AllocatedSizeForJitCode,
+                            _event.JitAllocFlag);
+                    }
+
                     if (showOptimizationTiers)
                     {
                         writer.Write(
@@ -478,8 +554,11 @@ namespace Stats
             JITStatsEx statsEx = JITStatsEx.Create(runtime);
 
             // TODO pay attention to indent;
-            writer.Write(" <JitProcess Process=\"{0}\" ProcessID=\"{1}\" JitTimeMSec=\"{2:n3}\" Count=\"{3}\" ILSize=\"{4}\" NativeSize=\"{5}\"",
-                stats.Name, stats.ProcessID, runtime.JIT.Stats().TotalCpuTimeMSec, runtime.JIT.Stats().Count, runtime.JIT.Stats().TotalILSize, runtime.JIT.Stats().TotalNativeSize);
+            writer.Write(" <JitProcess Process=\"{0}\" ProcessID=\"{1}\" JitTimeMSec=\"{2:n3}\" Count=\"{3}\" ILSize=\"{4}\" NativeSize=\"{5}\"", stats.Name, stats.ProcessID, runtime.JIT.Stats().TotalCpuTimeMSec, runtime.JIT.Stats().Count, runtime.JIT.Stats().TotalILSize, runtime.JIT.Stats().TotalNativeSize);
+            if (runtime.JIT.Stats().IsJitAllocSizePresent)
+            {
+                writer.Write("HotCodeAllocSize=\"{0}\" RODataAllocSize=\"{1}\" AllocSizeForJitCode=\"{2}\"", runtime.JIT.Stats().TotalHotCodeAllocSize, runtime.JIT.Stats().TotalRODataAllocSize, runtime.JIT.Stats().TotalAllocSizeForJitCode);
+            }
             if (stats.CPUMSec != 0)
             {
                 writer.Write(" ProcessCpuTimeMsec=\"{0}\"", stats.CPUMSec);
@@ -500,8 +579,8 @@ namespace Stats
 
             writer.WriteLine("  </JitEvents>");
 
-            writer.WriteLine(" <ModuleStats Count=\"{0}\" TotalCount=\"{1}\" TotalJitTimeMSec=\"{2:n3}\" TotalILSize=\"{3}\" TotalNativeSize=\"{4}\">",
-                statsEx.TotalModuleStats.Count, runtime.JIT.Stats().Count, runtime.JIT.Stats().TotalCpuTimeMSec, runtime.JIT.Stats().TotalILSize, runtime.JIT.Stats().TotalNativeSize);
+            writer.WriteLine(" <ModuleStats Count=\"{0}\" TotalCount=\"{1}\" TotalJitTimeMSec=\"{2:n3}\" TotalILSize=\"{3}\" TotalNativeSize=\"{4}\"  HotCodeAllocSize=\"{5}\" RODataAllocSize=\"{6}\" AllocSizeForJitCode=\"{7}\"",
+                statsEx.TotalModuleStats.Count, runtime.JIT.Stats().Count, runtime.JIT.Stats().TotalCpuTimeMSec, runtime.JIT.Stats().TotalILSize, runtime.JIT.Stats().TotalNativeSize, runtime.JIT.Stats().TotalHotCodeAllocSize, runtime.JIT.Stats().TotalRODataAllocSize, runtime.JIT.Stats().TotalAllocSizeForJitCode);
 
             // Sort the module list by Jit Time;
             List<string> moduleNames = new List<string>(statsEx.TotalModuleStats.Keys);
@@ -528,6 +607,13 @@ namespace Stats
                 writer.Write(" Count={0}", StringUtilities.QuotePadLeft(info.Count.ToString(), 7));
                 writer.Write(" ILSize={0}", StringUtilities.QuotePadLeft(info.TotalILSize.ToString(), 9));
                 writer.Write(" NativeSize={0}", StringUtilities.QuotePadLeft(info.TotalNativeSize.ToString(), 9));
+
+                if (info.IsJitAllocSizePresent)
+                {
+                    writer.Write(" HotCodeAllocSize={0}", StringUtilities.QuotePadLeft(info.TotalHotCodeAllocSize.ToString(), 9));
+                    writer.Write(" RODataAllocSize={0}", StringUtilities.QuotePadLeft(info.TotalRODataAllocSize.ToString(), 9));
+                    writer.Write(" RequestedAllocSizeForJitCode={0}", StringUtilities.QuotePadLeft(info.TotalAllocSizeForJitCode.ToString(), 9));
+                }
                 writer.Write(" Name=\"{0}\"", moduleName);
                 writer.WriteLine("/>");
             }
@@ -543,6 +629,14 @@ namespace Stats
             writer.Write(" JitTimeMSec={0}", StringUtilities.QuotePadLeft(info.CompileCpuTimeMSec.ToString("n3"), 8));
             writer.Write(" ILSize={0}", StringUtilities.QuotePadLeft(info.ILSize.ToString(), 10));
             writer.Write(" NativeSize={0}", StringUtilities.QuotePadLeft(info.NativeSize.ToString(), 10));
+
+            if (info.IsJitAllocSizePresent)
+            {
+                writer.Write(" JITHotCodeRequestSize={0}", StringUtilities.QuotePadLeft(info.JitHotCodeRequestSize.ToString(), 10));
+                writer.Write(" JITRODataRequestSize={0}", StringUtilities.QuotePadLeft(info.JitRODataRequestSize.ToString(), 10));
+                writer.Write(" AllocSizeForJitCode={0}", StringUtilities.QuotePadLeft(info.AllocatedSizeForJitCode.ToString(), 10));
+                writer.Write(" JitAllocFlag={0}", StringUtilities.QuotePadLeft(info.JitAllocFlag.ToString(), 10));
+            }
             if (showOptimizationTiers)
             {
                 writer.Write(

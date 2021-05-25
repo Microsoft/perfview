@@ -5,7 +5,7 @@
         xmlns:controls="clr-namespace:Controls"
         Background="#FFA7A7A7" 
         Title="Collecting ETW Data while running a command" 
-        Height="304" Width="877" MinHeight="210" MinWidth="750">
+        Height="304" Width="900" MinHeight="210" MinWidth="900">
     <Window.CommandBindings>
         <CommandBinding Command="Help" Executed="DoHyperlinkHelp" />
     </Window.CommandBindings>
@@ -79,10 +79,10 @@
                 <ColumnDefinition Width="auto"/>
                 <ColumnDefinition Width="auto"/>
                 <ColumnDefinition Width="auto"/>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition Width="auto"/>
                 <ColumnDefinition Width="1*"/>
-                <ColumnDefinition Width="auto"/>
-                <ColumnDefinition Width="auto"/>
-                <ColumnDefinition Width="auto"/>
                 <ColumnDefinition Width="auto"/>
                 <ColumnDefinition Width="auto"/>
                 <ColumnDefinition Width="auto"/>
@@ -110,17 +110,18 @@
             </TextBlock>
             <CheckBox Grid.Column="7" Name="ThreadTimeCheckbox" VerticalAlignment="Center" />
 
-            <TextBlock Grid.Column="9" VerticalAlignment="Center" Margin="5,0,2,0" KeyboardNavigation.IsTabStop="False" ToolTip="This text is attached to the Mark event when the 'Mark' button is pressed." >
+            <TextBlock Grid.Column="8" VerticalAlignment="Center" Margin="5,0,2,0" KeyboardNavigation.IsTabStop="False" ToolTip="This text is attached to the Mark event when the 'Mark' button is pressed." >
                 <Hyperlink Command="Help" CommandParameter="MarkTextBox">Mark Text:</Hyperlink>
             </TextBlock>
-            <TextBox Grid.Column="10" Name="MarkTextBox" VerticalAlignment="Center" Width="150" Margin="5,0" KeyDown="MarkTextKeyDown" />
-            <Button Name="MarkButton" Grid.Column="11" Margin="5,0,30,0" Width="auto" VerticalAlignment="Center"  
+            <TextBox Grid.Column="9" Name="MarkTextBox" VerticalAlignment="Center" Width="150" Margin="5,0" KeyDown="MarkTextKeyDown" />
+            <Button Name="MarkButton" Grid.Column="10" Margin="5,0" Padding="5,1" Width="auto" VerticalAlignment="Center"  
                     ToolTip="Click this button to enter a mark event into the data collected."
                     Click="MarkButtonClick">Mark</Button>
 
-            <Button Name="OKButton" Grid.Column="12" Margin="5,0" Width="110" VerticalAlignment="Center"  Click="OKButtonClick" IsDefault="True">Run Command</Button>
-            <Button Name="LogButton" Grid.Column="13" Margin="5,0" Width="30" VerticalAlignment="Center"  Click="LogButtonClick" IsCancel="True">Log</Button>
-            <Button Name="CancelButton" Grid.Column="14" Margin="5,0" Width="50" VerticalAlignment="Center"  Click="CancelButtonClick" IsCancel="True">Cancel</Button>
+            <Button Name="CopyCommandLineButton" Grid.Column="12" Margin="5,0" Padding="5,1" Width="auto" VerticalAlignment="Center"  Click="CopyCommandLineButtonClick" IsDefault="True">Copy Command Line</Button>
+            <Button Name="OKButton" Grid.Column="13" Margin="5,0" Padding="5,1" Width="auto" VerticalAlignment="Center"  Click="OKButtonClick" IsDefault="True">Run Command</Button>
+            <Button Name="LogButton" Grid.Column="14" Margin="5,0" Padding="5,1" Width="auto" VerticalAlignment="Center"  Click="LogButtonClick" IsCancel="True">Log</Button>
+            <Button Name="CancelButton" Grid.Column="15" Margin="5,0" Padding="5,1" Width="auto" VerticalAlignment="Center"  Click="CancelButtonClick" IsCancel="True">Cancel</Button>
         </Grid>
 
         <TextBlock Grid.Row="5" Grid.Column="0" Margin="5,0" HorizontalAlignment="Right" VerticalAlignment="Center" Text="Status:" />

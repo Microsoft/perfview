@@ -34,7 +34,7 @@ namespace Microsoft.Diagnostics.Tracing.StackSources
         {
             source.MoveNext();      // Prime Current 
 
-            // These are bytes put at the begining of a UTF8 file (like the byte order mark (BOM)) that should be skipped.  
+            // These are bytes put at the beginning of a UTF8 file (like the byte order mark (BOM)) that should be skipped.  
             var preambleBytes = Encoding.UTF8.GetPreamble();
             while (preambleBytes.Contains(source.Current))
             {

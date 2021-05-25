@@ -42,6 +42,7 @@ namespace Microsoft.Diagnostics.Tracing
             : this(fileName, TraceEventSourceType.MergeAll)
         {
         }
+
         /// <summary>
         /// Open a ETW event source for processing.  This can either be a moduleFile or a real time ETW session
         /// </summary>
@@ -53,6 +54,24 @@ namespace Microsoft.Diagnostics.Tracing
         public ETWTraceEventSource(string fileOrSessionName, TraceEventSourceType type)
         {
             Initialize(fileOrSessionName, type);
+        }
+
+        /// <summary>
+        /// Open multiple etl files as one trace for processing.
+        /// </summary>
+        /// <param name="fileNames"></param>
+        /// <param name="type">If type == MergeAll, call Initialize.</param>
+        // [SecuritySafeCritical]
+        public ETWTraceEventSource(IEnumerable<string> fileNames, TraceEventSourceType type)
+        {
+            if (type == TraceEventSourceType.MergeAll)
+            {
+                Initialize(fileNames);
+            }
+            else
+            {
+                this.fileNames = fileNames;
+            }
         }
 
         /// <summary>
@@ -220,7 +239,7 @@ namespace Microsoft.Diagnostics.Tracing
         {
             /// <summary>
             /// This is the default, where only NGEN images are included (since these are the only images whose PDBS typically
-            /// need to be resolved agressively AT COLLECTION TIME)
+            /// need to be resolved aggressively AT COLLECTION TIME)
             /// </summary>
             OnlyNGENImages = 0,
             /// <summary>
@@ -231,7 +250,7 @@ namespace Microsoft.Diagnostics.Tracing
             /// Normally only modules what have a CPU or stack sample are included in the list of assemblies (thus you don't 
             /// unnecessarily have to generate NGEN PDBS for modules that will never be looked up).  However if there are 
             /// events that have addresses that need resolving that this routine does not recognise, this option can be
-            /// set to insure that any module that was event LOADED is included.   This is inefficient, but guarenteed to
+            /// set to insure that any module that was event LOADED is included.   This is inefficient, but guaranteed to
             /// be complete
             /// </summary>
             IncludeModulesWithOutSamples = 2
@@ -250,9 +269,13 @@ namespace Microsoft.Diagnostics.Tracing
             // Get the name of all DLLS (in the file, and the set of all address-process pairs in the file.   
             using (var source = new ETWTraceEventSource(etlFile))
             {
+                var handledImageGroupFiles = new HashSet<string>();
                 source.Kernel.ImageGroup += delegate (ImageLoadTraceData data)
                 {
                     var fileName = data.FileName;
+                    if (!handledImageGroupFiles.Add(fileName))
+                        return;
+
                     if (fileName.IndexOf(".ni.", StringComparison.OrdinalIgnoreCase) < 0)
                     {
                         // READY_TO_RUN support generate PDBs for ready-to-run images.    
@@ -383,6 +406,18 @@ namespace Microsoft.Diagnostics.Tracing
             public int Size;
         }
 
+        private void Initialize(IEnumerable<string> fileNames)
+        {
+            List<string> allLogFiles = new List<string>(fileNames);
+            logFiles = new TraceEventNativeMethods.EVENT_TRACE_LOGFILEW[allLogFiles.Count];
+            for (int i = 0; i < allLogFiles.Count; i++)
+            {
+                logFiles[i].LogFileName = allLogFiles[i];
+            }
+
+            InitializeFiles();
+        }
+
         private void Initialize(string fileOrSessionName, TraceEventSourceType type)
         {
 
@@ -413,6 +448,12 @@ namespace Microsoft.Diagnostics.Tracing
                     IsRealTime = true;
                 }
             }
+
+            InitializeFiles();
+        }
+
+        private void InitializeFiles()
+        {
             handles = new ulong[logFiles.Length];
 
             // Fill  out the first log file information (we will clone it later if we have multiple files). 

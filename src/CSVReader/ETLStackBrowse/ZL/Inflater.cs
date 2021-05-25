@@ -378,7 +378,7 @@ namespace System.IO.Compression2
                 switch (state)
                 {
 
-                    case InflaterState.UncompressedAligning: // intial state when calling this function
+                    case InflaterState.UncompressedAligning: // initial state when calling this function
                                                              // we must skip to a byte boundary
                         input.SkipToByteBoundary();
                         state = InflaterState.UncompressedByte1;

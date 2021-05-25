@@ -36,7 +36,7 @@ namespace LinuxTracing.Tests
         }
 
         // These tests are associate with the Linux thread time 
-        // view which we know is broken becasue we are not getting 
+        // view which we know is broken because we are not getting 
         // the right linux events.   When we get that runnig we can
         // turn these on. 
 #if false

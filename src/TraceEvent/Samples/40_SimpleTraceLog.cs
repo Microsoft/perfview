@@ -230,7 +230,7 @@ namespace TraceEventSamples
             // Note the OpenOrConvert will take an ETL file and generate an ETLX (right next to it) if it is out of date.  
             // We TraceLogOptions gives you control over this conversion.  Here we spew the log file to the console
             var traceLog = TraceLog.OpenOrConvert(dataFileName, new TraceLogOptions() { ConversionLog = Out });
-            Out.WriteLine("**************  Done converting", Path.GetFileName(traceLog.FilePath));
+            Out.WriteLine("**************  Done converting {0}", Path.GetFileName(traceLog.FilePath));
 
             // The OS process ID of this process
             var myProcessID = Process.GetCurrentProcess().Id;

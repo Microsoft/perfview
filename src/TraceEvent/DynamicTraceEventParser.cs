@@ -1320,7 +1320,7 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
 
         // These are special sizes 
         // sizes from 0xFFF0 through 0xFFFF are variations of VAR_SIZE
-        internal const ushort COUNTED_SIZE = 0xFFF0;   // The size is variable.  Size preceeded the data, bits above tell more.   
+        internal const ushort COUNTED_SIZE = 0xFFF0;   // The size is variable.  Size preceded the data, bits above tell more.   
 
         // Size 0xFFEF is NULL_TERMINATED | IS_ANSI
         internal const ushort NULL_TERMINATED = 0xFFEE; // value is a null terminated string.   
@@ -2095,18 +2095,20 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
             Init();
             try
             {
-                Dictionary<string, int> opcodes = new Dictionary<string, int>();
-                opcodes.Add("win:Info", 0);
-                opcodes.Add("win:Start", 1);
-                opcodes.Add("win:Stop", 2);
-                opcodes.Add("win:DC_Start", 3);
-                opcodes.Add("win:DC_Stop", 4);
-                opcodes.Add("win:Extension", 5);
-                opcodes.Add("win:Reply", 6);
-                opcodes.Add("win:Resume", 7);
-                opcodes.Add("win:Suspend", 8);
-                opcodes.Add("win:Send", 9);
-                opcodes.Add("win:Receive", 240);
+                Dictionary<string, int> opcodes = new Dictionary<string, int>(11)
+                {
+                    {"win:Info", 0},
+                    {"win:Start", 1},
+                    {"win:Stop", 2},
+                    {"win:DC_Start", 3},
+                    {"win:DC_Stop", 4},
+                    {"win:Extension", 5},
+                    {"win:Reply", 6},
+                    {"win:Resume", 7},
+                    {"win:Suspend", 8},
+                    {"win:Send", 9},
+                    {"win:Receive", 240}
+                };
                 Dictionary<string, TaskInfo> tasks = new Dictionary<string, TaskInfo>();
                 Dictionary<string, TemplateInfo> templates = new Dictionary<string, TemplateInfo>();
                 Dictionary<string, IDictionary<long, string>> maps = null;

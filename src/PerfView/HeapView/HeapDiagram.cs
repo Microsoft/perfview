@@ -377,7 +377,7 @@ namespace PerfView
         {
             int stride = yCount + 1;
 
-            List<Tuple<Point, string, Pen>> labels = new List<Tuple<Point, string, Pen>>();
+            List<Tuple<Point, string, Pen>> labels = new List<Tuple<Point, string, Pen>>(yCount);
 
             // Draw the lines one by one
             for (int j = 0; j < yCount; j++)

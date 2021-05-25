@@ -41,33 +41,33 @@ namespace Microsoft.Diagnostics.Tracing.AutomatedAnalysis
             _writer.WriteLine("</html>");
         }
 
-        public void WriteIssuesForProcess(AutomatedAnalysisTraceProcess process, List<AutomatedAnalysisIssue> issues)
+        public void WriteIssuesForProcess(AnalyzerTraceProcess process, List<AnalyzerIssue> issues)
         {
             _writer.WriteLine($"<H3>Process {process.DisplayID}: {process.Description}</H3>");
             _writer.WriteLine("<Table Border=\"1\">");
             _writer.WriteLine("<TR><TH>Issue Title</TH><TH>Notes</TH></TR>");
-            foreach(AutomatedAnalysisIssue issue in issues)
+            foreach(AnalyzerIssue issue in issues)
             {
                 _writer.WriteLine($"<TR><TD>{issue.Title}</TD><TD>{issue.Description}<BR/><BR/>More details: <A HREF=\"{issue.URL}\">{issue.URL}</A></TD></TR>");
             }
             _writer.WriteLine("</Table>");
         }
 
-        public void WriteExecutedRulesList(List<AutomatedAnalysisRule> rules)
+        public void WriteExecutedAnalyzerList(IEnumerable<Analyzer> analyzers)
         {
-            if(rules.Count > 0)
+            if(analyzers.Count() > 0)
             {
-                _writer.WriteLine("<H3>Rules Executed:</H3>");
+                _writer.WriteLine("<H3>Analyzers Executed:</H3>");
                 _writer.WriteLine("<ul style=\"list-style-type:circle\">");
-                foreach (AutomatedAnalysisRule rule in rules)
+                foreach (Analyzer analyzer in analyzers)
                 {
-                    _writer.WriteLine($"<li>{rule.GetType().AssemblyQualifiedName}</li>");
+                    _writer.WriteLine($"<li>{analyzer.GetType().AssemblyQualifiedName}</li>");
                 }
                 _writer.WriteLine("</ul>");
             }
             else
             {
-                _writer.WriteLine($"<H3>No rules were executed.  Check '{AutomatedAnalysisRuleResolver.RulesDirectory}' for DLLs containing rules.</H3>");
+                _writer.WriteLine($"<H3>No analyzers were executed.  Check '{AnalyzerResolver.AnalyzersDirectory}' for DLLs containing analyzers.</H3>");
             }
         }
     }

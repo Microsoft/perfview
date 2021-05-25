@@ -155,11 +155,11 @@ namespace PerfView
 
                 if (gcCpu >= 40)
                 {
-                    AddIssue(IssueType.Cpu, String.Format("GC CPU usage extremely high ({0:N1} %)", gcCpu), "Check memory allocation, fragmentation, data structure, object refereence");
+                    AddIssue(IssueType.Cpu, String.Format("GC CPU usage extremely high ({0:N1} %)", gcCpu), "Check memory allocation, fragmentation, data structure, object reference");
                 }
                 else if (gcCpu >= 10)
                 {
-                    AddIssue(IssueType.Cpu, String.Format("GC CPU usage higher than normal ({0:N1} %)", gcCpu), "Check memory allocation, fragmentation, data structure, object refereence");
+                    AddIssue(IssueType.Cpu, String.Format("GC CPU usage higher than normal ({0:N1} %)", gcCpu), "Check memory allocation, fragmentation, data structure, object reference");
                 }
             }
 

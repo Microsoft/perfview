@@ -207,7 +207,7 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
     /// <summary>
     /// A Histogram is conceputually an array of floating point values.   A Histogram Controller
     /// contains all the information besides the values themselves need to understand the array
-    /// of floating point value.   There are alot of Histograms, however they all tend to share
+    /// of floating point value.   There are a lot of Histograms, however they all tend to share
     /// the same histogram controller.   Thus Histograms know their Histogram controller, but not
     /// the reverse.  
     /// 

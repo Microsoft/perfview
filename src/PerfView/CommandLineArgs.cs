@@ -115,7 +115,7 @@ namespace PerfView
         public string[] CpuCounters;        // Specifies any profile sources (CPU counters) to turn on (Win 8 only)
         public ClrTraceEventParser.Keywords ClrEvents = ClrTraceEventParser.Keywords.Default;
         public TraceEventLevel ClrEventLevel = Microsoft.Diagnostics.Tracing.TraceEventLevel.Verbose;    // The verbosity of CLR events
-        public TplEtwProviderTraceEventParser.Keywords TplEvents = TplEtwProviderTraceEventParser.Keywords.Default;
+        public TplEtwProviderTraceEventParser.Keywords TplEvents = TplEtwProviderTraceEventParser.Keywords.None;
         public bool ThreadTime;             // Shortcut for /KernelEvents=ThreadTime
         public bool GCOnly;                 // collect only enough for GC analysis
         public bool GCCollectOnly;          // Turn off even the allocation Tick

@@ -1,107 +1,71 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
-using Microsoft.Diagnostics.Tracing.Etlx;
-using Microsoft.Diagnostics.Symbols;
 
 namespace Microsoft.Diagnostics.Tracing.AutomatedAnalysis
 {
     public sealed class AutomatedAnalysisManager
     {
-        private IAutomatedAnalysisTrace _trace;
-        private TextWriter _textLog;
+        private IEnumerable<Analyzer> _analyzers;
+        private Configuration _configuration;
 
-        public AutomatedAnalysisManager(TraceLog traceLog, TextWriter textLog, SymbolReader symbolReader)
+        public AutomatedAnalysisManager()
         {
-            _trace = new AutomatedAnalysisTraceLog(traceLog, symbolReader);
-            _textLog = textLog;
+            _analyzers = AnalyzerResolver.GetAnalyzers();
+            _configuration = AnalyzerResolver.GetConfiguration();
+
         }
 
-        public AutomatedAnalysisManager(IAutomatedAnalysisTrace trace, TextWriter textLog)
+        public AutomatedAnalysisResult ProcessTrace(ITrace trace, TextWriter textLog)
         {
-            _trace = trace;
-            _textLog = textLog;
-        }
+            List<PerProcessAnalyzer> perProcessAnalyzers = new List<PerProcessAnalyzer>();
 
-        public AutomatedAnalysisIssueCollection Issues { get; private set; }
-
-        public List<AutomatedAnalysisRule> ExecuteRules()
-        {
-            Issues = new AutomatedAnalysisIssueCollection();
-
-            List<AutomatedAnalysisRule> allRules = new List<AutomatedAnalysisRule>();
-            List<AutomatedAnalysisPerProcessRule> perProcessRules = new List<AutomatedAnalysisPerProcessRule>();
-
-            // Run global rules, deferring per-process rules.
-            AutomatedAnalysisExecutionContext executionContext = new AutomatedAnalysisExecutionContext(_trace, _textLog, Issues);
-            foreach (AutomatedAnalysisRule rule in AutomatedAnalysisRuleResolver.GetRules())
+            // Run global analyzers, deferring per-process analyzers.
+            AnalyzerExecutionContext executionContext = new AnalyzerExecutionContext(_configuration, trace, textLog);
+            foreach (Analyzer analyzer in _analyzers)
             {
-                // Create a list of all executed rules so that they can be written into the report.
-                allRules.Add(rule);
-
-                if (rule is AutomatedAnalysisPerProcessRule)
+                if (analyzer is PerProcessAnalyzer)
                 {
-                    // Defer per-process rules.
-                    perProcessRules.Add((AutomatedAnalysisPerProcessRule)rule);
+                    // Defer per-process analyzers.
+                    perProcessAnalyzers.Add((PerProcessAnalyzer)analyzer);
                 }
                 else
                 {
-                    // Execute the rule.
+                    // Execute the analyzer.
                     try
                     {
-                        rule.RunRule(executionContext, null);
+                        analyzer.RunAnalyzer(executionContext, null);
                     }
                     catch (Exception ex)
                     {
-                        _textLog.WriteLine($"Error while executing rule '{rule.GetType().FullName}': {ex}");
+                        textLog.WriteLine($"Error while executing analyzer '{analyzer.GetType().FullName}': {ex}");
                     }
                 }
             }
 
-            // Run per-process rules.
-            foreach (AutomatedAnalysisTraceProcess process in executionContext.Trace.Processes)
+            // Run per-process analyzers.
+            foreach (AnalyzerTraceProcess process in executionContext.Trace.Processes)
             {
                 if (process.ContainsManagedCode)
                 {
                     // Create the process context.
                     ProcessContext processContext = new ProcessContext(executionContext, process);
 
-                    foreach (AutomatedAnalysisPerProcessRule rule in perProcessRules)
+                    foreach (PerProcessAnalyzer analyzer in perProcessAnalyzers)
                     {
                         try
                         {
-                            rule.RunRule(executionContext, processContext);
+                            analyzer.RunAnalyzer(executionContext, processContext);
                         }
                         catch (Exception ex)
                         {
-                            _textLog.WriteLine($"Error while executing rule '{rule.GetType().FullName}': {ex}");
+                            textLog.WriteLine($"Error while executing analyzer '{analyzer.GetType().FullName}': {ex}");
                         }
                     }
                 }
             }
 
-            return allRules;
-        }
-
-        public void GenerateReport(TextWriter writer)
-        {
-            using (AutomatedAnalysisReportGenerator reportGenerator = new AutomatedAnalysisReportGenerator(writer))
-            {
-                // Execute rules.
-                List<AutomatedAnalysisRule> allRules = ExecuteRules();
-
-                // Write out issues.
-                foreach (KeyValuePair<AutomatedAnalysisTraceProcess, List<AutomatedAnalysisIssue>> pair in Issues)
-                {
-                    if (pair.Value.Count > 0)
-                    {
-                        reportGenerator.WriteIssuesForProcess(pair.Key, pair.Value);
-                    }
-                }
-
-                // Write the list of executed rules.
-               reportGenerator.WriteExecutedRulesList(allRules);
-            }
+            return new AutomatedAnalysisResult(_analyzers, executionContext);
         }
     }
 }

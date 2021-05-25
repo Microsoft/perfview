@@ -161,7 +161,7 @@ public static class DirectoryUtilities
     }
 
     /// <summary>
-    /// DirectoryUtilities.GetFiles is basicaly the same as Directory.GetFiles 
+    /// DirectoryUtilities.GetFiles is basically the same as Directory.GetFiles 
     /// however it returns IEnumerator, which means that it lazy.  This is very important 
     /// for large directory trees.  A searchPattern can be specified (Windows wildcard conventions)
     /// that can be used to filter the set of archiveFile names returned. 

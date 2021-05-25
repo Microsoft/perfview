@@ -243,7 +243,7 @@ namespace System.Collections.Generic
         /// which has no capacity (and thus will cause growth on the first addition).
         /// This method allows you to lazily set the compacity of your GrowableArray by
         /// testing if it is of EmtpyCapacity, and if so set it to some useful capacity.
-        /// This avoids unecessary reallocs to get to a reasonable capacity.   
+        /// This avoids unnecessary reallocs to get to a reasonable capacity.   
         /// </summary>
         public bool EmptyCapacity { get { return array == null; } }
 
@@ -399,15 +399,21 @@ namespace System.Collections.Generic
             }
             else
             {
-                int expandSize = array.Length * 3 / 2 + 8;
-                if (minSize < expandSize)
+                long expandSize = (long)array.Length * 3 / 2 + 8;
+                if (expandSize > int.MaxValue)
                 {
-                    minSize = expandSize;
+                    if (array.Length == int.MaxValue)
+                        throw new NotSupportedException("Array cannot have more than int.MaxValue elements.");
+
+                    expandSize = int.MaxValue;
                 }
 
-                T[] newArray = new T[minSize];
-                Array.Copy(array, newArray, arrayLength);
-                array = newArray;
+                if (minSize < expandSize)
+                {
+                    minSize = (int)expandSize;
+                }
+
+                Array.Resize(ref array, minSize);
             }
         }
 
@@ -451,7 +457,7 @@ namespace System.Collections.Generic
         lastSuccesses = TestBinarySearch(testArray);
         Debug.Assert(lastSuccesses == 11);
 
-        // We always get the last one when the equality comparision allows multiple items to match.  
+        // We always get the last one when the equality comparison allows multiple items to match.  
         for (float i = 0; i < 11; i += 1)
         {
             int index;

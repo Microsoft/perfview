@@ -60,7 +60,7 @@ collect_offcpu=0
 ######################################
 
 # Separate GCCollectOnly list because our LTTng implementation doesn't set tracepoint verbosity.
-# Once tracepoint verbosity is set, we can set verbosity and collapse this wtih DotNETRuntime_GCKeyword.
+# Once tracepoint verbosity is set, we can set verbosity and collapse this with DotNETRuntime_GCKeyword.
 declare -a DotNETRuntime_GCKeyword_GCCollectOnly=(
     DotNETRuntime:GCStart
     DotNETRuntime:GCStart_V1
@@ -358,7 +358,7 @@ declare -a DotNETRuntime_CompilationKeyword=(
 )
 
 # Separate GCCollectOnly list because our LTTng implementation doesn't set tracepoint verbosity.
-# Once tracepoint verbosity is set, we can set verbosity and collapse this wtih DotNETRuntimePrivate_GCPrivateKeyword.
+# Once tracepoint verbosity is set, we can set verbosity and collapse this with DotNETRuntimePrivate_GCPrivateKeyword.
 declare -a DotNETRuntimePrivate_GCPrivateKeyword_GCCollectOnly=(
     DotNETRuntimePrivate:GCDecision
     DotNETRuntimePrivate:GCDecision_V1
@@ -684,6 +684,34 @@ RunSilent()
     else
         $* > /dev/null 2>&1
     fi
+}
+
+RunSilentBackground()
+{
+    if (( $logEnabled == 1 ))
+    then
+        echo "Running \"$*\"" >> $logFile
+        $* >> $logFile 2>&1  & sleep 1
+        echo "" >> $logFile
+    else
+        $* > /dev/null 2>&1  & sleep 1
+    fi
+
+    # When handler is invoked, kill the process.
+    pid=$!
+    for (( ; ; ))
+    do
+        if [ "$handlerInvoked" == "1" ]
+        then
+            kill -INT $pid
+            break;
+        else
+            sleep 1
+        fi	
+    done
+
+    # Wait for the process to exit.
+    wait $pid
 }
 
 InitializeLog()
@@ -2208,7 +2236,12 @@ DoCollect()
     else
         if [ "$usePerf" == "1" ]
         then
-            RunSilent $perfcmd $collectionArgs
+            if [ ! -z ${duration} ]
+            then
+                RunSilent $perfcmd $collectionArgs
+            else
+                RunSilentBackground $perfcmd $collectionArgs
+            fi
         else
             # Wait here until CTRL+C handler gets called when user types CTRL+C.
             LogAppend "Waiting for CTRL+C handler to get called."

@@ -443,7 +443,7 @@ public sealed class Command
                             }
                         }
                         // replace this instance of the variable with its definition.  
-                        int varStart = m.Groups[1].Index - 1;     // -1 becasue % chars are not in the group
+                        int varStart = m.Groups[1].Index - 1;     // -1 because % chars are not in the group
                         int varEnd = varStart + m.Groups[1].Length + 2; // +2 because % chars are not in the group
                         value = value.Substring(0, varStart) + varValue + value.Substring(varEnd, value.Length - varEnd);
                         startAt = varStart + varValue.Length;
@@ -568,7 +568,7 @@ public sealed class Command
             if (outputStream == null)
             {
                 string outStr = output.ToString();
-                // Only show the first lineNumber the last two lines if there are alot of output. 
+                // Only show the first lineNumber the last two lines if there are a lot of output. 
                 Match m = Regex.Match(outStr, @"^(\s*\n)?(.+\n)(.|\n)*?(.+\n.*\S)\s*$");
                 if (m.Success)
                 {

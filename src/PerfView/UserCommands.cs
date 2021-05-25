@@ -1403,7 +1403,7 @@ namespace PerfViewExtensibility
         /// <summary>
         /// Fetch all the PDBs files needed for viewing 'etlFileName' locally.   If 'processName'
         /// is present we only fetch PDBs needed for that process.  This can be either a process
-        /// name (exe without extention or path) or a decimal numeric ID.  
+        /// name (exe without extension or path) or a decimal numeric ID.  
         /// </summary>
         public void FetchSymbolsForProcess(string etlFileName, string processName = null)
         {
@@ -1449,64 +1449,6 @@ namespace PerfViewExtensibility
             {
                 foreach (var module in focusProcess.LoadedModules)
                     traceLog.CodeAddresses.LookupSymbolsForModule(symReader, module.ModuleFile);
-            }
-        }
-
-
-        /// <summary>
-        /// PrintSerializedExceptionFromProcessDump
-        /// </summary>
-        /// <param name="inputDumpFile">inputDumpFile</param>
-        public void PrintSerializedExceptionFromProcessDump(string inputDumpFile)
-        {
-            TextWriter log = LogFile;
-            if (!App.IsElevated)
-                throw new ApplicationException("Must be Administrator (elevated).");
-
-            if (Environment.Is64BitOperatingSystem)
-            {
-                // TODO FIX NOW.   Find a way of determing which architecture a dump is
-                try
-                {
-                    log.WriteLine("********** TRYING TO OPEN THE DUMP AS 64 BIT ************");
-                    PrintSerializedExceptionFromProcessDumpThroughHeapDump(inputDumpFile, log, ProcessorArchitecture.Amd64);
-                    return; // Yeah! success the first time
-                }
-                catch (Exception e)
-                {
-                    // It might have failed because this was a 32 bit dump, if so try again.  
-                    if (e is ApplicationException)
-                    {
-                        log.WriteLine("********** TRYING TO OPEN THE DUMP AS 32 BIT ************");
-                        PrintSerializedExceptionFromProcessDumpThroughHeapDump(inputDumpFile, log, ProcessorArchitecture.X86);
-                        return;
-                    }
-                    throw;
-                }
-            }
-            else
-            {
-                PrintSerializedExceptionFromProcessDumpThroughHeapDump(inputDumpFile, log, ProcessorArchitecture.X86);
-            }
-
-        }
-
-        private void PrintSerializedExceptionFromProcessDumpThroughHeapDump(string inputDumpFile, TextWriter log, ProcessorArchitecture arch)
-        {
-            var directory = arch.ToString().ToLowerInvariant();
-            var heapDumpExe = Path.Combine(SupportFiles.SupportFileDir, directory, "HeapDump.exe");
-            var options = new CommandOptions().AddNoThrow().AddTimeout(CommandOptions.Infinite);
-            options.AddOutputStream(LogFile);
-
-            options.AddEnvironmentVariable("_NT_SYMBOL_PATH", App.SymbolPath);
-            log.WriteLine("set _NT_SYMBOL_PATH={0}", App.SymbolPath);
-
-            var commandLine = string.Format("\"{0}\" {1} \"{2}\"", heapDumpExe, "/dumpSerializedException:", inputDumpFile);
-            log.WriteLine("Exec: {0}", commandLine);
-            var cmd = Command.Run(commandLine, options);
-            if (cmd.ExitCode != 0)
-            {
-                throw new ApplicationException("HeapDump failed with exit code " + cmd.ExitCode);
             }
         }
 

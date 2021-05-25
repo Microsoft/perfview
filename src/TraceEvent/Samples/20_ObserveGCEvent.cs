@@ -63,12 +63,15 @@ namespace TraceEventSamples
 
                 // Print the outgoing stream to the console
                 gcCollectStream.Subscribe(collectData =>
-                    Out.WriteLine("GC Collect:  Proc: {0,10} Gen0: {1,6:f1}M Gen1: {2,6:f1}M Gen2: {3,6:f1}M LargeObj: {4,6:f1}M",
+                    Out.WriteLine("GC Collect:  Proc: {0,10} Gen0: {1,6:f1}M Gen1: {2,6:f1}M Gen2: {3,6:f1}M LargeObj: {4,6:f1}M PinObj {4,6:f1}M",
                          GetProcessName(collectData.ProcessID),
                          collectData.GenerationSize0 / 1000000.0,
                          collectData.GenerationSize1 / 1000000.0,
                          collectData.GenerationSize2 / 1000000.0,
-                         collectData.GenerationSize3 / 1000000.0));
+                         collectData.GenerationSize3 / 1000000.0,
+                         0));
+                // TODO, enable POH display once TraceEvent package is updated
+                // collectData.GenerationSize4 / 1000000.0));
 
                 IObservable<long> timer = Observable.Timer(new TimeSpan(0, 0, monitoringTimeSec));
                 timer.Subscribe(delegate

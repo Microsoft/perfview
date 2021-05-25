@@ -73,7 +73,7 @@ Object Types: every object has a type.   A type at a minimum represents
    1. The name of the type (which allows the serializer and deserializer to agree what
       is being transmitted
    2. The version number for the data being sent.  
-   3. A minumum version number.   new format MAY be compatible with old readers
+   3. A minimum version number.   new format MAY be compatible with old readers
       this version indicates the oldest reader that can read this format.
 
 An object's structure is
@@ -156,7 +156,7 @@ more objects in the stream to read.
 
 ### Backward compatibility
 
-It is a relatively straightforward excercise to update the file format
+It is a relatively straightforward exercise to update the file format
 to add more information while maintaining backward compatibility (that is
 new readers can read old writers).   What is necessary is to 
 

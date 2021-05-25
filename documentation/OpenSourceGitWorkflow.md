@@ -30,7 +30,7 @@
 
 At this point you should have a local clone of your personal read-write fork of the main repository. However, this
 is a FULLY INDEPENDENT clone which will NEVER SEE ANY UPDATES from the main repository unless you explicitly integrate 
-(merge) them. To make it easy to update, it is good to create an alias for the original master repository.  Here
+(merge) them. To make it easy to update, it is good to create an alias for the original main repository.  Here
 we show you how to do that in Visual Studio.  
 
   1. Click on the View -> Team Explorer menu item 
@@ -56,20 +56,20 @@ section tells you how to do this.
 If you go to your fork's GitHub web page (e.g. one that has your user name in it like https://github.com/vancem/perfview)
 you will see that there is a line just before the description of files in the repo like
  
-   * This branch is even with Microsoft:master. 
+   * This branch is even with Microsoft:main. 
 
 Or it may say
 
-   * This branch is 4 commits behind Microsoft:master. 
+   * This branch is 4 commits behind Microsoft:main. 
 
-You can see that this item is an indication of the master branch of your personal fork being 'in sync' with the master branch
+You can see that this item is an indication of the main branch of your personal fork being 'in sync' with the main branch
 of the main repo (which we have named upstream). From time to time you will want to pull in
 all these changes to bring your fork up to date. We do this in three steps
 
   1. Fetching all changes from the upstream repository. This step makes all the changes (commits)
      in the fetched repository AVAILABLE for merging, but does not actually do any merging of branches.     
-  2. Merge the changes from the upstream/master branch into the LOCAL repository's master branch.
-  3. Push the changes from the LOCAL repository's master branch into the master branch of the GitHub fork (called origin). 
+  2. Merge the changes from the upstream/main branch into the LOCAL repository's main branch.
+  3. Push the changes from the LOCAL repository's main branch into the main branch of the GitHub fork (called origin). 
 
 #### Step 1: Fetching All Commits for the Upstream Repository.  
 
@@ -77,29 +77,29 @@ all these changes to bring your fork up to date. We do this in three steps
   2. Click on the bolded header (may say 'Home' or 'Changes', ...) and right click on 'Sync' option.  This will bring
      up the synchronization page, and one of the options will be 'Fetch'. Click on that. This brings up a dialog filled
    out with 'origin' which says it will pull all changes from the 'origin' repository (which is your GitHub fork).
-   However we don't want that since we are only interested in the changes from the original master (which we named upstream).
+   However we don't want that since we are only interested in the changes from the original main (which we named upstream).
    You should be able to type a down arrow and 'upstream' should be one of the choices (since we added 'upstream' as a
    known remote). Select 'upstream' and click the 'Fetch' button.  That will fetch all of the changes from 'upstream', 
    and put them in the LOCAL GitHub repository. So far we have made our local repository bigger (more commits) but we have 
    not changed any existing branch (the transitive closure of any branch is the same as it was before). 
 
-#### Step 2: Merging the LOCAL repository's master branch to include changes from upstream/master
+#### Step 2: Merging the LOCAL repository's main branch to include changes from upstream/main
 
   1. Click on the View -> Team Explorer menu item 
   2. Click on the top bolded header (may say 'Home' or 'Changes', ...) and right click on 'Branches' item which show you
      all branches associated with the LOCAL repository (that is the repository clone on your local disk).   There will
-   be at least one branch called 'master' as well as branches under 'remotes/origin' (these are branches in the
+   be at least one branch called 'main' as well as branches under 'remotes/origin' (these are branches in the
    private fork on GitHub) and 'remotes/upstream' (these are branches in the original main repository).   
-  3. Make sure that the 'active branch' (the one in bold) is 'master'. If it is not, double click on master to make it
+  3. Make sure that the 'active branch' (the one in bold) is 'main'. If it is not, double click on main to make it
      the active branch.  If it fails (and it could easily fail because you have modified files), you will have to
-   commit or undo those changes before proceeding. Ultimately you want 'master' to be the active branch.  
-  4. Right Click on the 'master' branch, right click on it and select 'Merge from'.  Then in the 'merge from' textbox select
-         upstream/master and click the 'Merge' button. This says we want to integrate (merge) all changes from the 
-   upstream/master branch into the currently active branch (which is master).
+   commit or undo those changes before proceeding. Ultimately you want 'main' to be the active branch.  
+  4. Right Click on the 'main' branch, right click on it and select 'Merge from'.  Then in the 'merge from' textbox select
+         upstream/main and click the 'Merge' button. This says we want to integrate (merge) all changes from the 
+   upstream/main branch into the currently active branch (which is main).
 
 
 In most cases this merge operation goes without a hitch and Visual Studio will auto-commit the merge.   However if there
-is a merge conflict with changes that you have made to 'master' (you really should never do that, put changes in some other
+is a merge conflict with changes that you have made to 'main' (you really should never do that, put changes in some other
 branch (see below)), then you will need to resolve them and commit the merge explicitly.  
 
 #### Step 3: Pushing the LOCAL repository to your GitHub Fork
@@ -112,10 +112,10 @@ branch (see below)), then you will need to resolve them and commit the merge exp
 
 At this point you should be able to go to your GitHub web page for the fork and see a line like this
 
-  * This branch is even with Microsoft:master. 
+  * This branch is even with Microsoft:main. 
 
 Which says that you have integrated all the changes from the original main repository into your private fork.
-Congratulations, you have successfully brought your private fork up to date with respect to its upstream master.   
+Congratulations, you have successfully brought your private fork up to date with respect to its upstream main.   
 
 ## Creating a pull request to the Main Repository.  
 
@@ -134,7 +134,7 @@ Once the branch exists in the fork, you can go to the GitHub web page for the fo
 https://github.com/vancem/perfview)
 
 Near the top on the left hand side of the web page, you will find a dropdown menu which selects the 'active'
-branch. It is likely to be set to the 'master' branch. Use the dropdown menu to change it to the 'TestPullRequest'
+branch. It is likely to be set to the 'main' branch. Use the dropdown menu to change it to the 'TestPullRequest'
 branch. Then click on the 'New Pull Request' button that is beside it. 
 
 At this point the page updates to a web page for the pull request. It prompts you to enter a description

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography;
@@ -1626,7 +1627,7 @@ namespace Microsoft.Diagnostics.Symbols
         public virtual int PdbAge { get { return 1; } }
 
         /// <summary>
-        ///  Fetches the SymbolReader assoicated with this SymbolModule.  This is where shared
+        ///  Fetches the SymbolReader associated with this SymbolModule.  This is where shared
         ///  attributes (like SourcePath, SymbolPath etc) are found.  
         /// </summary>
         public SymbolReader SymbolReader { get { return _reader; } }
@@ -1641,7 +1642,7 @@ namespace Microsoft.Diagnostics.Symbols
         /// If the symbol file format supports SourceLink JSON this routine should be overriden
         /// to return it.  
         /// </summary>
-        protected virtual string GetSourceLinkJson() { return null; }
+        protected virtual IEnumerable<string> GetSourceLinkJson() { return Enumerable.Empty<string>(); }
 
         #region private 
 
@@ -1653,15 +1654,17 @@ namespace Microsoft.Diagnostics.Symbols
         /// Return a URL for 'buildTimeFilePath' using the source link mapping (that 'GetSourceLinkJson' fetched)
         /// Returns null if there is URL using the SourceLink 
         /// </summary>
-        /// <param name="buildTimeFilePath"></param>
-        /// <returns></returns>
-        internal string GetUrlForFilePathUsingSourceLink(string buildTimeFilePath)
+        /// <param name="buildTimeFilePath">The path to the source file at build time</param>
+        /// <param name="url">The source link URL</param>
+        /// <param name="relativeFilePath"></param>
+        /// <returns>true if a source link file could be found</returns>
+        internal bool GetUrlForFilePathUsingSourceLink(string buildTimeFilePath, out string url, out string relativeFilePath)
         {
             if (!_sourceLinkMappingInited)
             {
                 _sourceLinkMappingInited = true;
-                string sourceLinkJson = GetSourceLinkJson();
-                if (sourceLinkJson != null)
+                IEnumerable<string> sourceLinkJson = GetSourceLinkJson();
+                if (sourceLinkJson.Any())
                 {
                     _sourceLinkMapping = ParseSourceLinkJson(sourceLinkJson);
                 }
@@ -1676,58 +1679,65 @@ namespace Microsoft.Diagnostics.Symbols
 
                     if (buildTimeFilePath.StartsWith(path, StringComparison.OrdinalIgnoreCase))
                     {
-                        string tail = buildTimeFilePath.Substring(path.Length, buildTimeFilePath.Length - path.Length).Replace('\\', '/');
-                        return urlReplacement.Replace("*", tail);
+                        relativeFilePath = buildTimeFilePath.Substring(path.Length, buildTimeFilePath.Length - path.Length).Replace('\\', '/');
+                        url = urlReplacement.Replace("*", relativeFilePath);
+                        return true;
                     }
                 }
             }
-            return null;
+
+            url = null;
+            relativeFilePath = null;
+            return false;
         }
 
         /// <summary>
         /// Parses SourceLink information and returns a list of filepath -> url Prefix tuples.  
         /// </summary>  
-        private List<Tuple<string, string>> ParseSourceLinkJson(string sourceLinkJson)
+        private List<Tuple<string, string>> ParseSourceLinkJson(IEnumerable<string> sourceLinkContents)
         {
             List<Tuple<string, string>> ret = null;
-            // TODO this is not right for corner cases (e.g. file paths with " or , } in them)
-            Match m = Regex.Match(sourceLinkJson, @"documents.?\s*:\s*{(.*?)}", RegexOptions.Singleline);
-            if (m.Success)
+            foreach (string sourceLinkJson in sourceLinkContents)
             {
-                string mappings = m.Groups[1].Value;
-                while (!string.IsNullOrWhiteSpace(mappings))
+                // TODO this is not right for corner cases (e.g. file paths with " or , } in them)
+                Match m = Regex.Match(sourceLinkJson, @"documents.?\s*:\s*{(.*?)}", RegexOptions.Singleline);
+                if (m.Success)
                 {
-                    m = Regex.Match(m.Groups[1].Value, "^\\s*\"(.*?)\"\\s*:\\s*\"(.*?)\"\\s*,?(.*)", RegexOptions.Singleline);
-                    if (m.Success)
+                    string mappings = m.Groups[1].Value;
+                    while (!string.IsNullOrWhiteSpace(mappings))
                     {
-                        if (ret == null)
+                        m = Regex.Match(m.Groups[1].Value, "^\\s*\"(.*?)\"\\s*:\\s*\"(.*?)\"\\s*,?(.*)", RegexOptions.Singleline);
+                        if (m.Success)
                         {
-                            ret = new List<Tuple<string, string>>();
-                        }
+                            if (ret == null)
+                            {
+                                ret = new List<Tuple<string, string>>();
+                            }
 
-                        string pathSpec = m.Groups[1].Value.Replace("\\\\", "\\");
-                        if (pathSpec.EndsWith("*"))
-                        {
-                            pathSpec = pathSpec.Substring(0, pathSpec.Length - 1);      // Remove the *
-                            ret.Add(new Tuple<string, string>(pathSpec, m.Groups[2].Value));
+                            string pathSpec = m.Groups[1].Value.Replace("\\\\", "\\");
+                            if (pathSpec.EndsWith("*"))
+                            {
+                                pathSpec = pathSpec.Substring(0, pathSpec.Length - 1);      // Remove the *
+                                ret.Add(new Tuple<string, string>(pathSpec, m.Groups[2].Value));
+                            }
+                            else
+                            {
+                                _log.WriteLine("Warning: {0} does not end in *, skipping this mapping.", pathSpec);
+                            }
+
+                            mappings = m.Groups[3].Value;
                         }
                         else
                         {
-                            _log.WriteLine("Warning: {0} does not end in *, skipping this mapping.", pathSpec);
+                            _log.WriteLine("Error: Could not parse SourceLink Mapping: {0}", mappings);
+                            break;
                         }
-
-                        mappings = m.Groups[3].Value;
-                    }
-                    else
-                    {
-                        _log.WriteLine("Error: Could not parse SourceLink Mapping: {0}", mappings);
-                        break;
                     }
                 }
-            }
-            else
-            {
-                _log.WriteLine("Error: Could not parse SourceLink Json: {0}", sourceLinkJson);
+                else
+                {
+                    _log.WriteLine("Error: Could not parse SourceLink Json: {0}", sourceLinkJson);
+                }
             }
 
             return ret;
@@ -1802,7 +1812,14 @@ namespace Microsoft.Diagnostics.Symbols
         /// can be used to fetch it with HTTP Get), then return that Url.   If no such publishing 
         /// point exists this property will return null.   
         /// </summary>
-        public virtual string Url { get { return _symbolModule.GetUrlForFilePathUsingSourceLink(BuildTimeFilePath); } }
+        public virtual string Url 
+        { 
+            get 
+            {
+                this.GetSourceLinkInfo(out string url, out _);
+                return url;
+            } 
+        }
 
         /// <summary>
         /// This may fetch things from the source server, and thus can be very slow, which is why it is not a property. 
@@ -1897,11 +1914,61 @@ namespace Microsoft.Diagnostics.Symbols
         public bool HasChecksum { get { return _hashAlgorithm != null; } }
 
         /// <summary>
+        /// Gets the name of the algorithm used to compute the source file hash. Values should be from System.Security.Cryptography.HashAlgorithmName.
+        /// This is null if there is no checksum.
+        /// </summary>
+        public string ChecksumAlgorithm
+        {
+            get
+            {
+                if (_hashAlgorithm == null)
+                {
+                    return null;
+                }
+                else if (_hashAlgorithm is SHA256)
+                {
+                    return "SHA256";
+                }
+                else if (_hashAlgorithm is SHA1)
+                {
+                    return "SHA1";
+                }
+                else if (_hashAlgorithm is MD5)
+                {
+                    return "MD5";
+                }
+                else
+                {
+                    Debug.Fail("Missing case in get_ChecksumAlgorithm");
+                    return null;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Gets the bytes of the source files checksum. This is null if there is no checksum.
+        /// </summary>
+        public IReadOnlyCollection<byte> ChecksumValue => _hash;
+
+        /// <summary>
         /// If GetSourceFile is called and 'requireChecksumMatch' == false then you can call this property to 
         /// determine if the checksum actually matched or not.   This will return true if the original
         /// PDB does not have a checksum (HasChecksum == false)
         /// </summary>; 
         public bool ChecksumMatches { get { return _checksumMatches; } }
+
+        /// <summary>
+        /// Obtains information used to download the source file file source link
+        /// </summary>
+        /// <param name="url">The URL to hit to download the source file</param>
+        /// <param name="relativePath">relative file path for the Source Link entry. For example, if the SourceLink map contains 'C:\foo\*' and this maps to 
+        /// 'C:\foo\bar\baz.cs', the relativeFilePath is 'bar\baz.cs'. For absolute SourceLink mappings, relativeFilePath will simply be the name of the file.</param>
+        /// <returns>true if SourceLink info can be found for this file</returns>
+        public virtual bool GetSourceLinkInfo(out string url, out string relativePath)
+        {
+            return _symbolModule.GetUrlForFilePathUsingSourceLink(BuildTimeFilePath, out url, out relativePath);
+        }
+
 
         #region private 
         protected SourceFile(ManagedSymbolModule symbolModule) { _symbolModule = symbolModule; }
@@ -2027,7 +2094,7 @@ namespace Microsoft.Diagnostics.Symbols
         // Should be in the framework, but I could  not find it quickly.  
         private static bool ArrayEquals(byte[] bytes1, byte[] bytes2)
         {
-            if (bytes1.Length != bytes1.Length)
+            if (bytes1.Length != bytes2.Length)
             {
                 return false;
             }

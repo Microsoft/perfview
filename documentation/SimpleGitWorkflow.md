@@ -19,7 +19,7 @@ of course you will only have read-only access.
   5. Click the Clone button. 
   
 At this point Visual Studio will create a local clone of all the files in a project in the directory you specified. This represents
-the final state of all files in the default branch (probably 'master'). It also clones the repository (thus the history for all time)
+the final state of all files in the default branch (probably 'main'). It also clones the repository (thus the history for all time)
 and places it in a hidden .git directory in the directory you specified. It is this cloned local repository where most GIT 
 commands you enact will operate. By default your clone ended up in %HOMEPATH%\Source\Repos\PerfView.   
 
@@ -43,10 +43,10 @@ was changed (thus it is more like every git command that starts by looking at fi
 As mentioned, GIT has the concept of the 'active branch' which is the branch the 'commit' operation uses to stamp the 
 commit (snapshot) with the predecessor commit (snapshot).  Thus the active branch is what determines the 'history' of 
 a commit and is very important, you want this to be accurate. After setting up a local repository, the active Branch
-is almost certainly one called 'master' (but you can check by going to the View -> Team Explorer -> Branches).
+is almost certainly one called 'main' (but you can check by going to the View -> Team Explorer -> Branches).
 
 Master represents the 'latest', 'default' version of the code in your repository. Thus after making updates to 
-particular files, simply commit them to master.  
+particular files, simply commit them to main.  
 
 When you have a set of files you wish to commit (check in), you can either right click on the solution in the 'Solution Explorer' 
 and select 'Commit', or use the View -> Team Explorer menu item to get the Team explorer pane and left click on the top
@@ -57,14 +57,14 @@ There is also a text box at the top in which you should put a message.
 By convention, you should begin this comment with ONE LINE SUMMARIZES THE CHANGE AS A WHOLE.   This one line is what shows up in 'short'
 descriptions of the commit.  After that line, you can write a longer explanation if desired. 
 
-At the top of the pane is the active branch.  It is likely to say 'master', but whatever it is, this is the branch that
+At the top of the pane is the active branch.  It is likely to say 'main', but whatever it is, this is the branch that
 you are committing to.  
 
 After you have filled out the description, you can simply hit the 'Commit All' button to commit your changes.  
 
 ## Don't use Master Branch for Non-trivial Features.  
 
-Committing directly to the master branch is fine for small, independent edits, however it is 
+Committing directly to the main branch is fine for small, independent edits, however it is 
 a *bad idea for any feature that **might** involve multiple commits*.   This includes any pull 
 request because most pull requests are likely to have commits to respond to maintainer 
 feedback.  (See [Open Source GitHub Setup and Workflow](OpenSourceGitWorkflow.md) 
@@ -75,13 +75,13 @@ By giving the multi-commit edit its own branch, the commits can be kept together
 agile history (you can take or leave this feature more easily). It also makes the history significantly easier to read.
 
 This is not hard to do, because you don't need to make the choice of whether to do the commit on
-the master branch directly, or creating its own branch until you actually are trying to commit. 
+the main branch directly, or creating its own branch until you actually are trying to commit. 
 It is only at commit time that you need to make the choice.
 
-To make a new branch for a feature, follow the same procedure as committing to master, but before
+To make a new branch for a feature, follow the same procedure as committing to main, but before
 hitting the 'Commit All' button, click the hyperlink on the branch name at the top of the pane.  
 
-This takes you to the Branches pane, and the current branch (likely to be master) is highlighted.
+This takes you to the Branches pane, and the current branch (likely to be main) is highlighted.
 You can then right click on that branch and select 'New Local Branch From' which will prompt
 you for a new branch name and hit the 'Create Branch' button.   This new branch is now the
 active branch so you can go back to the 'Changes' pane (left click on the 'Branches' Header) and
@@ -110,14 +110,14 @@ with what is new from the GitHub repo).
 
 One important point is that both a push and a pull operation operate on a branch (they cause the 
 branch to update) and both might cause conflicts (if a file has been changed in both places). Generally
-speaking you should only push or pull on your local 'master' branch. Otherwise all the bad effects
+speaking you should only push or pull on your local 'main' branch. Otherwise all the bad effects
 of interleaving unrelated changes discussed previously come into play. If you think you need to sync
-some other branch, it is more likely that you need to synchronize master, and then rebase your other 
-branch on top of master  (TODO reference instructions for this).  
+some other branch, it is more likely that you need to synchronize main, and then rebase your other 
+branch on top of main  (TODO reference instructions for this).  
 
-To synchronize the master branch do the following
+To synchronize the main branch do the following
 
-  1. Set the active branch to 'master' with no modified files, by following the procedure 'Switching Branches'
+  1. Set the active branch to 'main' with no modified files, by following the procedure 'Switching Branches'
      above. You may need to commit things to a temporary local branch to get to this state, but 
      one way or the other you need to get there.
   2. Go the Synchronization pane of team explorer.  

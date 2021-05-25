@@ -232,7 +232,7 @@ namespace Microsoft.Diagnostics.Tracing
         /// <summary>
         /// Normally WriteArchive creates a ZIP archive.  However it is possible that you only wish
         /// to do the merging and NGEN symbol generation.   Setting this property to false
-        /// will supress the final ZIP operation.  
+        /// will suppress the final ZIP operation.  
         /// </summary>
         public bool Zip { get; set; }
 
@@ -544,7 +544,7 @@ namespace Microsoft.Diagnostics.Tracing
                             continue;
                         }
 
-                        // There is a possibilty that you want to put symbol file using symbol server conventions
+                        // There is a possibility that you want to put symbol file using symbol server conventions
                         // (in which case it is X.pdb\NNNN\X.pdb, but you already have a file named X.pdb)  detect
                         // this and delete the file if necessary.  
                         var firstNameInRelativePath = pdbRelativePath;

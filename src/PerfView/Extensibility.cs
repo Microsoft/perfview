@@ -237,7 +237,7 @@ namespace PerfViewExtensibility
                         {
                             // Right now we set nothing.  
                             stacks.GuiState = new StackWindowGuiState();
-                            stacks.GuiState.Columns = new List<string> { "NameColumn",
+                            stacks.GuiState.Columns = new List<string>(9) { "NameColumn",
                                 "ExcPercentColumn", "ExcColumn", "ExcCountColumn",
                                 "IncPercentColumn", "IncColumn", "IncCountColumn",
                                 "FoldColumn", "FoldCountColumn" };
@@ -1094,7 +1094,7 @@ namespace PerfViewExtensibility
             // TODO logic for getting out of ConfigSettings.  
 
             var ret = new StackWindowGuiState();
-            ret.Columns = new List<string>() {
+            ret.Columns = new List<string>(12) {
                     "NameColumn",
                     "ExcPercentColumn", "ExcColumn", "ExcCountColumn",
                     "IncPercentColumn", "IncColumn", "IncCountColumn",
@@ -1110,7 +1110,7 @@ namespace PerfViewExtensibility
                 ret.FilterGuiState.GroupRegEx.Value =
                     @"[group CLR/OS entries] \Temporary ASP.NET Files\->;v4.0.30319\%!=>CLR;v2.0.50727\%!=>CLR;mscoree=>CLR;\mscorlib.*!=>LIB;\System.Xaml.*!=>WPF;\System.*!=>LIB;" +
                     @"Presentation%=>WPF;WindowsBase%=>WPF;system32\*!=>OS;syswow64\*!=>OS;{%}!=> module $1";
-                ret.FilterGuiState.GroupRegEx.History = new List<string> { ret.FilterGuiState.GroupRegEx.Value,
+                ret.FilterGuiState.GroupRegEx.History = new List<string>(6) { ret.FilterGuiState.GroupRegEx.Value,
                      "[group modules]           {%}!->module $1",
                      "[group module entries]  {%}!=>module $1",
                      "[group full path module entries]  {*}!=>module $1",
@@ -1118,7 +1118,7 @@ namespace PerfViewExtensibility
                      "[group classes]            {%!*}.%(->class $1;{%!*}::->class $1" };
 
                 ret.FilterGuiState.ExcludeRegEx.Value = "^Process% Idle";
-                ret.FilterGuiState.ExcludeRegEx.History = new List<string> { ret.FilterGuiState.ExcludeRegEx.Value };
+                ret.FilterGuiState.ExcludeRegEx.History = new List<string>(1) { ret.FilterGuiState.ExcludeRegEx.Value };
 
                 ret.FilterGuiState.FoldPercent.Value = "1";
 
@@ -1750,7 +1750,7 @@ namespace PerfViewExtensibility
 // 
 // StackSource - represents the raw data.   No dependencies, Can do filtering. - Clean for Model
 // CallTree - Depends on StackSource, model for treeview,  - Clean for Model
-// AgreegateCallTree - callers view and callees view - Clean for Model
+// AggregateCallTree - callers view and callees view - Clean for Model
 // EventSource - eventView - Clean for Model.  
 // 
 // MutableTraceEventStackSource - Sources for ETL file - Clean for Model 

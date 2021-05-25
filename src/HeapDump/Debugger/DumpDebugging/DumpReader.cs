@@ -332,7 +332,7 @@ namespace Microsoft.Samples.Debugging.Native
         // Alternatively, we could make this an IntPtr so that it's 4-bytes on 32-bit and 8-bytes on
         // 64-bit OSes. 32-bit OS can't load 4gb+ dumps anyways, so that may give us the best of
         // both worlds.
-        // We explictly keep the size private because clients should not need to access it. Size
+        // We explicitly keep the size private because clients should not need to access it. Size
         // expectations are already described by the minidump format.
         private long m_offset;
     }
@@ -1663,7 +1663,7 @@ namespace Microsoft.Samples.Debugging.Native
         /// Get a DumpPointer for the given stream. That can then be used to further decode the stream.
         /// </summary>
         /// <param name="type">type of stream to lookup</param>
-        /// <returns>DumpPointer refering into the stream. </returns>
+        /// <returns>DumpPointer referring into the stream. </returns>
         private DumpPointer GetStream(NativeMethods.MINIDUMP_STREAM_TYPE type)
         {
             EnsureValid();

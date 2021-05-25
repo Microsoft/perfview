@@ -217,7 +217,7 @@ namespace Utilities
     // 
     // #AutomaticExceptionProcessingAndHelp
     // 
-    // In the CommandLineParserExample1, while the command line parser did alot of the work there is still work
+    // In the CommandLineParserExample1, while the command line parser did a lot of the work there is still work
     // needed to make the application user friendly that pretty much all applications need. These include
     //  
     //     * Call the code:CommandLineParser constructor and code:CommandLineParser.CompleteValidation
@@ -340,7 +340,7 @@ class CommandLine
         /// parsable types (values are comma separated without space).
         /// 
         /// Qualifiers that are defined BEFORE any parameter sets apply to ALL parameter sets.  qualifiers that
-        /// are defined AFTER a parameter set will apply only the the parameter set that preceeds them.  
+        /// are defined AFTER a parameter set will apply only the the parameter set that precedes them.  
         /// 
         /// See code:#DefiningParametersAndQualifiers
         /// See code:#Overview 
@@ -684,7 +684,7 @@ class CommandLine
                 return GetFullHelp(maxLineWidth);
             }
 
-            // Find the begining of the parameter set parameters, as well as the end of the global parameters
+            // Find the beginning of the parameter set parameters, as well as the end of the global parameters
             // (Which come before any parameters set). 
             int parameterSetBody = 0;         // Points at body of the parameter set (parameters after the parameter set)
             CommandLineParameter parameterSetParameter = null;
@@ -800,7 +800,7 @@ class CommandLine
             return sb.ToString();
         }
         #region private
-        // Phase 1 parsing a string into words (space saparated values with double quote escaping)
+        // Phase 1 parsing a string into words (space separated values with double quote escaping)
         /// <summary>
         /// Parses 'commandLine' into words (space separated items).  Handles quoting (using double quotes)
         /// and handles escapes of double quotes and backslashes with the \" and \\ syntax.  
@@ -1198,7 +1198,7 @@ class CommandLine
             }
             else if (optionalPositionalArgEncountered)
             {
-                throw new CommandLineParserDesignerException("Optional positional parameters can't preceed required positional parameters");
+                throw new CommandLineParserDesignerException("Optional positional parameters can't precede required positional parameters");
             }
 
             positionalArgEncountered = true;
@@ -1276,7 +1276,7 @@ class CommandLine
 
             if (!paramSetEncountered && positionalArgEncountered)
             {
-                throw new CommandLineParserDesignerException("Positional parameters must not preceed parameter set definitions.");
+                throw new CommandLineParserDesignerException("Positional parameters must not precede parameter set definitions.");
             }
 
             paramSetEncountered = true;
@@ -1641,7 +1641,7 @@ class CommandLine
         // Phase 4 (often not done) Creating help strings
         /// <summary>
         /// CommandLineParameter contains the 'full' informaiton for a parameter or qualifier used for generating help.
-        /// Most of the time we don't actualy generate instances of this class.  (see mustParseHelpStrings)
+        /// Most of the time we don't actually generate instances of this class.  (see mustParseHelpStrings)
         /// </summary>
         private class CommandLineParameter
         {

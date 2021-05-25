@@ -6,7 +6,7 @@
     <authors>Microsoft</authors>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
     <licenseUrl>http://go.microsoft.com/fwlink/?LinkId=329770</licenseUrl>
-    <projectUrl>https://github.com/microsoft/perfview/tree/master/src/PerfViewJS</projectUrl>
+    <projectUrl>https://github.com/microsoft/perfview/tree/main/src/PerfViewJS</projectUrl>
     <description>PerfView SPA</description>
     <copyright>(c) Microsoft Corporation.  All rights reserved.</copyright>
   </metadata>

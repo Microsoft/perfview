@@ -1,52 +1,52 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <None Condition="Exists('$(MSBuildThisFileDirectory)..\lib\native\x86\KernelTraceControl.dll')" Include="$(MSBuildThisFileDirectory)..\lib\native\x86\KernelTraceControl.dll">
+    <None Condition="Exists('$(MSBuildThisFileDirectory)native\x86\KernelTraceControl.dll')" Include="$(MSBuildThisFileDirectory)native\x86\KernelTraceControl.dll">
       <Link>x86\KernelTraceControl.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Visible>False</Visible>
     </None>
-    <None Condition="Exists('$(MSBuildThisFileDirectory)..\lib\native\x86\KernelTraceControl.Win61.dll')" Include="$(MSBuildThisFileDirectory)..\lib\native\x86\KernelTraceControl.Win61.dll">
+    <None Condition="Exists('$(MSBuildThisFileDirectory)native\x86\KernelTraceControl.Win61.dll')" Include="$(MSBuildThisFileDirectory)native\x86\KernelTraceControl.Win61.dll">
       <Link>x86\KernelTraceControl.Win61.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Visible>False</Visible>
     </None>
-    <None Condition="Exists('$(MSBuildThisFileDirectory)..\lib\native\x86\msdia140.dll')" Include="$(MSBuildThisFileDirectory)..\lib\native\x86\msdia140.dll">
+    <None Condition="Exists('$(MSBuildThisFileDirectory)native\x86\msdia140.dll')" Include="$(MSBuildThisFileDirectory)native\x86\msdia140.dll">
       <Link>x86\msdia140.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Visible>False</Visible>
     </None>
-    <None Condition="Exists('$(MSBuildThisFileDirectory)..\lib\native\x86\msvcp140.dll')" Include="$(MSBuildThisFileDirectory)..\lib\native\x86\msvcp140.dll">
+    <None Condition="Exists('$(MSBuildThisFileDirectory)native\x86\msvcp140.dll')" Include="$(MSBuildThisFileDirectory)native\x86\msvcp140.dll">
       <Link>x86\msvcp140.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Visible>False</Visible>
     </None>
-    <None Condition="Exists('$(MSBuildThisFileDirectory)..\lib\native\x86\vcruntime140.dll')" Include="$(MSBuildThisFileDirectory)..\lib\native\x86\vcruntime140.dll">
+    <None Condition="Exists('$(MSBuildThisFileDirectory)native\x86\vcruntime140.dll')" Include="$(MSBuildThisFileDirectory)native\x86\vcruntime140.dll">
       <Link>x86\vcruntime140.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Visible>False</Visible>
     </None>
-    <None Condition="Exists('$(MSBuildThisFileDirectory)..\lib\native\amd64\KernelTraceControl.dll')" Include="$(MSBuildThisFileDirectory)..\lib\native\amd64\KernelTraceControl.dll">
+    <None Condition="Exists('$(MSBuildThisFileDirectory)native\amd64\KernelTraceControl.dll')" Include="$(MSBuildThisFileDirectory)native\amd64\KernelTraceControl.dll">
       <Link>amd64\KernelTraceControl.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Visible>False</Visible>
     </None>
-    <None Condition="Exists('$(MSBuildThisFileDirectory)..\lib\native\amd64\msdia140.dll')" Include="$(MSBuildThisFileDirectory)..\lib\native\amd64\msdia140.dll">
+    <None Condition="Exists('$(MSBuildThisFileDirectory)native\amd64\msdia140.dll')" Include="$(MSBuildThisFileDirectory)native\amd64\msdia140.dll">
       <Link>amd64\msdia140.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Visible>False</Visible>
     </None>
-    <None Condition="Exists('$(MSBuildThisFileDirectory)..\lib\native\amd64\msvcp140.dll')" Include="$(MSBuildThisFileDirectory)..\lib\native\amd64\msvcp140.dll">
+    <None Condition="Exists('$(MSBuildThisFileDirectory)native\amd64\msvcp140.dll')" Include="$(MSBuildThisFileDirectory)native\amd64\msvcp140.dll">
       <Link>amd64\msvcp140.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Visible>False</Visible>
     </None>
-    <None Condition="Exists('$(MSBuildThisFileDirectory)..\lib\native\amd64\vcruntime140.dll')" Include="$(MSBuildThisFileDirectory)..\lib\native\amd64\vcruntime140.dll">
+    <None Condition="Exists('$(MSBuildThisFileDirectory)native\amd64\vcruntime140.dll')" Include="$(MSBuildThisFileDirectory)native\amd64\vcruntime140.dll">
       <Link>amd64\vcruntime140.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Visible>False</Visible>
     </None>
-    <None Condition="Exists('$(MSBuildThisFileDirectory)..\lib\native\amd64\vcruntime140_1.dll')" Include="$(MSBuildThisFileDirectory)..\lib\native\amd64\vcruntime140_1.dll">
+    <None Condition="Exists('$(MSBuildThisFileDirectory)native\amd64\vcruntime140_1.dll')" Include="$(MSBuildThisFileDirectory)native\amd64\vcruntime140_1.dll">
       <Link>amd64\vcruntime140_1.dll</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Visible>False</Visible>

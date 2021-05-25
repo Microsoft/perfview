@@ -69,7 +69,7 @@ namespace Graphs
         /// Given an arbitrary code:NodeIndex that identifies the node, Get a code:Node object.  
         /// 
         /// This routine does not allocated but uses the space passed in by 'storage.  
-        /// 'storage' should be allocated with coode:AllocNodeStorage, and should be agressively reused.  
+        /// 'storage' should be allocated with coode:AllocNodeStorage, and should be aggressively reused.  
         /// </summary>
         public Node GetNode(NodeIndex nodeIndex, Node storage)
         {
@@ -86,7 +86,7 @@ namespace Graphs
         /// Given an arbitrary code:NodeTypeIndex that identifies the nodeId of the node, Get a code:NodeType object.  
         /// 
         /// This routine does not allocated but overwrites the space passed in by 'storage'.  
-        /// 'storage' should be allocated with coode:AllocNodeTypeStorage, and should be agressively reused.  
+        /// 'storage' should be allocated with coode:AllocNodeTypeStorage, and should be aggressively reused.  
         /// 
         /// Note that this routine does not get used much, instead Node.GetType is normal way of getting the nodeId.  
         /// </summary>
@@ -835,7 +835,7 @@ namespace Graphs
             m_index = NodeIndex.Invalid;
         }
 
-        // Node information is stored in a compressed form because we have alot of them. 
+        // Node information is stored in a compressed form because we have a lot of them. 
         internal static int ReadCompressedInt(SegmentedMemoryStreamReader reader)
         {
             int ret = 0;
@@ -1059,7 +1059,7 @@ namespace Graphs
         /// </summary>
         public DateTime BuildTime;      // From in the PE header
         /// <summary>
-        /// The name of hte PDB file assoicated with this module.   Ma bye null if unknown
+        /// The name of hte PDB file associated with this module.   Ma bye null if unknown
         /// </summary>
         public string PdbName;
         /// <summary>
@@ -1370,7 +1370,7 @@ public class RefGraph
     /// Given an arbitrary code:NodeIndex that identifies the node, Get a code:Node object.  
     /// 
     /// This routine does not allocated but uses the space passed in by 'storage.  
-    /// 'storage' should be allocated with coode:AllocNodeStorage, and should be agressively reused.  
+    /// 'storage' should be allocated with coode:AllocNodeStorage, and should be aggressively reused.  
     /// </summary>
     public RefNode GetNode(NodeIndex nodeIndex, RefNode storage)
     {
@@ -1823,8 +1823,8 @@ public class SpanningTree
     /// <summary>
     /// A helper for AddOrphansToQueue, so we only add orphans that are not reachable from other orphans.  
     /// 
-    /// Mark all decendents (but not nodeIndex itself) as being visited.    Any arcs that form
-    /// cycles are ignored, so nodeIndex is guarenteed to NOT be marked.     
+    /// Mark all descendants (but not nodeIndex itself) as being visited.    Any arcs that form
+    /// cycles are ignored, so nodeIndex is guaranteed to NOT be marked.     
     /// </summary>
     private void MarkDecendentsIgnoringCycles(NodeIndex nodeIndex, int recursionCount)
     {
@@ -2619,7 +2619,7 @@ public class GraphSampler
 
     /// <summary>
     /// This value goes in the m_newIndex[].   If we accept the node into the sampled graph, we put the node
-    /// index in the NET graph in m_newIndex.   If we reject the node we use the special RegjectedNode value
+    /// index in the NET graph in m_newIndex.   If we reject the node we use the special RejectedNode value
     /// below
     /// </summary>
     private const NodeIndex RejectedNode = (NodeIndex)(-2);

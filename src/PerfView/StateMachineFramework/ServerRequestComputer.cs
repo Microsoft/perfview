@@ -65,7 +65,7 @@ namespace PerfView
         /// <summary>
         /// Execute the server request computer.
         /// </summary>
-        internal override void RegisterEventHandlers(TraceEventDispatcher eventDispatcher)
+        public override void RegisterEventHandlers(TraceEventDispatcher eventDispatcher)
         {
             var aspNetParser = new AspNetTraceEventParser(eventDispatcher);
             var WCFParser = new ApplicationServerTraceEventParser(eventDispatcher);
@@ -507,7 +507,7 @@ namespace PerfView
                         int curCount = reqs.Count;
                         RemoveWCFServerRequest(wcfServerRequestKey, request);
 
-                        // This is for robstness it shoudl not happen 
+                        // This is for robustness it should not happen 
                         if (curCount == reqs.Count)
                         {
                             Debug.Assert(false, "failure deleting wcfServer request");

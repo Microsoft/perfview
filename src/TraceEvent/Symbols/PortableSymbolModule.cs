@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 
@@ -61,7 +63,7 @@ namespace Microsoft.Diagnostics.Symbols
 
         #region private 
 
-        protected override string GetSourceLinkJson()
+        protected override IEnumerable<string> GetSourceLinkJson()
         {
             foreach (CustomDebugInformationHandle customDebugInformationHandle in _metaData.CustomDebugInformation)
             {
@@ -73,11 +75,11 @@ namespace Microsoft.Diagnostics.Symbols
                 {
                     BlobReader blobReader = _metaData.GetBlobReader(customDebugInformation.Value);
                     var ret = blobReader.ReadUTF8(blobReader.Length);
-                    return ret;
+                    return new string[] { ret };
                 }
             }
 
-            return null;
+            return Enumerable.Empty<string>();
         }
 
         private SourceFile GetSourceFile(DocumentHandle documentHandle)

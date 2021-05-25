@@ -10,7 +10,7 @@
 
     <Company>Microsoft</Company>
     <Description>General Utility library</Description>
-    <Copyright>Copyright � Microsoft 2010</Copyright>
+    <Copyright>Copyright © Microsoft 2010</Copyright>
   </PropertyGroup>
 
   <PropertyGroup>

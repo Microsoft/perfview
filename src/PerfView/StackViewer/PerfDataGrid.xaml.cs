@@ -227,7 +227,7 @@ namespace PerfView
         }
         public List<string> ColumnNames()
         {
-            var ret = new List<string>();
+            var ret = new List<string>(Grid.Columns.Count);
             foreach (var column in Grid.Columns)
             {
                 ret.Add(((TextBlock)column.Header).Name);

@@ -71,9 +71,8 @@ namespace Microsoft.Diagnostics.Symbols
                 {
                     s_MicrosoftSymbolServerPath = s_MicrosoftSymbolServerPath +
                         ";" + @"SRV*https://msdl.microsoft.com/download/symbols" +     // Operatig system Symbols
-                        ";" + @"SRV*https://nuget.smbsrc.net" +                       // Nuget symbols
-                        ";" + @"SRV*https://referencesource.microsoft.com/symbols" +   // .NET Runtime desktop symbols 
-                        ";" + @"SRV*https://dotnet.myget.org/F/dotnet-core/symbols";  // Pre-release Nuget symbols.  
+                        ";" + @"SRV*https://nuget.smbsrc.net" +                        // Nuget symbols
+                        ";" + @"SRV*https://referencesource.microsoft.com/symbols";    // .NET Runtime desktop symbols 
                 }
                 return s_MicrosoftSymbolServerPath;
             }

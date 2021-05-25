@@ -21,7 +21,7 @@ class ModuleInfo;
 // Initialize or InitializeForAttach callback.  It is in these routines
 // where the real initializaiton occurs.  
 //
-// See comment in the begining of CorProfilerTracer.cpp for more 
+// See comment in the beginning of CorProfilerTracer.cpp for more 
 class CorProfilerTracer : public ICorProfilerCallback3
 {
 public:

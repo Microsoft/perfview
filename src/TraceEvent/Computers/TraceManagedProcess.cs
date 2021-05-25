@@ -1055,7 +1055,7 @@ namespace Microsoft.Diagnostics.Tracing.Analysis
                     var stats = currentManagedProcess(data);
                     TraceGC _gc = TraceGarbageCollector.GetCurrentGC(stats);
 
-                    var sizeAfterMB = (data.GenerationSize1 + data.GenerationSize2 + data.GenerationSize3) / 1000000.0;
+                    var sizeAfterMB = (data.GenerationSize1 + data.GenerationSize2 + data.GenerationSize3 + data.GenerationSize4) / 1000000.0;
                     if (_gc != null)
                     {
                         _gc.HeapStats = new GCHeapStats()
@@ -1076,6 +1076,8 @@ namespace Microsoft.Diagnostics.Tracing.Analysis
                             ,
                             GenerationSize3 = data.GenerationSize3
                             ,
+                            GenerationSize4 = data.GenerationSize4
+                            ,
                             PinnedObjectCount = data.PinnedObjectCount
                             ,
                             SinkBlockCount = data.SinkBlockCount
@@ -1091,6 +1093,8 @@ namespace Microsoft.Diagnostics.Tracing.Analysis
                             TotalPromotedSize2 = data.TotalPromotedSize2
                             ,
                             TotalPromotedSize3 = data.TotalPromotedSize3
+                            ,
+                            TotalPromotedSize4 = data.TotalPromotedSize4
                         };
 
                         if (_gc.Type == GCType.BackgroundGC)
@@ -1299,6 +1303,13 @@ namespace Microsoft.Diagnostics.Tracing.Analysis
                     {
                         process.CommandLine = data.CommandLine;
                     }
+                };
+
+                source.Clr.MethodMemoryAllocatedForJitCode += delegate(MethodJitMemoryAllocatedForCodeTraceData data)
+                {
+                    var process = data.Process();
+                    var stats = currentManagedProcess(data);
+                    JITStats.LogJitMethodAllocation(stats, data);
                 };
 
                 clrPrivate.ClrMulticoreJitCommon += delegate (MulticoreJitPrivateTraceData data)
@@ -1998,7 +2009,7 @@ namespace Microsoft.Diagnostics.Tracing.Analysis.GC
             {
                 if (null != HeapStats)
                 {
-                    return (HeapStats.GenerationSize0 + HeapStats.GenerationSize1 + HeapStats.GenerationSize2 + HeapStats.GenerationSize3) / 1000000.0;
+                    return (HeapStats.GenerationSize0 + HeapStats.GenerationSize1 + HeapStats.GenerationSize2 + HeapStats.GenerationSize3 + HeapStats.GenerationSize4) / 1000000.0;
                 }
                 else
                 {
@@ -2017,7 +2028,7 @@ namespace Microsoft.Diagnostics.Tracing.Analysis.GC
                 if (null != HeapStats)
                 {
                     return (HeapStats.TotalPromotedSize0 + HeapStats.TotalPromotedSize1 +
-                       HeapStats.TotalPromotedSize2 + HeapStats.TotalPromotedSize3) / 1000000.0;
+                       HeapStats.TotalPromotedSize2 + HeapStats.TotalPromotedSize3 + HeapStats.TotalPromotedSize4) / 1000000.0;
                 }
                 else
                 {
@@ -2071,6 +2082,11 @@ namespace Microsoft.Diagnostics.Tracing.Analysis.GC
         [Obsolete("This is experimental, you should not use it yet for non-experimental purposes.")]
         public double GenSizeAfterMB(Gens gen)
         {
+            if (gen == Gens.GenPinObj)
+            {
+                return HeapStats.GenerationSize4 / 1000000.0;
+            }
+
             if (gen == Gens.GenLargeObj)
             {
                 return HeapStats.GenerationSize3 / 1000000.0;
@@ -2179,6 +2195,11 @@ namespace Microsoft.Diagnostics.Tracing.Analysis.GC
         [Obsolete("This is experimental, you should not use it yet for non-experimental purposes.")]
         public double GenPromotedMB(Gens gen)
         {
+            if (gen == Gens.GenPinObj)
+            {
+                return HeapStats.TotalPromotedSize4 / 1000000.0;
+            }
+
             if (gen == Gens.GenLargeObj)
             {
                 return HeapStats.TotalPromotedSize3 / 1000000.0;
@@ -2437,7 +2458,7 @@ namespace Microsoft.Diagnostics.Tracing.Analysis.GC
         /// Per generation view of user allocated data
         /// </summary>
         [Obsolete("This is experimental, you should not use it yet for non-experimental purposes.")]
-        public double[] UserAllocated = new double[(int)Gens.Gen0After];
+        public double[] UserAllocated = new double[(int)Gens.MaxGenCount];
         /// <summary>
         /// Heap size before gc (mb)
         /// </summary>
@@ -2447,7 +2468,7 @@ namespace Microsoft.Diagnostics.Tracing.Analysis.GC
         /// Per generation view of heap sizes before GC (mb)
         /// </summary>
         [Obsolete("This is experimental, you should not use it yet for non-experimental purposes.")]
-        public double[] GenSizeBeforeMB = new double[(int)Gens.Gen0After];
+        public double[] GenSizeBeforeMB = new double[(int)Gens.MaxGenCount];
         /// <summary>
         /// This represents the percentage time spent paused for this GC since the last GC completed. 
         /// </summary>
@@ -2790,16 +2811,29 @@ namespace Microsoft.Diagnostics.Tracing.Analysis.GC
                 return heapStats.GenerationSize2 / 1000000.0;
             }
 
-            Debug.Assert(gen == Gens.GenLargeObj);
+            if (gen == Gens.GenLargeObj)
+            {
+                if (gc.HeapStats != null)
+                {
+                    return Math.Max(heapStats.GenerationSize3, gc.HeapStats.GenerationSize3) / 1000000.0;
+                }
+                else
+                {
+                    return heapStats.GenerationSize3 / 1000000.0;
+                }
+            }
+
+            Debug.Assert(gen == Gens.GenPinObj);
 
             if (gc.HeapStats != null)
             {
-                return Math.Max(heapStats.GenerationSize3, gc.HeapStats.GenerationSize3) / 1000000.0;
+                return Math.Max(heapStats.GenerationSize4, gc.HeapStats.GenerationSize4) / 1000000.0;
             }
             else
             {
-                return heapStats.GenerationSize3 / 1000000.0;
+                return heapStats.GenerationSize4 / 1000000.0;
             }
+
         }
 
         /// <summary>
@@ -3548,6 +3582,8 @@ namespace Microsoft.Diagnostics.Tracing.Analysis.GC
         public long TotalPromotedSize2;
         public long GenerationSize3;
         public long TotalPromotedSize3;
+        public long GenerationSize4;
+        public long TotalPromotedSize4;
         public long FinalizationPromotedSize;
         public long FinalizationPromotedCount;
         public int PinnedObjectCount;
@@ -3557,7 +3593,7 @@ namespace Microsoft.Diagnostics.Tracing.Analysis.GC
 
     /// <summary>
     /// Approximations we do in this function for V4_5 and prior:
-    /// On 4.0 we didn't seperate free list from free obj, so we just use fragmentation (which is the sum)
+    /// On 4.0 we didn't separate free list from free obj, so we just use fragmentation (which is the sum)
     /// as an approximation. This makes the efficiency value a bit larger than it actually is.
     /// We don't actually update in for the older gen - this means we only know the out for the younger 
     /// gen which isn't necessarily all allocated into the older gen. So we could see cases where the 
@@ -3776,6 +3812,22 @@ namespace Microsoft.Diagnostics.Tracing.Analysis.JIT
         /// </summary>
         public long TotalNativeSize;
         /// <summary>
+        /// Total hot code size allocated for all JITT'd methods
+        /// </summary>
+        public long TotalHotCodeAllocSize;
+        /// <summary>
+        /// Total read-only data size allocated for all JITT'd methods
+        /// </summary>
+        public long TotalRODataAllocSize;
+        /// <summary>
+        /// Total size allocated for all JITT'd methods
+        /// </summary>
+        public long TotalAllocSizeForJitCode;
+        /// <summary>
+        /// If data from alloc size for JIT event present
+        /// </summary>
+        public bool IsJitAllocSizePresent = false;
+        /// <summary>
         /// Indication if this is running on .NET 4.x+
         /// </summary>
         [Obsolete("This is experimental, you should not use it yet for non-experimental purposes.")]
@@ -3848,6 +3900,10 @@ namespace Microsoft.Diagnostics.Tracing.Analysis.JIT
             TotalCpuTimeMSec += method.CompileCpuTimeMSec;
             TotalILSize += method.ILSize;
             TotalNativeSize += method.NativeSize;
+            TotalHotCodeAllocSize += method.JitHotCodeRequestSize;
+            TotalRODataAllocSize += method.JitRODataRequestSize;
+            IsJitAllocSizePresent |= method.IsJitAllocSizePresent;
+            TotalAllocSizeForJitCode += method.AllocatedSizeForJitCode;
             if (method.CompilationThreadKind == CompilationThreadKind.MulticoreJitBackground)
             {
                 CountBackgroundMultiCoreJit++;
@@ -3867,7 +3923,7 @@ namespace Microsoft.Diagnostics.Tracing.Analysis.JIT
 
 #region private
         /// <summary>
-        /// Legacgy
+        /// Legacy
         /// </summary>
         internal static TraceJittedMethod MethodComplete(TraceLoadedDotNetRuntime stats, MethodLoadUnloadTraceDataBase data, string methodName, int rejitID, out bool createdNewMethod)
         {
@@ -3910,6 +3966,26 @@ namespace Microsoft.Diagnostics.Tracing.Analysis.JIT
             stats.JIT.m_stats.AddMethodToStatistics(_method);
 
             return _method;
+        }
+
+        /// <summary>
+        /// Handles AllocRequest event for JIT
+        /// </summary>
+        internal static void LogJitMethodAllocation(TraceLoadedDotNetRuntime stats, MethodJitMemoryAllocatedForCodeTraceData data)
+        {
+            TraceJittedMethod _method = stats.JIT.m_stats.FindIncompleteJitEventOnThread(stats, data.ThreadID);
+            if (_method != null)
+            {
+                // If we already counted alloc size for a method, don't count it again.
+                if (_method.JitHotCodeRequestSize == 0)
+                {
+                    _method.IsJitAllocSizePresent = true;
+                    _method.JitHotCodeRequestSize = data.JitHotCodeRequestSize;
+                    _method.JitRODataRequestSize = data.JitRODataRequestSize;
+                    _method.AllocatedSizeForJitCode = data.AllocatedSizeForJitCode;
+                    _method.JitAllocFlag = data.JitAllocFlag;
+                }
+            }
         }
 
         /// <summary>
@@ -4116,6 +4192,22 @@ namespace Microsoft.Diagnostics.Tracing.Analysis.JIT
         /// </summary>
         public int NativeSize;
         /// <summary>
+        /// Hot code size allocated for JIT code of method
+        /// </summary>
+        public long JitHotCodeRequestSize;
+        /// <summary>
+        /// Read-only data size allocated for JIT code of method
+        /// </summary>
+        public long JitRODataRequestSize;
+        /// <summary>
+        /// Total size allocated for JIT code of method
+        /// </summary>
+        public long AllocatedSizeForJitCode;
+        /// <summary>
+        /// Jit allocation flag
+        /// </summary>
+        public int JitAllocFlag;
+        /// <summary>
         /// Relative start time of JIT'd method
         /// </summary>
         public double StartTimeMSec;
@@ -4200,6 +4292,12 @@ namespace Microsoft.Diagnostics.Tracing.Analysis.JIT
         public int VersionID;
 
         public bool IsDefaultVersion { get { return VersionID == 0; } }
+
+        public bool IsJitAllocSizePresent
+        {
+            get;
+            set;
+        }
 
 #region private
         internal void SetOptimizationTier(OptimizationTier optimizationTier, TraceLoadedDotNetRuntime stats)
@@ -4372,7 +4470,7 @@ namespace Microsoft.Diagnostics.Tracing.Analysis.GC
         }
 
         //
-        // candiate to be made private/ex
+        // candidate to be made private/ex
         //
         // The amount of memory allocated by the user threads. So they are divided up into gen0 and LOH allocations.
         internal double[] allocTickCurrentMB = { 0.0, 0.0 };
@@ -4497,6 +4595,7 @@ namespace Microsoft.Diagnostics.Tracing.Analysis.GC
             TraceGC _event = GetLastGC(proc);
             if (_event != null)
             {
+                int numGenerations = data.NumGenerations;
                 var hist = new GCPerHeapHistory()
                 {
                     FreeListAllocated = (data.HasFreeListAllocated) ? data.FreeListAllocated : -1,
@@ -4506,7 +4605,7 @@ namespace Microsoft.Diagnostics.Tracing.Analysis.GC
                     MemoryPressure = (data.HasMemoryPressure) ? data.MemoryPressure : -1,
                     HasMemoryPressure = data.HasMemoryPressure,
                     VersionRecognized = data.VersionRecognized,
-                    GenData = new GCPerHeapHistoryGenData[(int)Gens.GenLargeObj + 1],
+                    GenData = new GCPerHeapHistoryGenData[numGenerations],
                     CondemnReasons0 = data.CondemnReasons0,
                     CondemnReasons1 = (data.HasCondemnReasons1) ? data.CondemnReasons1 : -1,
                     HasCondemnReasons1 = data.HasCondemnReasons1,
@@ -4517,7 +4616,7 @@ namespace Microsoft.Diagnostics.Tracing.Analysis.GC
                     Version = data.Version
                 };
 
-                for (Gens GenIndex = Gens.Gen0; GenIndex <= Gens.GenLargeObj; GenIndex++)
+                for (Gens GenIndex = Gens.Gen0; GenIndex < (Gens)numGenerations; GenIndex++)
                 {
                     hist.GenData[(int)GenIndex] = data.GenData(GenIndex);
                 }

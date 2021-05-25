@@ -140,7 +140,7 @@ namespace Tests
         [Fact]
         public void LTTng_KernelEvents()
         {
-            var assertValues = new Dictionary<string, List<int>>
+            var assertValues = new Dictionary<string, List<int>>(3)
             {
                 // key: trace file name, value: {expected number of ProcessStart events, expected number of GCStart events}
                 { "kernel-only.trace.zip", new List<int> { 20, 0 } },

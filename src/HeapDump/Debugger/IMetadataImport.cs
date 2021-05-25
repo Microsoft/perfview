@@ -1299,7 +1299,7 @@ namespace Microsoft.Samples.Debugging.CorMetadata.NativeApi
     ] // IID_IMetadataAssemblyImport from cor.h
 
     // This should be a private interface, but
-    // we cannot do that becuase we are then getting an exception
+    // we cannot do that because we are then getting an exception
     // "The specified type must be visible from COM." @ CorMetadataImport::GetRawInterface
     public interface IMetadataAssemblyImport
     {

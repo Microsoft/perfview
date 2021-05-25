@@ -1,10 +1,12 @@
 ﻿using Microsoft.Diagnostics.Tracing.Stacks;
+using Microsoft.Diagnostics.Utilities;
 using Microsoft.VisualStudio.Threading;
 using PerfView;
 using PerfView.TestUtilities;
 using PerfViewTests.Utilities;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Tracing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -319,6 +321,302 @@ namespace PerfViewTests.StackViewer
             return RunUITestAsync(setupAsync, testDriverAsync, cleanupAsync);
         }
 
+        [WpfFact]
+        [UseCulture("en-US")]
+        public Task TestSetTimeRangeInStartTextBoxEnUs01Async()
+        {
+            var start = 123456.789;
+            var initialStartText = start.ToString("n3", CultureInfo.CurrentCulture);
+
+            return TestSetTimeRangeInStartTextBoxImplAsync(
+                initialStartText,
+                null,
+                initialStartText,
+                null,
+                null,
+                CultureInfo.CurrentCulture);
+        }
+
+        [WpfFact]
+        [UseCulture("en-US")]
+        public Task TestSetTimeRangeInStartTextBoxEnUs02Async()
+        {
+            var start = 234567.890;
+            var initialStartText = start.ToString("n3", CultureInfo.CurrentCulture);
+            var end = 123456.789;
+            var initialEndText = end.ToString("n3", CultureInfo.CurrentCulture);
+
+            return TestSetTimeRangeInStartTextBoxImplAsync(
+                initialStartText,
+                initialEndText,
+                initialEndText,
+                initialStartText,
+                null,
+                CultureInfo.CurrentCulture);
+        }
+
+        [WpfFact]
+        [UseCulture("en-US")]
+        public Task TestSetTimeRangeInStartTextBoxEnUs03Async()
+        {
+            var start = 123456.789;
+            var end = 234567.890;
+            var finalStartText = start.ToString("n3", CultureInfo.CurrentCulture);
+            var finalEndtText = end.ToString("n3", CultureInfo.CurrentCulture);
+            var initialStartText = RangeUtilities.ToString(finalStartText, finalEndtText);
+
+            return TestSetTimeRangeInStartTextBoxImplAsync(
+                initialStartText,
+                null,
+                finalStartText,
+                finalEndtText,
+                null,
+                CultureInfo.CurrentCulture);
+        }
+
+        [WpfFact]
+        [UseCulture("en-US")]
+        public Task TestSetTimeRangeInStartTextBoxEnUs04Async()
+        {
+            var start = 123456.789;
+            var initialStartText = RangeUtilities.ToString(start.ToString("n3", CultureInfo.CurrentCulture), "not_a_number");
+            var endStartText = "0";
+
+            return TestSetTimeRangeInStartTextBoxImplAsync(
+                initialStartText,
+                null,
+                endStartText,
+                null,
+                null,
+                CultureInfo.CurrentCulture);
+        }
+
+        [WpfFact]
+        [UseCulture("en-US")]
+        public Task TestSetTimeRangeInStartTextBoxEnUs05Async()
+        {
+            var start = 123456.789;
+            var initialStartText = start.ToString("n3", CultureInfo.CurrentCulture);
+            var initialEndText = "not_a_number";
+
+            return TestSetTimeRangeInStartTextBoxImplAsync(
+                initialStartText,
+                initialEndText,
+                initialStartText,
+                "Infinity",
+                "Invalid number " + initialEndText,
+                CultureInfo.CurrentCulture);
+        }
+
+        [WpfFact]
+        [UseCulture("en-US")]
+        public Task TestSetTimeRangeInStartTextBoxEnUs06Async()
+        {
+            var start = 123456.789;
+            var initialStartText = RangeUtilities.ToString(start.ToString("n3", CultureInfo.CurrentCulture), "1.2,3.4,5.6,7.8,9.0");
+            var endStartText = "0";
+
+            return TestSetTimeRangeInStartTextBoxImplAsync(
+                initialStartText,
+                null,
+                endStartText,
+                null,
+                "Invalid number " + initialStartText,
+                CultureInfo.CurrentCulture);
+        }
+
+        [WpfFact]
+        [UseCulture("en-US")]
+        public Task TestSetTimeRangeInStartTextBoxEnUs07Async()
+        {
+            var start = 123456.789;
+            var initialStartText = RangeUtilities.ToString("1.2,3.4,5.6,7.8,9.0", start.ToString("n3", CultureInfo.CurrentCulture));
+            var endStartText = "0";
+
+            return TestSetTimeRangeInStartTextBoxImplAsync(
+                initialStartText,
+                null,
+                endStartText,
+                null,
+                "Invalid number " + initialStartText,
+                CultureInfo.CurrentCulture);
+        }
+
+        [WpfFact]
+        [UseCulture("ru-RU")]
+        public Task TestSetTimeRangeInStartTextBoxRuRu01Async()
+        {
+            var start = 123456.789;
+            var initialStartText = start.ToString("n3", CultureInfo.CurrentCulture);
+
+            return TestSetTimeRangeInStartTextBoxImplAsync(
+                initialStartText,
+                null,
+                initialStartText,
+                null,
+                null,
+                CultureInfo.CurrentCulture);
+        }
+
+        [WpfFact]
+        [UseCulture("ru-RU")]
+        public Task TestSetTimeRangeInStartTextBoxRuRu02Async()
+        {
+            var start = 234567.890;
+            var initialStartText = start.ToString("n3", CultureInfo.CurrentCulture);
+            var end = 123456.789;
+            var initialEndText = end.ToString("n3", CultureInfo.CurrentCulture);
+
+            return TestSetTimeRangeInStartTextBoxImplAsync(
+                initialStartText,
+                initialEndText,
+                initialEndText,
+                initialStartText,
+                null,
+                CultureInfo.CurrentCulture);
+        }
+
+        [WpfFact]
+        [UseCulture("ru-RU")]
+        public Task TestSetTimeRangeInStartTextBoxRuRu03Async()
+        {
+            var start = 123456.789;
+            var end = 234567.890;
+            var finalStartText = start.ToString("n3", CultureInfo.CurrentCulture);
+            var finalEndtText = end.ToString("n3", CultureInfo.CurrentCulture);
+            var initialStartText = RangeUtilities.ToString(finalStartText, finalEndtText);
+
+            return TestSetTimeRangeInStartTextBoxImplAsync(
+                initialStartText,
+                null,
+                finalStartText, // BUG!
+                finalEndtText, // BUG
+                null,
+                CultureInfo.CurrentCulture);
+        }
+
+        [WpfFact]
+        [UseCulture("ru-RU")]
+        public Task TestSetTimeRangeInStartTextBoxRuRu04Async()
+        {
+            var start = 123456.789;
+            var initialStartText = RangeUtilities.ToString(start.ToString("n3", CultureInfo.CurrentCulture), "not_a_number");
+            var endStartText = "0";
+
+            return TestSetTimeRangeInStartTextBoxImplAsync(
+                initialStartText,
+                null,
+                endStartText,
+                null,
+                null,
+                CultureInfo.CurrentCulture);
+        }
+
+        [WpfFact]
+        [UseCulture("ru-RU")]
+        public Task TestSetTimeRangeInStartTextBoxRuRu05Async()
+        {
+            var start = 123456.789;
+            var initialStartText = start.ToString("n3", CultureInfo.CurrentCulture);
+            var initialEndText = "not_a_number";
+
+            return TestSetTimeRangeInStartTextBoxImplAsync(
+                initialStartText,
+                initialEndText,
+                initialStartText,
+                "Infinity",
+                "Invalid number " + initialEndText,
+                CultureInfo.CurrentCulture);
+        }
+
+        [WpfFact]
+        [UseCulture("ru-RU")]
+        public Task TestSetTimeRangeInStartTextBoxRuRu06Async()
+        {
+            var start = 123456.789;
+            var initialStartText = RangeUtilities.ToString(start.ToString("n3", CultureInfo.CurrentCulture), "1.2,3.4,5.6,7.8,9.0");
+            var endStartText = "0";
+
+            return TestSetTimeRangeInStartTextBoxImplAsync(
+                initialStartText,
+                null,
+                endStartText,
+                null,
+                "Invalid number " + initialStartText,
+                CultureInfo.CurrentCulture);
+        }
+
+        [WpfFact]
+        [UseCulture("ru-RU")]
+        public Task TestSetTimeRangeInStartTextBoxRuRu07Async()
+        {
+            var start = 123456.789;
+            var initialStartText = RangeUtilities.ToString("1.2,3.4,5.6,7.8,9.0", start.ToString("n3", CultureInfo.CurrentCulture));
+            var endStartText = "0";
+
+            return TestSetTimeRangeInStartTextBoxImplAsync(
+                initialStartText,
+                null,
+                endStartText,
+                null,
+                "Invalid number " + initialStartText,
+                CultureInfo.CurrentCulture);
+        }
+
+        private Task TestSetTimeRangeInStartTextBoxImplAsync(string initialStartText, string initialEndText, string finalStartText, string finalEndText, string statusText, CultureInfo culture)
+        {
+            TimeRangeFile file = null;
+
+            Func<Task<StackWindow>> setupAsync = async () =>
+            {
+                await JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                file = new TimeRangeFile();
+                await OpenAsync(JoinableTaskFactory, file, GuiApp.MainWindow, GuiApp.MainWindow.StatusBar).ConfigureAwait(true);
+                var stackSource = file.GetStackSource();
+                return stackSource.Viewer;
+            };
+
+            Func<StackWindow, Task> cleanupAsync = async stackWindow =>
+            {
+                await JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                stackWindow.Close();
+            };
+
+            Func<StackWindow, Task> testDriverAsync = async stackWindow =>
+            {
+                await JoinableTaskFactory.SwitchToMainThreadAsync();
+
+                if (initialEndText != null)
+                {
+                    stackWindow.EndTextBox.Text = initialEndText;
+                }
+
+                stackWindow.StartTextBox.Text = initialStartText;
+
+                Keyboard.PrimaryDevice.Focus(stackWindow.StartTextBox);
+                InputManager.Current.ProcessInput(
+                    new KeyEventArgs(Keyboard.PrimaryDevice, Keyboard.PrimaryDevice.ActiveSource, 0, Key.Return)
+                    {
+                        RoutedEvent = Keyboard.KeyDownEvent,
+                    });
+
+                // Wait for any background processing to complete
+                await stackWindow.StatusBar.WaitForWorkCompleteAsync().ConfigureAwait(true);
+
+                Assert.Equal(finalStartText, stackWindow.StartTextBox.Text);
+                Assert.Equal(finalEndText ?? file.StackSource.Samples[file.StackSource.Samples.Count - 1].TimeRelativeMSec.ToString("n3", culture), stackWindow.EndTextBox.Text);
+
+                if (statusText != null)
+                {
+                    Assert.Equal(statusText, stackWindow.StatusBar.Status);
+                }
+            };
+
+            return RunUITestAsync(setupAsync, testDriverAsync, cleanupAsync);
+        }
+
         private static Task OpenAsync(JoinableTaskFactory factory, PerfViewTreeItem item, Window parentWindow, StatusBar worker)
         {
             return factory.RunAsync(async () =>
@@ -336,11 +634,23 @@ namespace PerfViewTests.StackViewer
         /// </summary>
         private class TimeRangeFile : PerfViewFile
         {
-            public override string Title => nameof(TimeRangeFile);
+            public TimeRangeFile() : this(new TimeRangeStackSource())
+            {
+            }
 
-            public override string FormatName => Title;
+            public TimeRangeFile(TimeRangeStackSource stackSource)
+            {
+                Title = FormatName = nameof(TimeRangeFile);
+                StackSource = stackSource;
+            }
 
-            public override string[] FileExtensions => new[] { "Time Range Test" };
+            public override string Title { get; }
+
+            public override string FormatName { get; }
+
+            public override string[] FileExtensions { get; } = new[] { "Time Range Test" };
+
+            public TimeRangeStackSource StackSource { get; }
 
             protected override Action<Action> OpenImpl(Window parentWindow, StatusBar worker)
             {
@@ -353,14 +663,12 @@ namespace PerfViewTests.StackViewer
 
             protected internal override StackSource OpenStackSourceImpl(TextWriter log)
             {
-                return new TimeRangeStackSource();
+                return StackSource;
             }
         }
 
         private class TimeRangeStackSource : StackSource
         {
-            private readonly List<StackSourceSample> _samples;
-
             private const StackSourceCallStackIndex StackRoot = StackSourceCallStackIndex.Invalid;
             private const StackSourceCallStackIndex StackEntry = StackSourceCallStackIndex.Start + 0;
             private const StackSourceCallStackIndex StackMiddle = StackSourceCallStackIndex.Start + 1;
@@ -372,7 +680,7 @@ namespace PerfViewTests.StackViewer
 
             public TimeRangeStackSource()
             {
-                _samples = new List<StackSourceSample>
+                Samples = new List<StackSourceSample>(4)
                 {
                     new StackSourceSample(this)
                     {
@@ -402,8 +710,17 @@ namespace PerfViewTests.StackViewer
                         Metric = 1,
                         TimeRelativeMSec = 3000.75
                     },
+                    new StackSourceSample(this)
+                    {
+                        SampleIndex = (StackSourceSampleIndex)3,
+                        StackIndex = StackTail,
+                        Metric = 1,
+                        TimeRelativeMSec = 456789.012
+                    },
                 };
             }
+
+            public List<StackSourceSample> Samples { get; }
 
             public override int CallStackIndexLimit
                 => (int)StackTail + 1;
@@ -412,18 +729,18 @@ namespace PerfViewTests.StackViewer
                 => (int)FrameTail + 1;
 
             public override int SampleIndexLimit
-                => _samples.Count;
+                => Samples.Count;
 
             public override double SampleTimeRelativeMSecLimit
-                => _samples.Select(sample => sample.TimeRelativeMSec).Max();
+                => Samples.Select(sample => sample.TimeRelativeMSec).Max();
 
             public override void ForEach(Action<StackSourceSample> callback)
             {
-                _samples.ForEach(callback);
+                Samples.ForEach(callback);
             }
 
             public override StackSourceSample GetSampleByIndex(StackSourceSampleIndex sampleIndex)
-                => _samples[(int)sampleIndex];
+                => Samples[(int)sampleIndex];
 
             public override StackSourceCallStackIndex GetCallerIndex(StackSourceCallStackIndex callStackIndex)
             {

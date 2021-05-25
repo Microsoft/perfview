@@ -1,4 +1,5 @@
-﻿using Microsoft.Diagnostics.Runtime.Interop;
+﻿#if CROSS_GENERATION_LIVENESS
+using Microsoft.Diagnostics.Runtime.Interop;
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -232,3 +233,4 @@ namespace Microsoft.Diagnostics.CrossGenerationLiveness
         int FlushCallbacks();
     }
 }
+#endif

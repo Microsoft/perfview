@@ -830,7 +830,7 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
 
                     // is this dynamically sized with another field specifying the length?
                     // Is it an array (binary and not a struct) (seems InType is not valid if property is a struct, so need to test for both.
-                    if ((propertyInfo->Flags & (PROPERTY_FLAGS.ParamCount | PROPERTY_FLAGS.ParamLength)) != 0 || (propertyInfo->InType == TdhInputType.Binary && (propertyInfo->Flags & PROPERTY_FLAGS.Struct) == 0))
+                    if ((propertyInfo->Flags & (PROPERTY_FLAGS.ParamCount | PROPERTY_FLAGS.ParamLength | PROPERTY_FLAGS.ParamFixedCount)) != 0 || propertyInfo->CountOrCountIndex > 1 || (propertyInfo->InType == TdhInputType.Binary && (propertyInfo->Flags & PROPERTY_FLAGS.Struct) == 0))
                     {
                         // silliness where if it is a byte[] they use Length otherwise they use count.  Normalize it.  
                         var countOrCountIndex = propertyInfo->CountOrCountIndex;
@@ -841,7 +841,7 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
 
                         ushort fixedCount = 0;
                         ushort arraySize;
-                        if ((propertyInfo->Flags & PROPERTY_FLAGS.ParamFixedLength) != 0)
+                        if ((propertyInfo->Flags & (PROPERTY_FLAGS.ParamFixedLength | PROPERTY_FLAGS.ParamFixedCount)) != 0)
                         {
                             fixedCount = countOrCountIndex;
                             arraySize = fixedCount;
@@ -1087,7 +1087,8 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
             ParamLength = 0x2,
             ParamCount = 0x4,
             WbemXmlFragment = 0x8,
-            ParamFixedLength = 0x10
+            ParamFixedLength = 0x10,
+            ParamFixedCount = 0x20
         }
 
         internal enum TdhInputType : ushort
@@ -1419,7 +1420,7 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
         {
             int count;
             deserializer.Read(out count);
-            m_templates = new Dictionary<TraceEvent, DynamicTraceEventData>(new TraceEventComparer());
+            m_templates = new Dictionary<TraceEvent, DynamicTraceEventData>(count, new TraceEventComparer());
             for (int i = 0; i < count; i++)
             {
                 DynamicTraceEventData template;

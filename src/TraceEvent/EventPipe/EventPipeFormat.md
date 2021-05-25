@@ -65,7 +65,7 @@ simply the serialization of a list of objects.  Each object consists of a payloa
    1. The name of the type (which allows the serializer and deserializer to agree what
       is being transmitted
    2. The version number for the data being sent.  
-   3. A minumum version number. A new format may be compatible with old readers.
+   3. A minimum version number. A new format may be compatible with old readers.
       This version indicates the oldest reader that can correctly interpret the payload of the object.
 
 **Tags:**  The format uses a number of byte-sized tags that are used to demarcate the boundaries of objects and as sentinel values. In particular there are BeginPrivateObject and EndObject which are used to define a new object, and NullReference used to define Null. These tags are encoded as the bytes:
@@ -332,7 +332,7 @@ On 32 bit traces the stack bytes can be interpreted as an array of 4 byte intege
 
 A sequence point object is used as a stream checkpoint and serves several purposes.
 
-1. It demarcates time with a TimeStamp. All the events in the stream which occured prior to this TimeStamp are located before this sequence point in file order. Likewise all events which happened after this timestamp are located afterwards. The TimeStamps on succesive Sequence points always increase so if you are interested in an event that happened at a particular point in time you can search the stream to find SequencePoints that occured beforehand/afterwards and be assured the event will be in that region of the file.
+1. It demarcates time with a TimeStamp. All the events in the stream which occurred prior to this TimeStamp are located before this sequence point in file order. Likewise all events which happened after this timestamp are located afterwards. The TimeStamps on successive Sequence points always increase so if you are interested in an event that happened at a particular point in time you can search the stream to find SequencePoints that occurred beforehand/afterwards and be assured the event will be in that region of the file.
 
 2. It contains a list of every thread that could potentially emit an event at that point in time and a lower bound on the last event sequence number that thread attempted to log. This can be used to detect dropped events. See the section on Sequence numbering for more info.
 
@@ -373,7 +373,7 @@ In order to lower runtime overhead of emitted events and to improve locality for
 
 ### Backward compatibility
 
-It is a relatively straightforward excercise to update the file format
+It is a relatively straightforward exercise to update the file format
 to add more information while maintaining backward compatibility (that is
 new readers can read old writers).   What is necessary is to 
 
@@ -471,14 +471,14 @@ now it is enough to know that this capability exists if we need it.
 **Not Forward Compatible**
 
 In general the file format became a little less simplistic in this revision to improve size on disk, speed up any IO bound read/write scenario, detect dropped events, and efficiently support a broader variety of access patterns. In exchange implementing a parser became a bit more complex and any read scenario that was previously memory or CPU bound likely degraded.
-Although not intending to abandon the original goals of simplicity, this definitely takes a few steps away from it in the name of performance. One of the original premises was that the format should make no effort to at conserving size because generic compression algorithms could always recover it. This still feels true in the case where you have a file on disk and there is no tight constraint on CPU or latency to compress it. This doesn't appear to hold up as well when you assume that you want to do streaming with low latency guarantees and constrained writer CPU resources. General purpose compression algorithms need both CPU cycles and sufficient blocks of data to recognize and exploit compressible patterns. On the other hand we have a priori knowledge about potentially large parts of the format that are highly compressible (often better than 10:1). At the cost of some complexity we can write targetted algorithms that recover considerable low hanging fruit at very low CPU/latency cost.
+Although not intending to abandon the original goals of simplicity, this definitely takes a few steps away from it in the name of performance. One of the original premises was that the format should make no effort to at conserving size because generic compression algorithms could always recover it. This still feels true in the case where you have a file on disk and there is no tight constraint on CPU or latency to compress it. This doesn't appear to hold up as well when you assume that you want to do streaming with low latency guarantees and constrained writer CPU resources. General purpose compression algorithms need both CPU cycles and sufficient blocks of data to recognize and exploit compressible patterns. On the other hand we have a priori knowledge about potentially large parts of the format that are highly compressible (often better than 10:1). At the cost of some complexity we can write targeted algorithms that recover considerable low hanging fruit at very low CPU/latency cost.
 
 Changes:
 
 1. The 'Nettrace' magic was added to the front of the file to better distinguish Nettrace from any other serialized output of the FastSerializer library.
 2. Metadata was moved out of EventBlocks and into separate MetadataBlocks. This makes it dramatically easier to locate in scenarios where the reader is searching only for specific events and the metadata necessary to interpret those events rather than wanting to parse every event in the stream.
 3. Stacks are interned and stored in StackBlocks rather than inlined into each event. This gives considerable file size savings in scenarios where stacks are commonly repeated. This added StackBlocks and the StackId event field.
-4. Header compression often dramatically reduces the file size overhead. Previously we payed a fixed 56 bytes per event. Anecdotally in a scenario I looked at recently compressed headers average 5 bytes despite encoding more data than before.
+4. Header compression often dramatically reduces the file size overhead. Previously we paid a fixed 56 bytes per event. Anecdotally in a scenario I looked at recently compressed headers average 5 bytes despite encoding more data than before.
 5. Timestamp ranges in the headers of EventBlocks help locate EventBlocks of interest without having to parse every event inside them.
 6. Sequence numbering events aids in dropped event detection. This added the SequenceNumber and CaptureThreadId fields to event blobs.
 7. ThreadId is now 64 bit instead of 32 bit to support large thread IDs used by some OSes.

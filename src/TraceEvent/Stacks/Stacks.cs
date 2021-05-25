@@ -183,7 +183,7 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
         /// things up.  If you sample at a rate of 10, it means that only one out of every 10 samples is actually
         /// produced by 'ForEach'.   Note that it is expected that when the sampling rate is set the 
         /// source will correspondingly adjust the CountMultiplier, so that the total will look like no sampling
-        /// is occuring 
+        /// is occurring 
         /// </summary>
         public virtual float? SamplingRate { get { return null; } set { } }
 
@@ -692,7 +692,7 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
             // Turn on for diffing between XPERF and PerfView 
 
             // This code will throw away any samples that are not 'close' to a 'negative' sample.
-            // It was designed SPECIFICALLY to allow comparisions between PerfView decoded ETL files
+            // It was designed SPECIFICALLY to allow comparisons between PerfView decoded ETL files
             // and XPERF created CSVZ files (we consider XPERF the gold standard). 
             
             // The basic problem is that we KNOW that XPERF also has problem decoding stacks all the time

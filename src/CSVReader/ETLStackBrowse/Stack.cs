@@ -1252,7 +1252,7 @@ namespace ETLStackBrowse
             private StringWriter sw = null;
 
             // this is to capture the 'magic' points in the stack with new interesting masks
-            // and signficant cost
+            // and significant cost
             private Dictionary<int, bool> idsMagic = new Dictionary<int, bool>();
             private Dictionary<uint, int> masksMagic = new Dictionary<uint, int>();
             private bool fSkipThunks = true;

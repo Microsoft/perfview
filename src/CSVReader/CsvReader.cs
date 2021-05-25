@@ -402,7 +402,7 @@ namespace CSVReader
                     ColumnSums = null;
                     if (ColumnsToDisplay != null)
                     {
-                        columnOrder = new Dictionary<string, int>();
+                        columnOrder = new Dictionary<string, int>(ColumnsToDisplay.Count);
                         for (int i = 0; i < ColumnsToDisplay.Count; i++)
                         {
                             columnOrder.Add(ColumnsToDisplay[i], i);

@@ -376,7 +376,7 @@ namespace Utilities
 
         /// <summary>
         /// This is a convinience function.  If you unpack native dlls, you may want to simply LoadLibary them
-        /// so that they are guarenteed to be found when needed.  
+        /// so that they are guaranteed to be found when needed.  
         /// </summary>
         [System.Runtime.InteropServices.DllImport("kernel32", SetLastError = true)]
         private static extern IntPtr LoadLibrary(string lpFileName);

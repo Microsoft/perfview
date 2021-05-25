@@ -747,7 +747,7 @@ namespace PerfView
             }
         }
 
-        // Single entry for 1 mb of commited memory, 256 + byte
+        // Single entry for 1 mb of committed memory, 256 + byte
         // 1 gb = 256 kb memory
         // 64 gb = 16 mb memory
         private Dictionary<ulong, ModuleClass[]> m_MemMap;

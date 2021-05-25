@@ -62,7 +62,7 @@
         </li>
         <li>
             <a href="http://media.ch9.ms/ch9/575f/d27ed117-0df6-447d-b2ec-1c58fec0575f/11CollectionForServices_Source.wmv">Collecting Data For Services</a> -(7 min) - When investigating services it is convinient
-            to explictly start and stop the trace.   It is also very common to want to collect data on
+            to explicitly start and stop the trace.   It is also very common to want to collect data on
             one machine (often by asking someone else to collect the data) and then analyze it on another
             machine.   This video shows you some of your options for server-scenario data collection.
         </li>
@@ -79,7 +79,7 @@
         <li>
             <a href="http://media.ch9.ms/ch9/4308/7c67a721-de52-4932-a9be-99db9fe74308/2SimpleCPUPerfInvestigation_Source.wmv">A Simple CPU Investigation</a> (16 min) - Typically the first investigation you
             do is to check on CPU usage. This totorial is longer than most, but that is
-            because it covers alot of important &#39;background&#39; information need to be a
+            because it covers a lot of important &#39;background&#39; information need to be a
             productive investigator. If you watch only one video, this should be it.
         </li>
 
@@ -92,7 +92,7 @@
         </li>
         <li>
             <a href="http://media.ch9.ms/ch9/58ef/081cbb95-9250-4840-8396-aa2bfe1058ef/4GroupingAndFolding_Source.wmv">Grouping And Folding</a> (13 min) -
-            Something that sets PerfView appart from most other profiling tools is its
+            Something that sets PerfView apart from most other profiling tools is its
             ability to hide a large amount of irrelevant detail while also allowing you to
             have high detail on the parts of the application that matter to you.&nbsp;&nbsp;
             This magic is done by the grouping and folding features (GroupPats and Fold*
@@ -116,10 +116,10 @@
     </ol>
 
     <h3>Wall Clock Time Investigations.&nbsp; </h3>
-    <p>Typically if you aredoing a time investigation, you are concerned about wall clock time (not CPU time).&nbsp;&nbsp; Thus you can argue that wall clock time investigations are more important that CPU investigations.&nbsp; However wall clock time is more harder to investigate because every thread in your process has its own wall clock time, and what you are intersted in is the CRITICAL PATH among these threads.&nbsp;&nbsp; CPU is nice because it TENDS to be on the critical path (even if the flow of control hops from thread to thread), which means ANY CPU time is probably important.&nbsp; This is NOT true for wall clock time and is part of what makes it harder to analyze.&nbsp;&nbsp;&nbsp; These videos walk you through what you need to know in order to do a successfull wall clock time investigation.&nbsp; </p>
+    <p>Typically if you aredoing a time investigation, you are concerned about wall clock time (not CPU time).&nbsp;&nbsp; Thus you can argue that wall clock time investigations are more important that CPU investigations.&nbsp; However wall clock time is more harder to investigate because every thread in your process has its own wall clock time, and what you are intersted in is the CRITICAL PATH among these threads.&nbsp;&nbsp; CPU is nice because it TENDS to be on the critical path (even if the flow of control hops from thread to thread), which means ANY CPU time is probably important.&nbsp; This is NOT true for wall clock time and is part of what makes it harder to analyze.&nbsp;&nbsp;&nbsp; These videos walk you through what you need to know in order to do a successful wall clock time investigation.&nbsp; </p>
     <ol>
         <li><a href="http://channel9.msdn.com/Series/PerfView-Tutorial/Tutorial-12-Wall-Clock-Time-Investigation-Basics">Wall Clock Time Investigation Basics</a> (16 min) - This video walks through a wall clock investigation on a very simple scenario (a disk bound sequential program).&nbsp;&nbsp; It covers how you should collect the data (the Thread Time checkbox), as well as using a method frame to isolate time to a particular thread and time interval for analysis.</li>
-        <li><a href="http://channel9.msdn.com/Series/PerfView-Tutorial/Tutorial-13-Leveraging-Tasks-make-sense-of-ParallelAsynchronous-programs" href="http://channel9.msdn.com/Series/PerfView-Tutorial/Tutorial-13-Leveraging-Tasks-make-sense-of-ParallelAsynchronous-programs">Leveraging Tasks make sense of Parallel/Asynchronous programs</a> (16 min) - This video walks through a more complex scenario where operations are happening in paralell and shows you that if you used System.Diagnostics.Threading.Tasks to do the parallel activity, PerfView can &#39;roll up&#39; the costs of the paralllel/async activity in a way that allows parallel/async programs to be analyzed like the simpler sequential case. </li>
+        <li><a href="http://channel9.msdn.com/Series/PerfView-Tutorial/Tutorial-13-Leveraging-Tasks-make-sense-of-ParallelAsynchronous-programs" href="http://channel9.msdn.com/Series/PerfView-Tutorial/Tutorial-13-Leveraging-Tasks-make-sense-of-ParallelAsynchronous-programs">Leveraging Tasks make sense of Parallel/Asynchronous programs</a> (16 min) - This video walks through a more complex scenario where operations are happening in parallel and shows you that if you used System.Diagnostics.Threading.Tasks to do the parallel activity, PerfView can &#39;roll up&#39; the costs of the paralllel/async activity in a way that allows parallel/async programs to be analyzed like the simpler sequential case. </li>
         <li><a href="http://channel9.msdn.com/posts/Tutorial-14-Investigating-Wall-Clock-responce-time-in-ASPNET-Scenarios" href="http://channel9.msdn.com/posts/Tutorial-14-Investigating-Wall-Clock-responce-time-in-ASPNET-Scenarios">Investigating Wall Clock Response Time of ASP.NET scenarios</a>&nbsp;(16 min) In this video we show how to analyze the wall clock response time of an ASP.NET application.&nbsp; I also discuss this scenario in<a data-mce-href="http://blogs.msdn.com/b/vancem/archive/2012/11/28/video-wall-clock-time-analysis-of-asp-net-applications-using-perfview.aspx" href="http://blogs.msdn.com/b/vancem/archive/2012/11/28/video-wall-clock-time-analysis-of-asp-net-applications-using-perfview.aspx"> this blog entry</a>.</li>
     </ol>
     <h3>The PerfView Event Viewer</h3>

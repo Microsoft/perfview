@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Xunit;
@@ -62,6 +63,21 @@ namespace TraceEventTests
 
                 Assert.True(File.Exists(etlFilePath));
             }
+
+            foreach (var folderZip in Directory.EnumerateFiles(TestDataDir, "*-diagsession.zip"))
+            {
+                var zipFile = ZipFile.OpenRead(folderZip);
+                var dir = Path.Combine(UnZippedDataDir, Path.GetFileNameWithoutExtension(folderZip));
+                if (!Directory.Exists(dir) || Directory.GetLastWriteTimeUtc(dir) < File.GetLastWriteTimeUtc(folderZip))
+                {
+                    zipFile.ExtractToDirectory(UnZippedDataDir);
+                }
+                else
+                {
+                    Trace.WriteLine(string.Format("using cached ETL files {0}", dir));
+                }
+            }
+
             Trace.WriteLine("Finished unzipping data");
             s_fileUnzipped = true;
         }

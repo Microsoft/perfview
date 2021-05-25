@@ -325,7 +325,7 @@ namespace PerfView
         /// <summary>
         /// Register event handlers before data is processed.
         /// </summary>
-        internal abstract void RegisterEventHandlers(
+        public abstract void RegisterEventHandlers(
             TraceEventDispatcher eventDispatcher);
     }
 

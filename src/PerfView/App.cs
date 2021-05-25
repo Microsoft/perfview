@@ -1143,7 +1143,7 @@ namespace PerfView
                     }
                     else
                     {
-                        // Have we tried to probe for the existance of \\clrmain?
+                        // Have we tried to probe for the existence of \\clrmain?
                         if (s_ProbedForFeedbackAt.Ticks == 0)
                         {
                             s_ProbedForFeedbackAt = DateTime.Now;

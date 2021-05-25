@@ -878,7 +878,7 @@ namespace PerfView
     }
 
     /// <summary>
-    /// A TreeViewContoller allow contains all the necessary callback that the TreeView needs to perform its job.
+    /// A TreeViewController allow contains all the necessary callback that the TreeView needs to perform its job.
     /// This is what hooks up the TreeView to its model.   Basically it lets you define what the name of
     /// each node of the tree is as well as how to get the children of a node (as well as the root node).  
     /// 

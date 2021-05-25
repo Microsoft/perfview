@@ -253,18 +253,18 @@ namespace Microsoft.Samples.Debugging.Native
         Dr7 = 0x18,
 
         // This section is specified/returned if the
-        // ContextFlags word contians the flag CONTEXT_FLOATING_POINT.
+        // ContextFlags word contains the flag CONTEXT_FLOATING_POINT.
         FloatSave = 0x1C,
 
         // This section is specified/returned if the
-        // ContextFlags word contians the flag CONTEXT_SEGMENTS.
+        // ContextFlags word contains the flag CONTEXT_SEGMENTS.
         SegGs = 0x8C,
         SegFs = 0x90,
         SegEs = 0x94,
         SegDs = 0x98,
 
         // This section is specified/returned if the
-        // ContextFlags word contians the flag CONTEXT_INTEGER.
+        // ContextFlags word contains the flag CONTEXT_INTEGER.
         Edi = 0x9C,
         Esi = 0xA0,
         Ebx = 0xA4,
@@ -273,7 +273,7 @@ namespace Microsoft.Samples.Debugging.Native
         Eax = 0xB0,
 
         // This section is specified/returned if the
-        // ContextFlags word contians the flag CONTEXT_CONTROL.
+        // ContextFlags word contains the flag CONTEXT_CONTROL.
         Ebp = 0xB4,
         Eip = 0xB8,
         SegCs = 0xBC,
@@ -589,7 +589,7 @@ namespace Microsoft.Samples.Debugging.Native
         IntT21 = 0x960,
         IntT22 = 0x968,
         IntNats = 0x970,    //  Nat bits for r1-r31
-                            //  r1-r31 in bits 1 thru 31.
+                            //  r1-r31 in bits 1 through 31.
         Preds = 0x978,      //  predicates = 0x, preserved
 
         BrRp = 0x980,       //  return pointer = 0x, b0 = 0x, preserved
@@ -842,7 +842,7 @@ namespace Microsoft.Samples.Debugging.Native
         public IntPtr ExceptionRecord;
 
         /// <summary>
-        /// Address in the debuggee that the exception occured at.
+        /// Address in the debuggee that the exception occurred at.
         /// </summary>
         public IntPtr ExceptionAddress;
 

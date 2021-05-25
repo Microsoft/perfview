@@ -449,6 +449,8 @@ namespace Stats
                 writer.Write(" TotalPromotedSize2=\"{0:n0}\"", gc.HeapStats.TotalPromotedSize2);
                 writer.Write(" GenerationSize3=\"{0:n0}\"", gc.HeapStats.GenerationSize3);
                 writer.Write(" TotalPromotedSize3=\"{0:n0}\"", gc.HeapStats.TotalPromotedSize3);
+                writer.Write(" GenerationSize4=\"{0:n0}\"", gc.HeapStats.GenerationSize4);
+                writer.Write(" TotalPromotedSize4=\"{0:n0}\"", gc.HeapStats.TotalPromotedSize4);
                 writer.Write(" FinalizationPromotedSize=\"{0:n0}\"", gc.HeapStats.FinalizationPromotedSize);
                 writer.Write(" FinalizationPromotedCount=\"{0:n0}\"", gc.HeapStats.FinalizationPromotedCount);
                 writer.Write(" PinnedObjectCount=\"{0:n0}\"", gc.HeapStats.PinnedObjectCount);
@@ -541,14 +543,14 @@ namespace Stats
                     writer.WriteLine(">");
 
                     var sb = new System.Text.StringBuilder();
-                    for (var gens = Gens.Gen0; gens <= Gens.GenLargeObj; gens++)
+                    for (int gens = 0; gens < perHeapHistory.GenData.Length; gens++)
                     {
                         sb.Clear();
                         sb.Append("        ");
-                        writer.Write(perHeapHistory.GenData[(int)gens].ToXml(gens, sb).AppendLine().ToString());
+                        writer.Write(perHeapHistory.GenData[(int)gens].ToXml((Gens)gens, sb).AppendLine().ToString());
                     }
 
-                    writer.Write("      </PerHeapHistory>");
+                    writer.WriteLine("      </PerHeapHistory>");
                     HeapNum++;
                 }
                 writer.WriteLine("      </PerHeapHistories>");
@@ -1244,7 +1246,7 @@ namespace Stats
             }
         }
 
-        private Dictionary<WorkSpanType, string> Type2Color = new Dictionary<WorkSpanType, string>()
+        private Dictionary<WorkSpanType, string> Type2Color = new Dictionary<WorkSpanType, string>(4)
                 {
                     {WorkSpanType.GcThread, "rgb(0,200,0)"},
                     {WorkSpanType.RivalThread, "rgb(250,20,20)"},

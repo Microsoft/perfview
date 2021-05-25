@@ -170,7 +170,7 @@
         <a id="LatestVersion">Getting the latest version of PerfView</a>
     </h3>
     <p>
-        You can get the latest version of PerfView by going to the <a href="https://github.com/Microsoft/perfview/blob/master/documentation/Downloading.md">PerfView GitHub Download Page</a>
+        You can get the latest version of PerfView by going to the <a href="https://github.com/Microsoft/perfview/blob/main/documentation/Downloading.md">PerfView GitHub Download Page</a>
     </p>
     <hr />
     <hr />
@@ -1882,6 +1882,11 @@
     <p>
         Once you have the data you can view the data in the &#39;GC Heap Net Mem&#39;, which shows you the call
         stacks of all the allocations where the metric is bytes of GC Net GC heap.&nbsp;&nbsp;&nbsp;
+        The most notable difference between <a href="#GCHeapAlloc">GC Heap Alloc Stacks</a> and &#39;GC Heap Net Mem&#39; 
+        is that the former shows allocations stacks of all objects, whereas the latter shows allocations stacks 
+        of only those objects that were not garbage collected yet.
+    </p>    
+    <p>
         There is basically no difference in what is displayed between traces collected with the &#39;.NET Alloc&#39;
         checkbox or the &#39;.NET SampAlloc&#39; checkbox.&nbsp;&nbsp; It is just that in the case of .NET SampAlloc
         the information may be inaccurate since a particular call stack and type are &#39;charged&#39; with 10K of
@@ -3368,7 +3373,7 @@
             startup, set the time filter to exclude any other samples).&nbsp;&nbsp; It MUST
             be the case that the two traces represent equivalent work.&nbsp;&nbsp;&nbsp; Moreover,
             the smaller the trace, the easier it will be to analyze.&nbsp;&nbsp; Thus the more
-            you can filter it down, the better.&nbsp;&nbsp; While it is can just skip this step,
+            you can filter it down, the better.&nbsp;&nbsp; While you can just skip this step,
             some effort here will pay off later.&nbsp;&nbsp;
         </li>
         <li>
@@ -4747,9 +4752,9 @@
     </p>
     <p>
         This is the problem entry groups solve.&nbsp;&nbsp; They are just like normal groups
-        but use the =&gt; instead of -&gt; to indicate they are entry.&nbsp;&nbsp; An entry
+        but use the =&gt; instead of -&gt; to indicate they are entry groups.&nbsp;&nbsp; An entry
         group creates the same group as a normal group but it instructs the parsing logic
-        to the caller into account.&nbsp; Effectively a group is formed for each &#39;entry
+        to take the caller into account.&nbsp; Effectively a group is formed for each &#39;entry
         point into the group.&nbsp;&nbsp; If a call is made from outside the group to inside
         the group, the name of the entry point is used as the name of the group.&nbsp;&nbsp;
         As long as that method calls other methods within the group, the stack frame is
@@ -4989,10 +4994,10 @@
     </p>
     <p>
         <strong>Blocked time investigations are inherently harder than CPU investigations</strong>.&nbsp;
-        CPU investigations are reasonably straightforward because in most scenarios any CPU use is &#39;interesting&#39;to
+        CPU investigations are reasonably straightforward because in most scenarios any CPU usage is &#39;interesting&#39; to
         investigate regardless of where it happens.&nbsp; Thus the trivial algorithm of attaching the
         same weight to every msec of CPU regardless of where it happened is appropriate.&nbsp;&nbsp;
-        This is actually not true in some scenarios.&nbsp; For example if there well background CPU-bound
+        This is actually not true in some scenarios.&nbsp; For example, if there was a background CPU-bound
         task on a multi-processor machine, the CPU associated with that background task is likely not very
         interesting because it is not consuming &#39;precious&#39; resources and is not on the critical path
         of some user operation.&nbsp;&nbsp; Thus if you were investigating CPU on such an application you
@@ -5136,7 +5141,7 @@
         However in other scenarios the issue is understanding why delays is as long&nbsp; as it is.&nbsp;
         For example, if a thread is blocked waiting on a lock, the interesting question is why
         was some other thread holding the lock so long?&nbsp; To answer this question you need
-        to determine that thread that was holding the lock.&nbsp;&nbsp; Questions like this are
+        to determine which thread was holding the lock.&nbsp;&nbsp; Questions like this are
         what the ReadyThread event helps answer.
     </p>
     <p>
@@ -7545,7 +7550,7 @@
         </li>
         <li>
             ContextSwitch - Fires each time OS stops running switches to another.&nbsp; It indicates
-            loosing processor and the thread getting it.&nbsp; This event fire &gt; 10K second
+            losing processor and the thread getting it.&nbsp; This event fire &gt; 10K second
             depending on scenario, but can be VERY useful for determining why some process is
             waiting.&nbsp; Logs a stack trace.
         </li>
@@ -8408,7 +8413,7 @@
                 <li> Merged kayle's update to display the type of the alloction for C++ code (in the Net OS Heap Alloc View).
                      It is now the case that if you have PDBS for the call site of a C++ 'new' expression and that compiler
                      supports it (I believe anything after VS2017 CPP compiler will work), then PerfView will create a 'Type XXX'
-                     pseduo-node for allocation sites.   Having this type information can definately be useful.   
+                     pseduo-node for allocation sites.   Having this type information can definitely be useful.   
                 </li>
             </ul>
         </li>
@@ -8989,50 +8994,31 @@
                 <li>
                     Added Support for .perfView.json and perfView.json.zip files.  You can give it a JSON file like the following which
                     has two samples in it.
-                    <ul>
-                        <li>
-                            {
-                            <ul>
-
-                                <li>
-                                    "StackSource" :  {
-                                    <ul>
-                                        <li>
-                                            "Samples" : [
-                                            <ul>
-                                                <li> { "Time" : "10.1",</li>
-                                                <li>
-                                                    &nbsp; &nbsp; "Stack": [
-                                                    <ul>
-                                                        <li>"Executing Func for Sample 1",</li>
-                                                        <li>"Calling Func",</li>
-                                                        <li>"Main"</li>
-                                                    </ul>
-                                                </li>
-                                                <li>},</li>
-                                                <li> { "Time" : "10.1",</li>
-                                                <li>
-                                                    &nbsp; &nbsp; "Stack": [
-                                                    <ul>
-                                                        <li>"Executing Func for Sample 2",</li>
-                                                        <li>"Calling Func",</li>
-                                                        <li>"Main"</li>
-                                                    </ul>
-                                                </li>
-                                                <li>}</li>
-                                            </ul>
-                                        </li>
-                                        <li>]</li>
-                                    </ul>
-                                </li>
-                                <li>}</li>
-                            </ul>
-                        </li>
-                        <li>}</li>
-                    </ul>
-                </li>
-            </ul>
-        </li>
+                    <pre>                    
+{
+    "StackSource": {
+        "Samples": [
+            {
+                "Time": "10.1",
+                "Stack": [
+                    "Executing Func for Sample 1",
+                    "Calling Func",
+                    "Main"
+                ]
+            },
+            {
+                "Time": "10.1",
+                "Stack": [
+                    "Executing Func for Sample 2",
+                    "Calling Func",
+                    "Main"
+                ]
+            }
+        ]
+    }
+}
+                </pre>
+            </li>
         <li>
             Version 1.8.28 2/4/16
             <ul>
@@ -9089,25 +9075,24 @@
                     Extended perfView.xml file format so that it can more easily consume 'ad hoc' creation of stacks.
                     It still accepts the 'interned' scheme where you give IDs to each frame and stack and use those
                     to create samples, but now you can specify the samples inline with the sample like this
-                    <ul>
-                        <li> &lt;StackWindow&gt; &lt;StackSource&gt; &lt;Samples&gt; </li>
-                        <li>
-                            &lt;Sample Time="10"&gt;
-                            <ul>
-                                <li>Executing Func for Sample 1</li>
-                                <li>Calling Func</li>
-                                <li>Main</li>
-                            </ul>
-                        <li>
-                            &lt;Sample Time="20"&gt;
-                            <ul>
-                                <li>Executing Func for Sample 1</li>
-                                <li>Calling Func</li>
-                                <li>Main</li>
-                            </ul>
-                        </li>
-                        <li> &lt;/Samples&gt; &lt;/StackSource&gt; &lt;/StackWindow&gt; </li>
-                    </ul>
+                        <pre>
+&lt;StackWindow&gt;
+    &lt;StackSource&gt;
+        &lt;Samples&gt;
+            &lt;Sample Time="10"&gt;
+                Executing Func for Sample 1
+                Calling Func
+                Main
+            &lt;/Sample&gt;
+            &lt;Sample Time="20"&gt;
+                Executing Func for Sample 2
+                Calling Func
+                Main
+            &lt;/Sample&gt;
+        &lt;/Samples&gt;
+    &lt;/StackSource&gt; 
+&lt;/StackWindow&gt;
+                    </pre>
                     While this format is inefficient (you repeat many strings in many stacks), it is sometimes
                     convenient, and it is easy enough to support.   There are more details which I will blog about in
                     the near future.

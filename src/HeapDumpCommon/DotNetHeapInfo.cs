@@ -115,6 +115,7 @@ public class GCHeapDumpSegment : IFastSerializable
     public Address Gen1End { get; internal set; }
     public Address Gen2End { get; internal set; }
     public Address Gen3End { get; internal set; }
+    public Address Gen4End { get; internal set; }
 
     #region private
     void IFastSerializable.ToStream(Serializer serializer)

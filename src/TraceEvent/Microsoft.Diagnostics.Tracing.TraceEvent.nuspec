@@ -7,13 +7,7 @@
     <authors>Microsoft</authors>
     <owners>Microsoft</owners>
     <projectUrl>https://github.com/Microsoft/perfview</projectUrl>
-    <licenseUrl>https://github.com/Microsoft/perfview/blob/master/LICENSE.TXT</licenseUrl>
-    <!--  *************************************** 
-     4/2/2019 When the official builds support the 'license' element we should upgrade to use the that (shown below)  
-
     <license type="expression">MIT</license>
-     *************************************** -->
-    <iconUrl>http://go.microsoft.com/fwlink/?LinkID=288859</iconUrl>
     <requireLicenseAcceptance>true</requireLicenseAcceptance>
     <description>
       Event Tracing for Windows (ETW) is a powerful logging mechanism built into the Windows OS and is used extensively in Windows. 
@@ -35,26 +29,35 @@
     <tags>TraceEvent EventSource Microsoft ETW Event Tracing for Windows</tags>
 
     <dependencies>
-      <dependency id="System.Runtime.CompilerServices.Unsafe" version="4.5.2" />
+      <group targetFramework=".NETFramework4.5">
+        <dependency id="System.Runtime.CompilerServices.Unsafe" version="4.5.2" />
+      </group>
+      <group targetFramework=".NETStandard1.6">
+        <dependency id="System.Runtime.CompilerServices.Unsafe" version="4.5.2" />
+      </group>
+      <group targetFramework=".NETStandard2.0">
+        <dependency id="System.Runtime.CompilerServices.Unsafe" version="4.5.2" />
+      </group>
     </dependencies>
   </metadata>
 
   <files>
     <!-- Support for native binaries -->
     <file src="Microsoft.Diagnostics.Tracing.TraceEvent.props" target="build\Microsoft.Diagnostics.Tracing.TraceEvent.props" />
+    <file src="Microsoft.Diagnostics.Tracing.TraceEvent.props" target="buildTransitive\Microsoft.Diagnostics.Tracing.TraceEvent.props" />
 
     <!-- Native binaries -->
-    <file src="$OutDir$netstandard2.0\amd64\KernelTraceControl.dll" target="lib\native\amd64\KernelTraceControl.dll" />
-    <file src="$OutDir$netstandard2.0\amd64\msdia140.dll" target="lib\native\amd64\msdia140.dll" />
-    <file src="$OutDir$netstandard2.0\amd64\msvcp140.dll" target="lib\native\amd64\msvcp140.dll" />
-    <file src="$OutDir$netstandard2.0\amd64\vcruntime140.dll" target="lib\native\amd64\vcruntime140.dll" />
-    <file src="$OutDir$netstandard2.0\amd64\vcruntime140_1.dll" target="lib\native\amd64\vcruntime140_1.dll" />
+    <file src="$OutDir$netstandard2.0\amd64\KernelTraceControl.dll" target="build\native\amd64\KernelTraceControl.dll" />
+    <file src="$OutDir$netstandard2.0\amd64\msdia140.dll" target="build\native\amd64\msdia140.dll" />
+    <file src="$OutDir$netstandard2.0\amd64\msvcp140.dll" target="build\native\amd64\msvcp140.dll" />
+    <file src="$OutDir$netstandard2.0\amd64\vcruntime140.dll" target="build\native\amd64\vcruntime140.dll" />
+    <file src="$OutDir$netstandard2.0\amd64\vcruntime140_1.dll" target="build\native\amd64\vcruntime140_1.dll" />
 
-    <file src="$OutDir$netstandard2.0\x86\KernelTraceControl.dll" target="lib\native\x86\KernelTraceControl.dll" />
-    <file src="$OutDir$netstandard2.0\x86\KernelTraceControl.Win61.dll" target="lib\native\x86\KernelTraceControl.Win61.dll" />
-    <file src="$OutDir$netstandard2.0\x86\msdia140.dll" target="lib\native\x86\msdia140.dll" />
-    <file src="$OutDir$netstandard2.0\x86\msvcp140.dll" target="lib\native\x86\msvcp140.dll" />
-    <file src="$OutDir$netstandard2.0\x86\vcruntime140.dll" target="lib\native\x86\vcruntime140.dll" />
+    <file src="$OutDir$netstandard2.0\x86\KernelTraceControl.dll" target="build\native\x86\KernelTraceControl.dll" />
+    <file src="$OutDir$netstandard2.0\x86\KernelTraceControl.Win61.dll" target="build\native\x86\KernelTraceControl.Win61.dll" />
+    <file src="$OutDir$netstandard2.0\x86\msdia140.dll" target="build\native\x86\msdia140.dll" />
+    <file src="$OutDir$netstandard2.0\x86\msvcp140.dll" target="build\native\x86\msvcp140.dll" />
+    <file src="$OutDir$netstandard2.0\x86\vcruntime140.dll" target="build\native\x86\vcruntime140.dll" />
 
     <!-- NetStandard 2.0 Framework -->
 	

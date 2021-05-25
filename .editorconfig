@@ -1,5 +1,9 @@
 root=true
 
+[*.{csproj,props,targets,nuspec}]
+indent_style = space
+indent_size = 2
+
 [*.cs]
 indent_style = space
 indent_size = 4

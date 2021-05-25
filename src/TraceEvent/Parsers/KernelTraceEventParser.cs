@@ -1,6 +1,7 @@
 //     Copyright (c) Microsoft Corporation.  All rights reserved.
 //
 using FastSerialization;
+using Microsoft.Diagnostics.Tracing.Etlx;
 using Microsoft.Diagnostics.Tracing.Parsers.Kernel;
 using Microsoft.Diagnostics.Tracing.Utilities;
 using System;
@@ -327,26 +328,26 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
                 {
                     Debug.Assert(data.ThreadID >= 0);
                     Debug.Assert(data.ProcessID >= 0);
-                    state.threadIDtoProcessID.Add((Address)data.ThreadID, 0, data.ProcessID);
+                    state.threadIDtoProcessID.Add(data.ThreadID, 0, data.ProcessID);
                 };
                 ThreadEndGroup += delegate (ThreadTraceData data)
                 {
                     int processID;
                     if (source.IsRealTime)
                     {
-                        state.threadIDtoProcessID.Remove((Address)data.ThreadID);
+                        state.threadIDtoProcessID.Remove(data.ThreadID);
                     }
                     else
                     {
                         // Do we have thread start information for this thread?
-                        if (!state.threadIDtoProcessID.TryGetValue((Address)data.ThreadID, data.TimeStampQPC, out processID))
+                        if (!state.threadIDtoProcessID.TryGetValue(data.ThreadID, data.TimeStampQPC, out processID))
                         {
                             // No, this is likely a circular buffer, remember the thread end information 
                             if (state.threadIDtoProcessIDRundown == null)
-                                state.threadIDtoProcessIDRundown = new HistoryDictionary<int>(100);
+                                state.threadIDtoProcessIDRundown = new HistoryDictionary<int, int>(100);
 
                             // Notice I NEGATE the timestamp, this way HistoryDictionary does the comparison the way I want it.  
-                            state.threadIDtoProcessIDRundown.Add((Address)data.ThreadID, -data.TimeStampQPC, data.ProcessID);
+                            state.threadIDtoProcessIDRundown.Add(data.ThreadID, -data.TimeStampQPC, data.ProcessID);
                         }
                     }
                 };
@@ -3209,10 +3210,10 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
         internal int ThreadIDToProcessID(int threadID, long timeQPC)
         {
             int ret;
-            if (!threadIDtoProcessID.TryGetValue((Address)threadID, timeQPC, out ret))
+            if (!threadIDtoProcessID.TryGetValue(threadID, timeQPC, out ret))
             {
                 // See if we have end-Thread information, and use that if it is there.  
-                if (threadIDtoProcessIDRundown != null && threadIDtoProcessIDRundown.TryGetValue((Address)threadID, -timeQPC, out ret))
+                if (threadIDtoProcessIDRundown != null && threadIDtoProcessIDRundown.TryGetValue(threadID, -timeQPC, out ret))
                 {
                     return ret;
                 }
@@ -3232,9 +3233,9 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
 
             serializer.Write(threadIDtoProcessID.Count);
             serializer.Log("<WriteCollection name=\"ProcessIDForThread\" count=\"" + threadIDtoProcessID.Count + "\">\r\n");
-            foreach (HistoryDictionary<int>.HistoryValue entry in threadIDtoProcessID.Entries)
+            foreach (HistoryDictionary<int, int>.HistoryValue entry in threadIDtoProcessID.Entries)
             {
-                serializer.Write((long)entry.Key);
+                serializer.Write(entry.Key);
                 serializer.Write(entry.StartTime);
                 serializer.Write(entry.Value);
             }
@@ -3247,9 +3248,9 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
             {
                 serializer.Write(threadIDtoProcessIDRundown.Count);
                 serializer.Log("<WriteCollection name=\"ProcessIDForThreadRundown\" count=\"" + threadIDtoProcessIDRundown.Count + "\">\r\n");
-                foreach (HistoryDictionary<int>.HistoryValue entry in threadIDtoProcessIDRundown.Entries)
+                foreach (HistoryDictionary<int, int>.HistoryValue entry in threadIDtoProcessIDRundown.Entries)
                 {
-                    serializer.Write((long)entry.Key);
+                    serializer.Write(entry.Key);
                     serializer.Write(entry.StartTime);
                     serializer.Write(entry.Value);
                 }
@@ -3260,9 +3261,9 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
             {
                 serializer.Log("<WriteCollection name=\"fileIDToName\" count=\"" + fileIDToName.Count + "\">\r\n");
                 serializer.Write(fileIDToName.Count);
-                foreach (HistoryDictionary<string>.HistoryValue entry in fileIDToName.Entries)
+                foreach (HistoryDictionary<Address, string>.HistoryValue entry in fileIDToName.Entries)
                 {
-                    serializer.Write((long)entry.Key);
+                    serializer.WriteAddress(entry.Key);
                     serializer.Write(entry.StartTime);
                     serializer.Write(entry.Value);
                 }
@@ -3307,10 +3308,10 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
             deserializer.Log("<Marker name=\"ProcessIDForThread\"/ count=\"" + count + "\">");
             for (int i = 0; i < count; i++)
             {
-                long key; deserializer.Read(out key);
+                int key; deserializer.Read(out key);
                 long startTimeQPC; deserializer.Read(out startTimeQPC);
                 int value; deserializer.Read(out value);
-                threadIDtoProcessID.Add((Address)key, startTimeQPC, value);
+                threadIDtoProcessID.Add(key, startTimeQPC, value);
             }
 
             deserializer.Read(out count);
@@ -3318,13 +3319,13 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
             deserializer.Log("<Marker name=\"ProcessIDForThreadRundown\"/ count=\"" + count + "\">");
             if (count > 0)
             {
-                threadIDtoProcessIDRundown = new HistoryDictionary<int>(count);
+                threadIDtoProcessIDRundown = new HistoryDictionary<int, int>(count);
                 for (int i = 0; i < count; i++)
                 {
-                    long key; deserializer.Read(out key);
+                    int key; deserializer.Read(out key);
                     long startTimeQPC; deserializer.Read(out startTimeQPC);
                     int value; deserializer.Read(out value);
-                    threadIDtoProcessIDRundown.Add((Address)key, startTimeQPC, value);
+                    threadIDtoProcessIDRundown.Add(key, startTimeQPC, value);
                 }
             }
 
@@ -3335,10 +3336,10 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
                 deserializer.Log("<Marker name=\"fileIDToName\"/ count=\"" + count + "\">");
                 for (int i = 0; i < count; i++)
                 {
-                    long key; deserializer.Read(out key);
+                    Address key; deserializer.ReadAddress(out key);
                     long startTimeQPC; deserializer.Read(out startTimeQPC);
                     string value; deserializer.Read(out value);
-                    fileIDToName.Add((Address)key, startTimeQPC, value);
+                    fileIDToName.Add(key, startTimeQPC, value);
                 }
             });
 
@@ -3366,25 +3367,25 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
             }
         }
 
-        internal HistoryDictionary<string> fileIDToName
+        internal HistoryDictionary<Address, string> fileIDToName
         {
             get
             {
                 if (_fileIDToName == null)
                 {
-                    _fileIDToName = new HistoryDictionary<string>(500);
+                    _fileIDToName = new HistoryDictionary<Address, string>(500);
                 }
 
                 return _fileIDToName;
             }
         }
-        internal HistoryDictionary<int> threadIDtoProcessID
+        internal HistoryDictionary<int, int> threadIDtoProcessID
         {
             get
             {
                 if (_threadIDtoProcessID == null)
                 {
-                    _threadIDtoProcessID = new HistoryDictionary<int>(50);
+                    _threadIDtoProcessID = new HistoryDictionary<int, int>(50);
                 }
 
                 return _threadIDtoProcessID;
@@ -3416,8 +3417,8 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
 
         // Fields 
         internal KernelToUserDriveMapping driveMapping;
-        private HistoryDictionary<string> _fileIDToName;
-        private HistoryDictionary<int> _threadIDtoProcessID;
+        private HistoryDictionary<Address, string> _fileIDToName;
+        private HistoryDictionary<int, int> _threadIDtoProcessID;
         internal Dictionary<int, string> _objectTypeToName;
         private GrowableArray<DiskIOTime> _diskEventTimeStamp;
         internal int lastDiskEventIdx;
@@ -3430,7 +3431,7 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
         /// Also, because circular buffering is not the common case, we only add entries to this table if needed
         /// (if we could not find the thread ID using threadIDtoProcessID).  
         /// </summary>
-        internal HistoryDictionary<int> threadIDtoProcessIDRundown;
+        internal HistoryDictionary<int, int> threadIDtoProcessIDRundown;
         internal KernelTraceEventParser.ParserTrackingOptions callBacksSet;
         #endregion
 

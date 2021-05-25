@@ -101,7 +101,7 @@ namespace TraceEventTests
                         // that TraceLog managed to filter out:
                         //    Microsoft-Windows-DotNETRuntime/Method, 2,
                         //    Microsoft-Windows-DotNETRuntimeRundown/Method, 26103, ...
-                        // I haven't had an oportunity to investigate and its probably not a big
+                        // I haven't had an opportunity to investigate and its probably not a big
                         // deal so just hacking around it for the moment
                         if (eventName == "Microsoft-Windows-DotNETRuntimeRundown/Method" ||
                             eventName == "Microsoft-Windows-DotNETRuntime/Method")
@@ -443,7 +443,7 @@ namespace TraceEventTests
             // NetPerf and NetTrace v1 format don't support serializing array typed parameters.
             // DiagnosticSourceEventSource declares well known events that use array typed parameters
             // and the runtime serializes EventPipe metadata which claims the events have no parameters.
-            // We made a targetted fix where EventPipeEventSource will recognize these well-known events
+            // We made a targeted fix where EventPipeEventSource will recognize these well-known events
             // and ignore the empty parameter metadata provided in the stream, treating the events
             // as if the runtime had provided the correct parameter schema.
             //

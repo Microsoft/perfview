@@ -12,7 +12,7 @@ internal class TraceParserGen
     {
         m_provider = provider;
 
-        // group the events by event Name.   
+        // group the events by event Name.
         m_eventsByName = new SortedDictionary<string, List<Event>>();
         foreach (var evnt in m_provider.Events)
         {
@@ -23,7 +23,7 @@ internal class TraceParserGen
 
     /// <summary>
     /// Given an eventName, return a list of all events with that name.   Warns if two events
-    /// with the same name have different Ids, and retnames the event to be unique.  
+    /// with the same name have different Ids, and retnames the event to be unique.
     /// </summary>
     /// <param name="eventName"></param>
     /// <param name="eventId"></param>
@@ -36,7 +36,7 @@ internal class TraceParserGen
             m_eventsByName[eventName] = eventsForName = new List<Event>();
         }
 
-        // Make sure that every event has a unique names, Warn if this is not true and morph name by adding the EventId as a suffix.  
+        // Make sure that every event has a unique names, Warn if this is not true and morph name by adding the EventId as a suffix.
         foreach (var eventWithName in eventsForName)
         {
             if (eventWithName.Id != eventId)
@@ -44,7 +44,7 @@ internal class TraceParserGen
                 var newName = eventName + eventId.ToString();
                 Console.WriteLine("Error: events with ID {0} and {1} have the same name (same opcode name and task name) renaming to {2} fix.",
                     eventWithName.Id, eventId, newName);
-                // TODO should we rename or simply leave it?   Not clear yet... For now we rename   
+                // TODO should we rename or simply leave it?   Not clear yet... For now we rename
                 return GetEventsForName(newName, eventId);
             }
         }
@@ -55,7 +55,7 @@ internal class TraceParserGen
     /// <summary>
     /// This is the prefix for any class names.  Users can override this, but by default
     /// it is the last component (components separated by -) of the provider name.  Users
-    /// can override this however.  
+    /// can override this however.
     /// </summary>
     public string ClassNamePrefix
     {
@@ -64,7 +64,7 @@ internal class TraceParserGen
             if (m_ClassNamePrefix == null)
             {
                 m_ClassNamePrefix = TraceParserGen.ToCSharpName(m_provider.Name);
-                // We use the last component of the - separated list.  
+                // We use the last component of the - separated list.
                 int lastDash = m_ClassNamePrefix.LastIndexOf('-');
                 if (lastDash > 0)
                 {
@@ -79,17 +79,17 @@ internal class TraceParserGen
         }
     }
     /// <summary>
-    /// If set then it assumes that the generated class should be internal and not public.   
+    /// If set then it assumes that the generated class should be internal and not public.
     /// </summary>
     public bool Internal;
     /// <summary>
-    /// If true it will cause the generation of a 'state' class associated with the parser to hold information needed from one event to the next 
+    /// If true it will cause the generation of a 'state' class associated with the parser to hold information needed from one event to the next
     /// </summary>
     public bool NeedsParserState;
 
     /// <summary>
-    /// Once you have set all the properties you wish, you can actually geneate a TraceEventParser to a 
-    /// particular output file by calling this routine.  
+    /// Once you have set all the properties you wish, you can actually geneate a TraceEventParser to a
+    /// particular output file by calling this routine.
     /// </summary>
     public void GenerateTraceEventParserFile(string outputFileName)
     {
@@ -220,7 +220,7 @@ internal class TraceParserGen
             keywordName = keywordName.Substring(keywordIdx + 8);
         }
 
-        // Convert it to CamelCase.  
+        // Convert it to CamelCase.
 
         var sb = new StringBuilder();
         bool capitalizeNext = true;
@@ -250,13 +250,13 @@ internal class TraceParserGen
     }
 
     /// <summary>
-    /// Generate the *Template helper functions as well as the EnumerateTemplates operation.  
+    /// Generate the *Template helper functions as well as the EnumerateTemplates operation.
     /// </summary>
     /// <param name="output"></param>
     private void GenerateTemplateDefs(TextWriter output)
     {
 
-        // Geneate all the helper functions that initialize a single template for an event.  
+        // Geneate all the helper functions that initialize a single template for an event.
         foreach (var keyValue in m_eventsByName)
         {
             var evntName = keyValue.Key;
@@ -289,7 +289,7 @@ internal class TraceParserGen
 
         output.WriteLine();
         output.WriteLine("        static private volatile TraceEvent[] s_templates;");
-        output.WriteLine("        protected internal {0}override void EnumerateTemplates(Func<string, string, EventFilterResponse> eventsToObserve, Action<TraceEvent> callback)", internalOpt);
+        output.WriteLine("        protected {0}override void EnumerateTemplates(Func<string, string, EventFilterResponse> eventsToObserve, Action<TraceEvent> callback)", internalOpt);
         output.WriteLine("        {");
         output.WriteLine("            if (s_templates == null)");
         output.WriteLine("            {");
@@ -317,7 +317,7 @@ internal class TraceParserGen
     }
 
     /// <summary>
-    /// Emit the C# events that allow you to get callback 
+    /// Emit the C# events that allow you to get callback
     /// </summary>
     private void GenerateEvents(TextWriter output)
     {
@@ -362,17 +362,17 @@ internal class TraceParserGen
     private void GenerateEventPayloadClass(TextWriter output, string stateClassName)
     {
         // Severla distinct events might have the same payload class, this Dictionary keeps track
-        // of which we have emitted so we don't emit it twice.  
+        // of which we have emitted so we don't emit it twice.
         var classesEmitted = new Dictionary<string, string>();
 
-        // For every event of the same name  
+        // For every event of the same name
         foreach (var keyValue in m_eventsByName)
         {
             var eventName = keyValue.Key;
             var versionsForEvent = keyValue.Value;
-     
+
             // We have to accumulate all the information needed to fetch a field, across all the versions of the event
-            // Only then can we emit the code that will work for all fields simultaneously.  
+            // Only then can we emit the code that will work for all fields simultaneously.
             var fieldVersions = new SortedDictionary<string, List<FieldInfo>>();
             // allFields is the accumulation of all the values in 'fieldsVersions'
             List<FieldInfo> allFields = new List<FieldInfo>();
@@ -384,7 +384,7 @@ internal class TraceParserGen
                 continue;
             }
 
-            // This is the name of the template we will be generating.   
+            // This is the name of the template we will be generating.
             string templateClassName = GetTemplateNameForEvent(versionsForEvent[0], eventName);
 
             // Have we done it already?
@@ -395,11 +395,11 @@ internal class TraceParserGen
 
             classesEmitted.Add(templateClassName, null);
 
-            // OK we are ready to write it all out.  
+            // OK we are ready to write it all out.
             output.WriteLine("    public sealed class " + templateClassName + " : TraceEvent");
             output.WriteLine("    {");
 
-            // Write out all the getters.  
+            // Write out all the getters.
             foreach (FieldInfo fieldInfo in allFields)
             {
                 string name = fieldInfo.Name;
@@ -469,7 +469,7 @@ internal class TraceParserGen
                         else
                         {
                             // Var-sized non-blob arrays are accessed not via properties, but
-                            // methods that take an array index as parameter. 
+                            // methods that take an array index as parameter.
                             // (Note:  Perhaps this should be done for fixed-sized
                             // arrays as well?)
                             output.WriteLine("        public " + GetType(versions) + " " + safeName + "(int arrayIndex) { " + GetPropertyStmt(versions, versionsForEvent.Count) + " }");
@@ -506,19 +506,19 @@ internal class TraceParserGen
             }
 
             // Write out the dispatch method
-            output.WriteLine("        protected internal {0}override void Dispatch()", internalOpt);
+            output.WriteLine("        protected {0}override void Dispatch()", internalOpt);
             output.WriteLine("        {");
             output.WriteLine("            Action(this);");
             output.WriteLine("        }");
 
             // And the debugging logic
-            output.WriteLine("        protected internal {0}override void Validate()", internalOpt);
+            output.WriteLine("        protected {0}override void Validate()", internalOpt);
             output.WriteLine("        {");
             output.Write(lengthAssert);
             output.WriteLine("        }");
 
             // And for setting and inspecting the callback delegate
-            output.WriteLine("        protected internal {0}override Delegate Target", internalOpt);
+            output.WriteLine("        protected {0}override Delegate Target", internalOpt);
             output.WriteLine("        {");
             output.WriteLine("            get { return Action; }");
             output.WriteLine("            set { Action = (Action<" + templateClassName + ">) value; }");
@@ -634,7 +634,7 @@ internal class TraceParserGen
 
     /// <summary>
     /// Accumulate all the information needed to fetch a field by field name.  Also compute the assert that
-    /// we will use to confirm the payload length is good.   
+    /// we will use to confirm the payload length is good.
     /// </summary>
     private void GetFieldInfoByField(List<Event> versionsForEvent, SortedDictionary<string, List<FieldInfo>> fieldVersions, List<FieldInfo> allFields, ref string lengthAssert)
     {
@@ -643,7 +643,7 @@ internal class TraceParserGen
         {
             if (eventVersion.Fields != null)
             {
-                // Figure out the field offsets for the fields for this version.  
+                // Figure out the field offsets for the fields for this version.
                 FieldInfo lastField = null;
                 foreach (FieldInfo fieldInfo in GetInfoForFields(eventVersion.Fields))
                 {
@@ -673,7 +673,7 @@ internal class TraceParserGen
     }
 
     /// <summary>
-    /// Generate all the enumeration types needed by the class defintions.  
+    /// Generate all the enumeration types needed by the class defintions.
     /// </summary>
     /// <param name="output"></param>
     private void GenerateEnumerations(TextWriter output)
@@ -681,12 +681,12 @@ internal class TraceParserGen
         // We also keep track of every enumerated type we use so we can emit those defintions too
         var enumerationsUsed = new SortedDictionary<string, Enumeration>();
 
-        // For every event of the same name  
+        // For every event of the same name
         foreach (List<Event> versionsForEvent in m_eventsByName.Values)
         {
             foreach (var eventVersion in versionsForEvent)
             {
-                // see what enumerations we use.  
+                // see what enumerations we use.
                 if (eventVersion.Fields != null)
                 {
                     foreach (Field field in eventVersion.Fields)
@@ -700,7 +700,7 @@ internal class TraceParserGen
             }
         }
 
-        // Emit all the enumerations that were used in the payload defintions.  
+        // Emit all the enumerations that were used in the payload defintions.
         foreach (var enumeration in enumerationsUsed.Values)
         {
             GenerateEventEnumeration(enumeration, output);
@@ -756,7 +756,7 @@ internal class TraceParserGen
     /* More support methods */
     /// <summary>
     /// returns C# code that will generate 'guid' in an efficient way (initializing by string is
-    /// inefficient). 
+    /// inefficient).
     /// </summary>
     private static string CodeForGuidLiteral(Guid guid)
     {
@@ -832,7 +832,7 @@ internal class TraceParserGen
 
     /// <summary>
     /// Find all the information needed to create a payload decode class for a template (including offsets
-    /// of the fields) and returns it as a list of 'FieldInfo' structures.  
+    /// of the fields) and returns it as a list of 'FieldInfo' structures.
     /// </summary>
     private List<FieldInfo> GetInfoForFields(IList<Field> fields)
     {
@@ -907,22 +907,22 @@ internal class TraceParserGen
         return ret;
     }
     /// <summary>
-    /// Returns a string representing the C# code that will fetch the property for any of the versions described by 'versions'.  
-    /// 'totalVersions' is the maximum number of versions that the event (not just the property) has.  
+    /// Returns a string representing the C# code that will fetch the property for any of the versions described by 'versions'.
+    /// 'totalVersions' is the maximum number of versions that the event (not just the property) has.
     /// </summary>
     private string GetPropertyStmt(List<FieldInfo> versions, int totalVersions)
     {
         Debug.Assert(versions.Count > 0);
 
         // The expression for fetching the previous version of this field.  Null is fine as it
-        // does not match any legit fetch expression string. 
+        // does not match any legit fetch expression string.
         string prevFetch = null;
 
         // Represents a statement that will compute the value of all versions up to the i'th one
         string curStmt;
         // If this field exists in all versions or the first version is version 0 (which means there
         // can not be any previous versions, we start out with the smallest version fetch
-        // Otherwise we start out with null value (not present value).  
+        // Otherwise we start out with null value (not present value).
         if (versions.Count == totalVersions || versions[0].VersionNum == 0)
         {
             prevFetch = versions[0].Fetch();
@@ -933,7 +933,7 @@ internal class TraceParserGen
             curStmt = "return " + versions[0].NullValue() + ";";
         }
 
-        // Versions are in ordered from lowest number to highest.  
+        // Versions are in ordered from lowest number to highest.
         foreach (FieldInfo version in versions)
         {
             string fetch = version.Fetch();
@@ -962,7 +962,7 @@ internal class TraceParserGen
     }
 
     /// <summary>
-    /// insures that the name is a valid CSharp Identifier.  
+    /// insures that the name is a valid CSharp Identifier.
     /// </summary>
     public static string ToCSharpName(string input)
     {
@@ -971,7 +971,7 @@ internal class TraceParserGen
             return null;
         }
 
-        // Note: the previous implementation did not seem right 
+        // Note: the previous implementation did not seem right
         // by removing characters while iterating based on the string length
         var validName = new StringBuilder(input.Length);
         for (int i = 0; i < input.Length; i++)
@@ -1040,7 +1040,7 @@ internal class TraceParserGen
                     NumPointersInSize = 1;
                     ByteSize = 4;
                     break;
-                // Booleans are DWORD sized. 
+                // Booleans are DWORD sized.
                 case "win:Boolean":
                     Type = "bool";
                     FetchMethod = "GetInt32At";
@@ -1093,7 +1093,7 @@ internal class TraceParserGen
                     Type = "string";
                     FetchMethod = "GetFixedUnicodeStringAt(" + count + ", ";
 
-                    // TODO add a fixed size string parser routine.  
+                    // TODO add a fixed size string parser routine.
                     ByteSize = 2;
                     break;
                 case "win:UnicodeString":
@@ -1107,7 +1107,7 @@ internal class TraceParserGen
                     SkipMethod = "SkipUTF8String(" + FieldInfo.Skip(prevField) + ")";
                     break;
                 case "trace:IPAddrV6":
-                    // TODO deal with this. 
+                    // TODO deal with this.
                     ByteSize = 16;
                     break;
                 case "trace:WBEMSid":
@@ -1149,7 +1149,7 @@ internal class TraceParserGen
 
         public int NumPointersInSize;
         public FieldInfo PrevField;
-        public string SkipMethod;           // If the field is variable sized, this method can skip it.  
+        public string SkipMethod;           // If the field is variable sized, this method can skip it.
         public int VersionNum;
         public int EventId;
 
@@ -1193,7 +1193,7 @@ internal class TraceParserGen
             return FieldInfo.Skip(PrevField);
         }
         /// <summary>
-        /// Returns a string representing the offset of whatever is directly after this field. 
+        /// Returns a string representing the offset of whatever is directly after this field.
         /// This method is static so that it can be called on a null field, which is convenient in several places.
         /// </summary>
         /// <returns></returns>
@@ -1203,7 +1203,7 @@ internal class TraceParserGen
             int numPointers = 0;
             int numBytes = 0;
 
-            // Go through the previous fields, adding up their offsets. 
+            // Go through the previous fields, adding up their offsets.
             FieldInfo ptr = field;
             while (ptr != null)
             {
@@ -1245,23 +1245,23 @@ internal class TraceParserGen
 
         // Depending on the kind of field we're talking about, the fetch string will look
         // quite different:
-        // 
+        //
         // 1) Typical case (non-array, non-struct value):
-        // 
+        //
         //     FetchMethod(<OffsetToThisFieldFromEventStart>)
-        //     
+        //
         // 2) Var-sized array of non-struct value:
-        // 
+        //
         //     FetchMethod(<OffsetToThisFieldFromEventStart> + (arrayIndex * <SizeOfThisFieldInBytes>))
-        //     
+        //
         // 3) This field resides in a single, non-array struct
-        // 
+        //
         //     FetchMethod(<OffsetToTheContainingStructFromEventStart> + <OffsetToThisFieldFromStructStart>)
-        //     
+        //
         // 4) This field resides in a var-sized array of structs
-        // 
+        //
         //     FetchMethod(<OffsetToTheContainingStructFromEventStart> + (arrayIndex * <SizeOfContainingStructInBytes>) + <OffsetToThisFieldFromStructStart>)
-        //     
+        //
         public string Fetch()
         {
             string ret = FetchMethod + "(";
@@ -1270,7 +1270,7 @@ internal class TraceParserGen
                 if (VarSizedArrayCountPropertyName == null)
                 {
                     // Non-struct, non-varsized array
-                    // 
+                    //
                     // FetchMethod(<OffsetToThisFieldFromEventStart>)
                     ret += Offset() + ")";
                 }
@@ -1283,7 +1283,7 @@ internal class TraceParserGen
                     // For Var-sized arrays of single (non-struct) values, after we get the
                     // offset to the beginning of the array, add in the extra offset to get
                     // to the specified arrayIndex
-                    // 
+                    //
                     // FetchMethod(<OffsetToThisFieldFromEventStart> + (arrayIndex * <SizeOfThisFieldInBytes>))
                     // TODO: I don't think this works on x64 for arrays of pointers
                     ret += Offset() + " + (arrayIndex * HostOffset(" + ByteSize.ToString() + ", " + NumPointersInSize.ToString() + ")))";
@@ -1294,7 +1294,7 @@ internal class TraceParserGen
                 if (ContainingStructInfo.VarSizedArrayCountPropertyName == null)
                 {
                     // Single Struct (non-array)
-                    // 
+                    //
                     // FetchMethod(<OffsetToTheContainingStructFromEventStart> + <OffsetToThisFieldFromStructStart>)
                     ret += ContainingStructInfo.Offset() + " + " + Offset() + ")";
                 }
@@ -1304,7 +1304,7 @@ internal class TraceParserGen
                     // offset to the containing struct, then skip struct entries in the
                     // array, and then finally add in the offset to this field relative to
                     // the start of the struct
-                    // 
+                    //
                     // FetchMethod(<OffsetToTheContainingStructFromEventStart> + (arrayIndex * <SizeOfContainingStructInBytes>) + <OffsetToThisFieldFromStructStart>)
                     ret += ContainingStructInfo.Offset() + " + (arrayIndex * HostOffset(" + ContainingStructInfo.ByteSize.ToString() + ", " + ContainingStructInfo.NumPointersInSize.ToString() + ")) + " + Offset() + ")";
                 }
@@ -1341,19 +1341,19 @@ internal class TraceParserGen
 
     /* Fields */
     /// <summary>
-    /// This is the last component (- separted) of the provider name.  It decides what your TraceParserGen is named 
+    /// This is the last component (- separted) of the provider name.  It decides what your TraceParserGen is named
     /// </summary>
     private string m_ClassNamePrefix;
     /// <summary>
-    /// All the information from the manifest file. 
+    /// All the information from the manifest file.
     /// </summary>
     private Provider m_provider;
 
     /// <summary>
-    /// We group events together by version during the processing.  
+    /// We group events together by version during the processing.
     /// </summary>
     private SortedDictionary<string, List<Event>> m_eventsByName;
 
-    private static Dictionary<string, string> reservedKeywords = new Dictionary<string, string> { { "object", "Object" }, { "new", "New" }, { "protected", "Protected" } };
+    private static Dictionary<string, string> reservedKeywords = new Dictionary<string, string>(3) { { "object", "Object" }, { "new", "New" }, { "protected", "Protected" } };
     #endregion
 }

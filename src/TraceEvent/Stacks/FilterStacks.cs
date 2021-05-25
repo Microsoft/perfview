@@ -1004,7 +1004,7 @@ namespace Diagnostics.Tracing.StackSources
                 var pat = pats[i];
                 if (pat != null && pat.IsMatch(str))
                 {
-                    // Note we can allocate a lot of arrays this way, but it likelyhood of matching
+                    // Note we can allocate a lot of arrays this way, but it likelihood of matching
                     // more than once is very low, so this is OK. 
                     var newRet = new int[retCount + 1];
                     if (retCount > 0)
@@ -1230,7 +1230,7 @@ namespace Diagnostics.Tracing.StackSources
         private StackSource m_baseStackSource;
         private ScalingPolicyKind m_scalingPolicy;
 
-        // To avoid alot of regular expression matching, we remember for a given frame ID the pattern it matched 
+        // To avoid a lot of regular expression matching, we remember for a given frame ID the pattern it matched 
         // This allows us to avoid string matching on all but the first lookup of a given frame.  
         private FrameInfo[] m_frameIdToFrameInfo;
 

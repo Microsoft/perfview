@@ -30,9 +30,9 @@ namespace Microsoft.Diagnostics.Tracing.Stacks.Formats
 
             var exportedFrameNameToExportedFrameId = new Dictionary<string, int>();
             var exportedFrameIdToFrameTuple = new Dictionary<int, FrameInfo>();
-            var profileEventsPerThread = new Dictionary<string, IReadOnlyList<ProfileEvent>>();
+            var profileEventsPerThread = new Dictionary<string, IReadOnlyList<ProfileEvent>>(samplesPerThread.Count);
 
-            foreach(var pair in samplesPerThread)
+            foreach (var pair in samplesPerThread)
             {
                 var sortedProfileEvents = GetProfileEvents(source, pair.Value, exportedFrameNameToExportedFrameId, exportedFrameIdToFrameTuple);
 
@@ -49,7 +49,7 @@ namespace Microsoft.Diagnostics.Tracing.Stacks.Formats
         /// <summary>
         /// writes pre-calculated data to SpeedScope format
         /// </summary>
-        private static void WriteToFile(IReadOnlyDictionary<string, IReadOnlyList<ProfileEvent>> sortedProfileEventsPerThread, 
+        private static void WriteToFile(IReadOnlyDictionary<string, IReadOnlyList<ProfileEvent>> sortedProfileEventsPerThread,
             IReadOnlyList<string> orderedFrameNames, TextWriter writer, string name)
         {
             writer.Write("{");
@@ -81,25 +81,25 @@ namespace Microsoft.Diagnostics.Tracing.Stacks.Formats
                 var sortedProfileEvents = perThread.Value;
 
                 writer.Write("{ ");
-                    writer.Write("\"type\": \"evented\", ");
-                    writer.Write($"\"name\": \"{perThread.Key}\", ");
-                    writer.Write("\"unit\": \"milliseconds\", ");
-                    writer.Write($"\"startValue\": \"{sortedProfileEvents.First().RelativeTime.ToString("R", CultureInfo.InvariantCulture)}\", ");
-                    writer.Write($"\"endValue\": \"{sortedProfileEvents.Last().RelativeTime.ToString("R", CultureInfo.InvariantCulture)}\", ");
-                    writer.Write("\"events\": [ ");
-                    for (int i = 0; i < sortedProfileEvents.Count; i++)
-                    {
-                        var frameEvent = sortedProfileEvents[i];
+                writer.Write("\"type\": \"evented\", ");
+                writer.Write($"\"name\": \"{perThread.Key}\", ");
+                writer.Write("\"unit\": \"milliseconds\", ");
+                writer.Write($"\"startValue\": {sortedProfileEvents.First().RelativeTime.ToString("R", CultureInfo.InvariantCulture)}, ");
+                writer.Write($"\"endValue\": {sortedProfileEvents.Last().RelativeTime.ToString("R", CultureInfo.InvariantCulture)}, ");
+                writer.Write("\"events\": [ ");
+                for (int i = 0; i < sortedProfileEvents.Count; i++)
+                {
+                    var frameEvent = sortedProfileEvents[i];
 
-                        writer.Write($"{{ \"type\": \"{(frameEvent.Type == ProfileEventType.Open ? "O" : "C")}\", ");
-                        writer.Write($"\"frame\": {frameEvent.FrameId}, ");
-                        // "R" is crucial here!!! we can't loose precision becasue it can affect the sort order!!!!
-                        writer.Write($"\"at\": {frameEvent.RelativeTime.ToString("R", CultureInfo.InvariantCulture)} }}");
+                    writer.Write($"{{ \"type\": \"{(frameEvent.Type == ProfileEventType.Open ? "O" : "C")}\", ");
+                    writer.Write($"\"frame\": {frameEvent.FrameId}, ");
+                    // "R" is crucial here!!! we can't lose precision because it can affect the sort order!!!!
+                    writer.Write($"\"at\": {frameEvent.RelativeTime.ToString("R", CultureInfo.InvariantCulture)} }}");
 
-                        if (i != sortedProfileEvents.Count - 1)
-                            writer.Write(", ");
-                    }
-                    writer.Write("]");
+                    if (i != sortedProfileEvents.Count - 1)
+                        writer.Write(", ");
+                }
+                writer.Write("]");
                 writer.Write("}");
             }
 

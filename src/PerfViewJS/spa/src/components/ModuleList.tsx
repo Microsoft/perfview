@@ -36,7 +36,7 @@ export class ModuleList extends React.Component<Props, State> {
                 <thead>
                     <tr>
                         <th>Module Name</th>
-                        <th>Number of address occurences in all stacks</th>
+                        <th>Number of address occurrences in all stacks</th>
                     </tr>
                 </thead>
                 <tbody>

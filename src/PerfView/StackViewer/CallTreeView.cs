@@ -655,7 +655,7 @@ namespace PerfView
         {
             var callees = m_treeView.DisplayCallees(Data);
             Debug.Assert(callees != null);
-            var ret = new List<CallTreeViewNode>();
+            var ret = new List<CallTreeViewNode>(callees.Count);
             for (int i = 0; i < callees.Count; i++)
             {
                 CallTreeNode elem = callees[i];

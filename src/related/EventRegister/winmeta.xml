@@ -12,7 +12,7 @@
             <channel name="System" type="Admin" symbol="WINEVENT_CHANNEL_GLOBAL_SYSTEM"
                 isolation="System" value="8" message="$(string.channel.System)">
               Events for all installed system services.  This channel is secured to applications running under
-              system service accounts or user applications running under local adminstrator privileges.
+              system service accounts or user applications running under local administrator privileges.
             </channel>
             <channel name="Application" type="Admin" symbol="WINEVENT_CHANNEL_GLOBAL_APPLICATION"
                 isolation="Application" value="9" message="$(string.channel.Application)">

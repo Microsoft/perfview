@@ -129,7 +129,7 @@ namespace PEFile
             return ret;
         }
         /// <summary>
-        /// For side by side dlls, the manifest that decribes the binding information is stored as the RT_MANIFEST resource, and it
+        /// For side by side dlls, the manifest that describes the binding information is stored as the RT_MANIFEST resource, and it
         /// is an XML string.   This routine returns this.  
         /// </summary>
         /// <returns></returns>
@@ -1056,7 +1056,7 @@ namespace PEFile
     {
         // TODO incomplete, but this is all I need.  
         /// <summary>
-        /// The verison string 
+        /// The version string 
         /// </summary>
         public string FileVersion { get; private set; }
         #region private 

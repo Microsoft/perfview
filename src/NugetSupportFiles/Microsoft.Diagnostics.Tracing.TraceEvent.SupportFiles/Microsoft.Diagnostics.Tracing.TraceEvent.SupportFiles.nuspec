@@ -6,7 +6,7 @@
     <title>Non-Source files needed to Build TraceEvent</title>
     <authors>Microsoft</authors>
     <owners>Microsoft</owners>
-    <licenseUrl>https://github.com/Microsoft/perfview/blob/master/LICENSE.TXT</licenseUrl>
+    <licenseUrl>https://github.com/Microsoft/perfview/blob/main/LICENSE.TXT</licenseUrl>
     <!--  *************************************** 
      4/2/2019 When the official builds support the 'license' element we should upgrade to use the that (shown below)  
 

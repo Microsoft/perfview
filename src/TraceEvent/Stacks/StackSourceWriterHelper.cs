@@ -63,7 +63,7 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
 
         /// <summary>
         /// all the samples that we have are leafs (last sample in the call stack)
-        /// this method walks the stack up to the begining and merges the samples and outputs them in proper order
+        /// this method walks the stack up to the beginning and merges the samples and outputs them in proper order
         /// </summary>
         internal static IReadOnlyList<ProfileEvent> GetProfileEvents(StackSource stackSource, IReadOnlyList<Sample> leafs,
             Dictionary<string, int> exportedFrameNameToExportedFrameId, Dictionary<int, FrameInfo> exportedFrameIdToExportedNameAndCallerId)
@@ -73,7 +73,7 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
             var previousSamples = new List<Sample>(30);
             var currentSamples = new List<Sample>(30);
 
-            // we use stack here bacause we want a certain order: from the root to the leaf
+            // we use stack here because we want a certain order: from the root to the leaf
             var stackIndexesToHandle = new Stack<StackSourceCallStackIndex>();
 
             foreach (var leafSample in leafs)
@@ -156,7 +156,7 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
                 i++;
             }
 
-            // close the tail samples (frome the last to first diff) that don't match
+            // close the tail samples (from the last to first diff) that don't match
             for (int j = previousSamples.Count - 1; j >= i; j--)
             {
                 var sample = previousSamples[j];

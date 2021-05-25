@@ -536,7 +536,7 @@ namespace PerfView
                         int processId;
                         if (Int32.TryParse(parsedArgs.FocusProcess, out processId))
                         {
-                            options.ProcessIDFilter = new List<int>() { processId };
+                            options.ProcessIDFilter = new List<int>(1) { processId };
                             LogFile.WriteLine("**** /FocusProcess specified LIMITING user mode events to process with ID {0}", processId);
                         }
                         else
@@ -545,15 +545,15 @@ namespace PerfView
                                 LogFile.WriteLine("**** WARNING: process name does not end in .exe, likely you will exclude processes of interest");
 
                             LogFile.WriteLine("**** /FocusProcess specified LIMITING user mode events to process with name {0}", parsedArgs.FocusProcess);
-                            options.ProcessNameFilter = new List<string>() { parsedArgs.FocusProcess };
+                            options.ProcessNameFilter = new List<string>(1) { parsedArgs.FocusProcess };
                         }
                     }
 
-                    if(parsedArgs.EnableEventsInContainers)
+                    if (parsedArgs.EnableEventsInContainers)
                     {
                         options.EnableInContainers = true;
                     }
-                    if(parsedArgs.EnableSourceContainerTracking)
+                    if (parsedArgs.EnableSourceContainerTracking)
                     {
                         options.EnableSourceContainerTracking = true;
                     }
@@ -691,8 +691,8 @@ namespace PerfView
                                     ClrPrivateTraceEventParser.Keywords.Binding |
                                     ClrPrivateTraceEventParser.Keywords.Fusion |
                                     ClrPrivateTraceEventParser.Keywords.MulticoreJit |   /* only works on verbose */
-                                                                                         // ClrPrivateTraceEventParser.Keywords.LoaderHeap |     /* only verbose */
-                                                                                         //  ClrPrivateTraceEventParser.Keywords.Startup 
+                                    // ClrPrivateTraceEventParser.Keywords.LoaderHeap |     /* only verbose */
+                                    //  ClrPrivateTraceEventParser.Keywords.Startup 
                                     ClrPrivateTraceEventParser.Keywords.Stack
                                 ), options);
 
@@ -704,7 +704,7 @@ namespace PerfView
                                 {
                                     // This turns on stacks only for TaskScheduled (7) TaskWaitSend (10) and AwaitTaskContinuationScheduled (12)
                                     netTaskStacks = options.Clone();
-                                    netTaskStacks.EventIDStacksToEnable = new List<int>() { 7, 10, 12 };
+                                    netTaskStacks.EventIDStacksToEnable = new List<int>(3) { 7, 10, 12 };
                                 }
                                 EnableUserProvider(userModeSession, ".NETTasks",
                                     TplEtwProviderTraceEventParser.ProviderGuid, parsedArgs.ClrEventLevel,
@@ -1602,7 +1602,7 @@ namespace PerfView
                 {
                     // Compute the separate directory name.
                     unzipedEtlFile = CacheFiles.FindFile(inputFileName);
-                    
+
                     // Delete the directory if it exists.
                     if (Directory.Exists(unzipedEtlFile))
                     {
@@ -2753,7 +2753,7 @@ namespace PerfView
 #endif
         }
 
-        private static string ParsedArgsAsString(string command, CommandLineArgs parsedArgs)
+        public static string ParsedArgsAsString(string command, CommandLineArgs parsedArgs)
         {
             var cmdLineArgs = "";
             if (parsedArgs.DataFile != null)
@@ -2914,6 +2914,11 @@ namespace PerfView
             if (parsedArgs.ClrEvents != ClrTraceEventParser.Keywords.Default)
             {
                 cmdLineArgs += " /ClrEvents:" + parsedArgs.ClrEvents.ToString().Replace(" ", "");
+            }
+
+            if(parsedArgs.TplEvents != TplEtwProviderTraceEventParser.Keywords.None)
+            {
+                cmdLineArgs += " /TplEvents:" + parsedArgs.TplEvents.ToString().Replace(" ", "");
             }
 
             if (parsedArgs.Providers != null)
@@ -3407,7 +3412,7 @@ namespace PerfView
                         int processId;
                         if (Int32.TryParse(parsedArgs.FocusProcess, out processId))
                         {
-                            options.ProcessIDFilter = new List<int>() { processId };
+                            options.ProcessIDFilter = new List<int>(1) { processId };
                             LogFile.WriteLine("**** /FocusProcess specified LIMITING RUNDOWN to process with ID {0}", processId);
                         }
                         else
@@ -3416,7 +3421,7 @@ namespace PerfView
                                 LogFile.WriteLine("**** WARNING: process name does not end in .exe, likely you will exclude processes of interest");
 
                             LogFile.WriteLine("**** /FocusProcess specified LIMITING RUNDOWN to process with name {0}", parsedArgs.FocusProcess);
-                            options.ProcessNameFilter = new List<string>() { parsedArgs.FocusProcess };
+                            options.ProcessNameFilter = new List<string>(1) { parsedArgs.FocusProcess };
                         }
                     }
 
@@ -3467,9 +3472,12 @@ namespace PerfView
                     if (parsedArgs.ClrEvents != ClrTraceEventParser.Keywords.None)
                     {
                         // Always enable minimal rundown, which ensures that we get the runtime start event.
-                        // We use the keyword 0x40000000 which does not match any valid keyword in the rundown provider.
+                        // We use the keyword 0x800000000000 which does not match any valid keyword in the rundown provider.
                         // Choosing 0 results in enabling all keywords based on the logic that checks for keyword status in the runtime.
-                        var rundownKeywords = (ClrRundownTraceEventParser.Keywords)0x40000000;
+                        // NOTE: This used to be 0x40000000 which matched the ClrStack keyword in the main provider.  This resulted in
+                        // lots of ClrStack/Walk events that couldn't be matched with Clr events, because for V2 rundown, we enable
+                        // the Clr provider.
+                        var rundownKeywords = (ClrRundownTraceEventParser.Keywords)0x800000000000;
 
                         // Only consider forcing suppression of these keywords if full rundown is enabled.
                         if (!parsedArgs.NoRundown && !parsedArgs.NoClrRundown)

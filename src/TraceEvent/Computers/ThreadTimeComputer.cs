@@ -696,7 +696,7 @@ namespace Microsoft.Diagnostics.Tracing
             if (thread != null)
             {
                 // Should be running.  
-                // I have seen this fire becasue there are two thread-stops for the same thread in the trace.   
+                // I have seen this fire because there are two thread-stops for the same thread in the trace.   
                 // I have only seen this once so I am leaving this assert (it seems it does more good than harm)
                 // But if it happens habitually, we should pull it.  
                 Debug.Assert(m_threadState[(int)thread.ThreadIndex].ThreadRunning || m_threadState[(int)thread.ThreadIndex].ThreadUninitialized);
@@ -1305,7 +1305,7 @@ namespace Microsoft.Diagnostics.Tracing
         private StartStopActivity[] m_threadToStartStopActivity;
 
         /// <summary>
-        /// Sadly, with AWAIT nodes might come into existance AFTER we would have normally identified 
+        /// Sadly, with AWAIT nodes might come into existence AFTER we would have normally identified 
         /// a region as having no thread/await working on it.  Thus you have to be able to 'undo' ASYNC_UNKONWN
         /// nodes.   We solve this by remembering all of our ASYNC_UNKNOWN nodes on a list (basically provisional)
         /// and only add them when the start-stop activity dies (when we know there can't be another AWAIT.  

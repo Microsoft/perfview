@@ -332,6 +332,8 @@ namespace TraceEventTests
         [Theory]
         [InlineData("HeartRateMonitor.10068.nettrace.zip")]
         [InlineData("VoiceMemo.23092.nettrace.zip")]
+        [InlineData("mixed_managed_external_samples.nettrace.zip")]
+        [InlineData("only_managed_samples.nettrace.zip")]
         public void CanConvertProvidedTraceFiles(string zippedTraceFileName)
         {
             var debugListenersCopy = new TraceListener[Debug.Listeners.Count];
@@ -366,6 +368,8 @@ namespace TraceEventTests
                     computer.GenerateThreadTimeStacks(stackSource);
 
                     var samplesPerThread = GetSortedSamplesPerThread(stackSource);
+
+                    Assert.NotEmpty(samplesPerThread);
 
                     var exportedFrameNameToExportedFrameId = new Dictionary<string, int>();
                     var exportedFrameIdToFrameTuple = new Dictionary<int, FrameInfo>();

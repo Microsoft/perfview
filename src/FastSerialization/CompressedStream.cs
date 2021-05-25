@@ -38,7 +38,7 @@ namespace Utilities
     ///   * Negative DWORD compressed blockSize (in bytes) of first Chunk (indicates last chunk
     ///   * DWORD blockSize of uncompressed data;
     ///   * compressed Data for last chunk
-    /// * BlockTable (array of QWORDS of file offsets to the begining of block 0 through N)
+    /// * BlockTable (array of QWORDS of file offsets to the beginning of block 0 through N)
     /// * DWORD number of QWORDS entries in BlockTable. 
     /// * DWORD number of uncompressed bytes in the last block
     /// 
@@ -132,7 +132,7 @@ namespace Utilities
         public override bool CanSeek { get { return false; } }
         public override bool CanWrite { get { return true; } }
 
-        // This is stored at the begining as ASCII to mark this stream  
+        // This is stored at the beginning as ASCII to mark this stream  
         public static readonly string Signature = "!BlockDeflateStream";
 
         // methods that are purposely not implemented 
@@ -385,7 +385,7 @@ namespace Utilities
                 throw new Exception("Stream signature mismatch.  Bad data format.");
         }
         /// <summary>
-        /// Initializes the current block to point at the begining of the block (a block is the length as
+        /// Initializes the current block to point at the beginning of the block (a block is the length as
         /// well as the data) that starts at the uncompressed location 'uncompressedBlockStart' which as the
         /// cooresponding compressed location 'compressedBlockStart'.
         /// </summary>
@@ -498,7 +498,7 @@ namespace Utilities
         bool leaveOpen;
 
         // fields associated with the current position
-        long uncompressedBlockStartPosition;    // uncompressed stream position begining of the current block
+        long uncompressedBlockStartPosition;    // uncompressed stream position beginning of the current block
         long nextCompressedBlockStartPosition;  // compresed stream position for the NEXT block 
         DeflateStream decompressor;         // The real stream2, we create a new one on each block. 
         int uncompressedBlockSize;          // The logical blockSize of the current uncompressed block.

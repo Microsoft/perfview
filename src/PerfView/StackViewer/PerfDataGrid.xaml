@@ -79,7 +79,7 @@
                        Inc % <Hyperlink  Click="DoHyperlinkHelp" Tag="IncPercentColumn">?</Hyperlink>
                         <TextBlock.ToolTip>
                                 <TextBlock>
-                                     The % of the total sample metric that occured in this item or any of its callees.   
+                                     The % of the total sample metric that occurred in this item or any of its callees.   
                                 </TextBlock>
                         </TextBlock.ToolTip>
                     </TextBlock>
@@ -95,7 +95,7 @@
                         Inc <Hyperlink Click="DoHyperlinkHelp" Tag="IncColumn">?</Hyperlink>
                         <TextBlock.ToolTip>
                                 <TextBlock>
-                                     The sum of the sample metric that occured in this item or any of its callees.   
+                                     The sum of the sample metric that occurred in this item or any of its callees.   
                                 </TextBlock>
                         </TextBlock.ToolTip>
                     </TextBlock>
@@ -113,7 +113,7 @@
                         Inc Avg <Hyperlink Click="DoHyperlinkHelp" Tag="IncAvgColumn">?</Hyperlink>
                         <TextBlock.ToolTip>
                             <TextBlock>
-                                     The average of the sample metric that occured in this item or any of its callees.
+                                     The average of the sample metric that occurred in this item or any of its callees.
                             </TextBlock>
                         </TextBlock.ToolTip>
                     </TextBlock>
@@ -147,7 +147,7 @@
                         Exc % <Hyperlink Click="DoHyperlinkHelp" Tag="ExcPercentColumn">?</Hyperlink>
                         <TextBlock.ToolTip>
                                 <TextBlock>
-                                    The % of the total sample metric that occured in this item exclusively (not its children, does include folding).  
+                                    The % of the total sample metric that occurred in this item exclusively (not its children, does include folding).  
                                 </TextBlock>
                         </TextBlock.ToolTip>
                     </TextBlock>
@@ -164,7 +164,7 @@
                         Exc <Hyperlink Click="DoHyperlinkHelp" Tag="ExcColumn">?</Hyperlink>
                         <TextBlock.ToolTip>
                                 <TextBlock>
-                                    The sum of the sample metric that occured in this item exclusively (not its children, does include folding).  
+                                    The sum of the sample metric that occurred in this item exclusively (not its children, does include folding).  
                                 </TextBlock>
                         </TextBlock.ToolTip>
                     </TextBlock>

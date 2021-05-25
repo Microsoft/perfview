@@ -216,7 +216,7 @@ using System.IO;
 /// 
 /// #AutomaticExceptionProcessingAndHelp
 /// 
-/// In the CommandLineParserExample1, while the Command line parser did alot of the work there is still work
+/// In the CommandLineParserExample1, while the Command line parser did a lot of the work there is still work
 /// needed to make the application user friendly that pretty much all applications need. These include
 ///  
 ///     * Call the code:CommandLineParser constructor and code:CommandLineParser.CompleteValidation
@@ -491,7 +491,7 @@ public class CommandLineParser
     }
     /// <summary>
     /// Specify additional aliases for an named parameter.  This call must come BEFORE the definition, since
-    /// the defintion is the operation that causes the parsing to happen.  
+    /// the definition is the operation that causes the parsing to happen.  
     /// </summary>
     public void DefineAliases(string officalName, params string[] alaises)
     {
@@ -669,7 +669,7 @@ public class CommandLineParser
         // TODO allow substrings or other patterns. 
         Debug.Assert(helpNeeded);
 
-        // Find the begining of the parameter set parameters, as well as the end of the global parameters
+        // Find the beginning of the parameter set parameters, as well as the end of the global parameters
         // (Which come before any parameters set). 
         int parameterSetBody = 0;         // Points at body of the parameter set (parameters after the parameter set.
         CommandLineParameter parameterSetParameter = null;
@@ -1181,7 +1181,7 @@ public class CommandLineParser
         if (!isRequired)
             optionalPositionalArgEncountered = true;
         else if (optionalPositionalArgEncountered)
-            throw new CommandLineParserDesignerException("Optional positional parameters can't preceed required positional parameters");
+            throw new CommandLineParserDesignerException("Optional positional parameters can't precede required positional parameters");
 
         positionalArgEncountered = true;
         if (helpNeeded)
@@ -1240,7 +1240,7 @@ public class CommandLineParser
             ParseWords();
 
         if (!paramSetEncountered && positionalArgEncountered)
-            throw new CommandLineParserDesignerException("Positional parameters must not preceed paramter set definitions.");
+            throw new CommandLineParserDesignerException("Positional parameters must not precede paramter set definitions.");
 
         paramSetEncountered = true;
         positionalArgEncountered = false;               // each parameter set gets a new arg set   

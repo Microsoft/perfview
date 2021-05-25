@@ -44,12 +44,12 @@ namespace PerfView
         /// </summary>
         public static List<Preset> ParseCollection(string presets)
         {
-            var result = new List<Preset>();
             if (presets == null)
             {
-                return result;
+                return new List<Preset>(0);
             }
             var entries = presets.Split(new[] { PresetSeparator }, StringSplitOptions.RemoveEmptyEntries);
+            var result = new List<Preset>(entries.Length);
             foreach (var entry in entries)
             {
                 result.Add(ParsePreset(entry));

@@ -7,7 +7,7 @@ using System.Xml;
 namespace ETWManifest
 {
     /// <summary>
-    /// A ProviderManifest represents the XML manifest associated with the provider.    
+    /// A ProviderManifest represents the XML manifest associated with the provider.
     /// </summary>
     public sealed class Provider
     {
@@ -33,7 +33,7 @@ namespace ETWManifest
                 }
             }
 
-            // Resolve all the localization strings that may have been used.  
+            // Resolve all the localization strings that may have been used.
             var stringMap = new Dictionary<string, string>();
             while (reader.Read())
             {
@@ -99,7 +99,7 @@ namespace ETWManifest
         /// </summary>
         public Guid Id { get; private set; }
         /// <summary>
-        /// The events for the 
+        /// The events for the
         /// </summary>
         public IList<Event> Events { get { return m_events; } }
 
@@ -107,7 +107,7 @@ namespace ETWManifest
         /// <summary>
         /// returns the name of the keyword which has the bit position bitPos
         /// (bitPos is 0 through 63).   It may return null if there is no
-        /// keyword name for 'bitPos'.   
+        /// keyword name for 'bitPos'.
         /// </summary>
         public string GetKeywordName(int bitPos)
         {
@@ -122,8 +122,8 @@ namespace ETWManifest
         /// <summary>
         /// returns a string that is the best human readable representation of the keyword set
         /// represented by 'keywords'.   It the concatenation of all the keyword names separated
-        /// by a comma, as well as a hexadecimal number (if there is anything that can't be 
-        /// represented by names).  
+        /// by a comma, as well as a hexadecimal number (if there is anything that can't be
+        /// represented by names).
         /// </summary>
         public string GetKeywordSetString(ulong keywords, string separator = ",")
         {
@@ -239,7 +239,7 @@ namespace ETWManifest
                 Id = Guid.Parse(reader.GetAttribute("guid"));
 
                 var inputDepth = reader.Depth;
-                reader.Read();      // Advance to children 
+                reader.Read();      // Advance to children
                 var curTask = GlobalScope;
                 var curTaskDepth = int.MaxValue;
                 while (inputDepth < reader.Depth)
@@ -290,7 +290,7 @@ namespace ETWManifest
                                     m_taskNames.Add(value, message);
                                     m_taskValues.Add(name, value);
 
-                                    // Remember enuough to resolve opcodes nested inside this task.  
+                                    // Remember enuough to resolve opcodes nested inside this task.
                                     curTask = value;
                                     curTaskDepth = reader.Depth;
                                     reader.Read();
@@ -329,7 +329,7 @@ namespace ETWManifest
                                 ReadMap(reader, false);
                                 break;
                             default:
-                                Debug.WriteLine("Skipping unknown element {0}", reader.Name);
+                                Debug.WriteLine("Skipping unknown element: {0}", (object)reader.Name);
                                 reader.Read();
                                 break;
                         }
@@ -351,13 +351,13 @@ namespace ETWManifest
                 throw new ApplicationException(message, e);
             }
 
-            // Second pass, look up any Ids used in the events.   
+            // Second pass, look up any Ids used in the events.
             foreach (var ev in m_events)
             {
                 ev.ResolveIdsInEvent(fileName);
             }
 
-            // We are done with these.  Free up some space.  
+            // We are done with these.  Free up some space.
             m_taskValues = null;
             m_opcodeValues = null;
             m_keywordValues = null;
@@ -367,13 +367,13 @@ namespace ETWManifest
 
 
         // opcodes live inside a particular task, or you can have 'global' scope for the
-        // opcode.   'GlobalScope' is a 'task' for this global scope.  Just needs to be an illegal task number.  
+        // opcode.   'GlobalScope' is a 'task' for this global scope.  Just needs to be an illegal task number.
         private const int GlobalScope = 0x10000;
         /// <summary>
         /// Adds an opcode with a  given name to the database.   'taskId' can be GlobalScope
         /// if the opcode works for any task.   'manifestName' is the name in the manifest (e.g. "win:Stop")
-        /// and 'name' is the name that you will print (e.g. "Stop").   If manifestName is null then 
-        /// name and manifest name are considered the same.  
+        /// and 'name' is the name that you will print (e.g. "Stop").   If manifestName is null then
+        /// name and manifest name are considered the same.
         /// </summary>
         private void AddOpcode(int taskId, int opcodeId, string name, string manifestName = null)
         {
@@ -386,7 +386,7 @@ namespace ETWManifest
                 manifestName = name;
             }
 
-            // Prefix the key with the taskID if the opcode is local to the task.  
+            // Prefix the key with the taskID if the opcode is local to the task.
             string key = manifestName;
             if (taskId != GlobalScope)
                 key = taskId + ":" + key;
@@ -477,7 +477,7 @@ namespace ETWManifest
             string name = reader.GetAttribute("name");
             Enumeration enumeration = new Enumeration(name, isBitMap);
             var inputDepth = reader.Depth;
-            reader.Read();      // Advance to children 
+            reader.Read();      // Advance to children
             while (inputDepth < reader.Depth)
             {
                 if (reader.NodeType == XmlNodeType.Element)
@@ -524,7 +524,7 @@ namespace ETWManifest
             }
 
             var inputDepth = reader.Depth;
-            reader.Read();      // Advance to children 
+            reader.Read();      // Advance to children
             while (inputDepth < reader.Depth)
             {
                 if (reader.NodeType == XmlNodeType.Element)
@@ -556,13 +556,13 @@ namespace ETWManifest
         private List<Event> m_events = new List<Event>();
         internal string[] m_keywordNames;
         internal Dictionary<int, string> m_taskNames;
-        // Note that the key is task << 8 + opcode to allow for private opcode names 
+        // Note that the key is task << 8 + opcode to allow for private opcode names
         internal Dictionary<int, string> m_opcodeNames;
 
-        // These are not used after parsing.  
+        // These are not used after parsing.
         internal Dictionary<string, int> m_taskValues;
         // Note that the value is task << 8 + opcode to allow for private opcode names
-        // Also the key is taskId : opcodeName again to allow private opcode names or simply opcodeName if it is global.  
+        // Also the key is taskId : opcodeName again to allow private opcode names or simply opcodeName if it is global.
         internal Dictionary<string, int> m_opcodeValues;
         internal Dictionary<string, ulong> m_keywordValues;
         internal Dictionary<string, List<Field>> m_templateValues;
@@ -616,19 +616,19 @@ namespace ETWManifest
         }
         public string Message { get; internal set; }
 
-        /* These are not guarenteed to be present */
+        /* These are not guaranteed to be present */
         /// <summary>
         /// Technically the Symbol attribute on an event is not part of the model (it is not stored in the binary manifest)
-        /// but if it is present, it can be used to create better names.   This value can be null. 
+        /// but if it is present, it can be used to create better names.   This value can be null.
         /// </summary>
         public string Symbol { get; internal set; }
         /// <summary>
         /// Technically the name of the Template for the fields on an event is not part of the model (it is not stored in the binary manifest)
-        /// but if it is present, it can be used to create better names.   This value can be null. 
+        /// but if it is present, it can be used to create better names.   This value can be null.
         /// </summary>
         public string TemplateName { get; internal set; }
         /// <summary>
-        /// Get the line number in the file.  Used for error messages.  
+        /// Get the line number in the file.  Used for error messages.
         /// </summary>
         public int LineNum { get; private set; }
         #region private
@@ -722,7 +722,7 @@ namespace ETWManifest
                         TemplateName = reader.Value;
                         break;
                     case "message":
-                        Message = reader.Value;     // This is actually just a ref to the localization data, but we don't have that yet.  
+                        Message = reader.Value;     // This is actually just a ref to the localization data, but we don't have that yet.
                         break;
                     case "channel":
                         Channel = reader.Value;
@@ -756,7 +756,7 @@ namespace ETWManifest
                 {
                     int opcode;
 
-                    // Try the task-specific one, then the global scope.  
+                    // Try the task-specific one, then the global scope.
                     if (!m_provider.m_opcodeValues.TryGetValue(Task + ":" + id, out opcode))
                         opcode = m_provider.m_opcodeValues[id];
 
@@ -834,7 +834,7 @@ namespace ETWManifest
     }
 
     /// <summary>
-    /// A field represents one field in a ETW event 
+    /// A field represents one field in a ETW event
     /// </summary>
     public sealed class Field
     {
@@ -843,27 +843,27 @@ namespace ETWManifest
         /// </summary>
         public string Name { get; private set; }
         /// <summary>
-        /// If the type is a structure, then this points at its type.   'Enumeration' and 'Type' will be null in this case.  
+        /// If the type is a structure, then this points at its type.   'Enumeration' and 'Type' will be null in this case.
         /// </summary>
         public Struct Struct { get; private set; }
         /// <summary>
-        /// If Type is a integral type, then Enumeration can be set which gives values either 
-        /// a bitfield or a enumerated type for the values of the parameter.    Otherwise it is null. 
+        /// If Type is a integral type, then Enumeration can be set which gives values either
+        /// a bitfield or a enumerated type for the values of the parameter.    Otherwise it is null.
         /// </summary>
         public Enumeration Enumeration { get; internal set; }
         /// <summary>
-        /// If the type is 'built in' then it has a string name, and this is it.   This is null for structs and an integer type for Enumerations.   
+        /// If the type is 'built in' then it has a string name, and this is it.   This is null for structs and an integer type for Enumerations.
         /// </summary>
         public string Type { get; private set; }
 
         /// <summary>
         /// There is no Array type.  Instead all field can have a 'Count' which might be a number
         /// (for fixed sized arrays) or a name of a Field (for variable sized arrays).    This
-        /// can be null, which means the field is not an array.   
+        /// can be null, which means the field is not an array.
         /// </summary>
         public string CountField { get; private set; }
         /// <summary>
-        /// If set, it indicates that the integer value should be pretty-printed as hexadecimal rather than decimal.  
+        /// If set, it indicates that the integer value should be pretty-printed as hexadecimal rather than decimal.
         /// </summary>
         public bool HexFormat { get; private set; }
         #region private
@@ -879,14 +879,14 @@ namespace ETWManifest
     public sealed class Struct
     {
         /// <summary>
-        /// Then name of the type of the structure as a whole.    
+        /// Then name of the type of the structure as a whole.
         /// </summary>
         public string Name { get; private set; }
         public IList<Field> Fields { get; private set; }
     }
 
     /// <summary>
-    /// A Enumeration represents an enumerated type and can be used in field definitions.  
+    /// A Enumeration represents an enumerated type and can be used in field definitions.
     /// </summary>
     public sealed class Enumeration
     {
@@ -919,7 +919,10 @@ namespace ETWManifest
             }
 
             m_stringsLookedUp = true;
-            List<int> keys = new List<int>(m_values.Keys);
+
+            int[] keys = new int[m_values.Keys.Count];
+            m_values.Keys.CopyTo(keys, 0);
+
             foreach (var key in keys)
             {
                 var value = m_values[key];

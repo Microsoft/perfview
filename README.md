@@ -16,7 +16,7 @@ PerfView is built on a library called Microsoft.Diagnostics.Tracing.TraceEvent, 
 ### Learning about PerfView 
 
 The PerfView User's Guide is part of the application itself. In addition, you can click the
-[Users Guide link](http://htmlpreview.github.io/?https://github.com/Microsoft/perfview/blob/master/src/PerfView/SupportFiles/UsersGuide.htm) 
+[Users Guide link](http://htmlpreview.github.io/?https://github.com/Microsoft/perfview/blob/main/src/PerfView/SupportFiles/UsersGuide.htm) 
 to see the [GitHub HTML Source File](src/PerfView/SupportFiles/UsersGuide.htm) rendered in your browser.  You can also simply
 download PerfView using the instructions above and select the Help -> User's Guide menu item. 
 
@@ -31,8 +31,8 @@ This allows those watching for issues to reproduce your environment and give muc
 
 Note that once you have your question answered, if the issue is likely to be common, you should strongly consider updating the
 documentation to include the information.  The documentation is pretty much just
-one file https://github.com/Microsoft/perfview/blob/master/src/PerfView/SupportFiles/UsersGuide.htm.
-You will need to clone the repository and create a pull request (see [OpenSourceGitWorkflow](https://github.com/Microsoft/perfview/blob/master/documentation/OpenSourceGitWorkflow.md)
+one file https://github.com/Microsoft/perfview/blob/main/src/PerfView/SupportFiles/UsersGuide.htm.
+You will need to clone the repository and create a pull request (see [OpenSourceGitWorkflow](https://github.com/Microsoft/perfview/blob/main/documentation/OpenSourceGitWorkflow.md)
 for instructions for setting up and creating a pull request.  
 
 Reporting bugs works pretty much the same way as asking a question.  It is very likely that you will want to include the *.ETL.ZIP
@@ -141,13 +141,13 @@ the debugger to figure out what went wrong.
 
 This repository uses [AppVeyor](https://www.appveyor.com/) and Azure DevOps to automatically build and test pull requests, which allows
 the community to easily view build results. Code coverage is provided by [codecov.io](https://codecov.io). The build and
-coverage status reflected here is the AppVeyor and Azure DevOps build status of the **master** branch.
+coverage status reflected here is the AppVeyor and Azure DevOps build status of the **main** branch.
 
 [![Build status](https://dev.azure.com/ms/perfview/_apis/build/status/CI?label=build)](https://dev.azure.com/ms/perfview/_build/latest?definitionId=332)
 
 [![Build status](https://ci.appveyor.com/api/projects/status/fxtu3xa874whk2w0?svg=true)](https://ci.appveyor.com/project/sharwell/perfview)
 
-[![codecov](https://codecov.io/gh/Microsoft/perfview/branch/master/graph/badge.svg)](https://codecov.io/gh/Microsoft/perfview)
+[![codecov](https://codecov.io/gh/Microsoft/perfview/branch/main/graph/badge.svg)](https://codecov.io/gh/Microsoft/perfview)
 
 > :warning: Builds produced by AppVeyor and Azure DevOps CI are not considered official builds of PerfView, and are not signed or otherwise
 > validated for safety or security in any way. This build integration is provided as a convenience for community
@@ -193,5 +193,5 @@ These docs are for specialized scenarios
 does not build itself. We created two nuget packages to hold these.  This document tells you how to update this
 nuget package when these files need to be updated. Very few people should care about these instructions.  
 
-  * [Internal Docs](https://devdiv.visualstudio.com/DevDiv/_git/perfview?_a=preview&path=%2Fdocumentation%2Finternal%2FinternalDocs.md&version=GBmaster) This is documentation that is only 
+  * [Internal Docs](https://devdiv.visualstudio.com/DevDiv/_git/perfview?_a=preview&path=%2Fdocumentation%2Finternal%2FinternalDocs.md&version=GBmain) This is documentation that is only 
   useful for internal Microsoft users. By design the link will not work for most people.

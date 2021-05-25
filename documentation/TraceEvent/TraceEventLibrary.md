@@ -10,7 +10,7 @@ the TraceEvent library to do it.
 
 Microsoft.Diagnostics.Tracing.TraceEvent is a [nuget package](https://www.nuget.org/packages/Microsoft.Diagnostics.Tracing.TraceEvent/)  available from nuget.org.   This library works on both the .NET Desktop (V4.5 and up) as well
 a .NET Core (NetStandard 1.6 and up).   Parts of the library work on Linux, but ETW is a Windows
-specific technology and thus that part (which is alot of the package) only works on Windows.   
+specific technology and thus that part (which is a lot of the package) only works on Windows.   
 
 The data model for ETW data is non-trivial, and the data is large (which means that you have to care
 about efficiency).  There is also the question of decoding events (they are logged as binary
@@ -57,7 +57,7 @@ is a trivial example that logs all the kernel, clr and dynamic events in an ETL 
 To see more complete samples that use the APIs in more sophisticated (but not too
 sophisticated ways).   In the directory 
 
-* https://github.com/Microsoft/perfview/tree/master/src/TraceEvent/Samples
+* https://github.com/Microsoft/perfview/tree/main/src/TraceEvent/Samples
 
 There are one or two page samples doing interesting things (collecting data, parsing from files or
 in real time, transforming one ETL file to another etc).    Each sample is independent of the others.

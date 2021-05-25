@@ -68,6 +68,7 @@ namespace Microsoft.Diagnostics.Tracing.Session
             m_SessionName = sessionName;
             m_Create = true;
             m_ResartIfExist = (options & TraceEventSessionOptions.NoRestartOnCreate) == 0;
+            m_NoPerProcessBuffering = (options & TraceEventSessionOptions.NoPerProcessorBuffering) != 0;
             m_CpuSampleIntervalMSec = 1.0F;
             m_SessionId = -1;
             m_StopOnDispose = true;
@@ -134,6 +135,10 @@ namespace Microsoft.Diagnostics.Tracing.Session
                     m_FileName = null;
                     m_CircularBufferMB = m_BufferSizeMB;
                 }
+                if ((properties->LogFileMode & TraceEventNativeMethods.EVENT_TRACE_NO_PER_PROCESSOR_BUFFERING) != 0)
+                {
+                    m_NoPerProcessBuffering = true;
+                }
             }
             else
             {
@@ -142,6 +147,7 @@ namespace Microsoft.Diagnostics.Tracing.Session
                 m_FileName = null;               // filename = null means real time session
                 m_Create = true;
                 m_ResartIfExist = (options & TraceEventSessionOptions.NoRestartOnCreate) == 0;
+                m_NoPerProcessBuffering = (options & TraceEventSessionOptions.NoPerProcessorBuffering) != 0;
             }
         }
         /// <summary>
@@ -1338,7 +1344,7 @@ namespace Microsoft.Diagnostics.Tracing.Session
         /// <returns>A enumeration of strings, each of which is a name of a session</returns>
         public static unsafe List<string> GetActiveSessionNames()
         {
-            const int MAX_SESSIONS = 64;
+            int MAX_SESSIONS = GetETWMaxLoggers();
             int sizeOfProperties = sizeof(TraceEventNativeMethods.EVENT_TRACE_PROPERTIES) +
                                    sizeof(char) * TraceEventSession.MaxNameSize +     // For log moduleFile name 
                                    sizeof(char) * TraceEventSession.MaxNameSize;      // For session name
@@ -1358,7 +1364,7 @@ namespace Microsoft.Diagnostics.Tracing.Session
             int hr = TraceEventNativeMethods.QueryAllTraces((IntPtr)propetiesArray, MAX_SESSIONS, ref sessionCount);
             Marshal.ThrowExceptionForHR(TraceEventNativeMethods.GetHRFromWin32(hr));
 
-            List<string> activeTraceNames = new List<string>();
+            List<string> activeTraceNames = new List<string>(sessionCount);
             for (int i = 0; i < sessionCount; i++)
             {
                 byte* propertiesBlob = (byte*)propetiesArray[i];
@@ -1366,6 +1372,54 @@ namespace Microsoft.Diagnostics.Tracing.Session
                 activeTraceNames.Add(sessionName);
             }
             return activeTraceNames;
+        }
+
+        /// <summary>
+        /// Maximum Number of MaxEtwLoggers the system supports
+        /// </summary>
+        private static int? MaxEtwLoggers = null;
+
+        /// <summary>
+        /// Get the maximum number of ETW loggers supported by the current machine
+        /// </summary>
+        /// <returns>The maximum number of supported ETW loggers</returns>
+        private static int GetETWMaxLoggers()
+        {
+            const string MaxEtwRegistryKey = "SYSTEM\\CurrentControlSet\\Control\\WMI";
+            const string MaxEtwPropertyName = "EtwMaxLoggers";
+            const int DefaultMaxETWLoggers = 64;
+
+            if (MaxEtwLoggers == null)
+            {
+                try
+                {
+                    using (RegistryKey key = Registry.LocalMachine.OpenSubKey(MaxEtwRegistryKey))
+                    {
+                        if (key != null)
+                        {
+                            var property = key.GetValue(MaxEtwPropertyName);
+                            if (property != null)
+                            {
+                                if (int.TryParse(property.ToString(), out int propertyValue))
+                                {
+                                    // Ensure registry was set within permissable range as defined by
+                                    // https://docs.microsoft.com/en-us/windows/win32/api/evntrace/nf-evntrace-starttracew
+                                    if (propertyValue >= 32 && propertyValue <= 256)
+                                    {
+                                        MaxEtwLoggers = propertyValue;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception) { }
+
+                // If the value does not exist or cannot be read from the registry, return the default value
+                MaxEtwLoggers = MaxEtwLoggers ?? DefaultMaxETWLoggers;
+            }
+
+            return (int)MaxEtwLoggers;
         }
 
         // Post processing (static methods)
@@ -2204,7 +2258,12 @@ namespace Microsoft.Diagnostics.Tracing.Session
 
             properties->MaximumBuffers = properties->MinimumBuffers * 5 / 4 + 10;
 
-            properties->Wnode.ClientContext = 1;    // set Timer resolution to 100ns.  
+            properties->Wnode.ClientContext = 1;    // set Timer resolution to 100ns.
+
+            if (m_NoPerProcessBuffering)
+            {
+                properties->LogFileMode |= TraceEventNativeMethods.EVENT_TRACE_NO_PER_PROCESSOR_BUFFERING;
+            }
             return properties;
         }
 
@@ -2243,6 +2302,7 @@ namespace Microsoft.Diagnostics.Tracing.Session
         // Internal state
         private bool m_Create;                    // Should create if it does not exist.
         private bool m_ResartIfExist;             // Try to restart if it exists
+        private bool m_NoPerProcessBuffering;     // Don't use per-processor buffers.  Use a single buffer.
         private bool m_IsActive;                  // Session is active (InsureSession has been called)
         private bool m_Stopped;                   // The Stop() method was called (avoids reentrant)
         private bool m_StopOnDispose;             // Should we Stop() when the object is destroyed?
@@ -2503,17 +2563,23 @@ namespace Microsoft.Diagnostics.Tracing.Session
         /// <summary>
         /// Create a new session, stop and recreated it if it already exists.  This is the default.  
         /// </summary>
-        Create = 0,
+        Create = 1,
         /// <summary>
         /// Attach to an existing session, fail if the session does NOT already exist.  
         /// </summary>
-        Attach = 1,
+        Attach = 2,
         /// <summary>
         /// Normally if you create a session it will stop and restart it if it exists already.  Setting
         /// this flat will disable the 'stop and restart' behavior.   This is useful if only a single
         /// monitoring process is intended. 
         /// </summary>
-        NoRestartOnCreate = 2,
+        NoRestartOnCreate = 4,
+        /// <summary>
+        /// Write events that were logged on different processors to a common buffer.  This is useful when
+        /// it is important to capture the events in the order in which they were logged.  This is not recommended
+        /// for sessions that expect more than 1K events per second.
+        /// </summary>
+        NoPerProcessorBuffering = 8,
     }
 
     /// <summary>
@@ -2677,8 +2743,8 @@ namespace Microsoft.Diagnostics.Tracing.Session
             }
 
             Guid* asGuids = (Guid*)buffer;
-            List<Guid> ret = new List<Guid>();
             int guidCount = buffSize / sizeof(Guid);
+            List<Guid> ret = new List<Guid>(guidCount);
             for (int i = 0; i < guidCount; i++)
             {
                 ret.Add(asGuids[i]);
@@ -2851,7 +2917,7 @@ namespace Microsoft.Diagnostics.Tracing.Session
         {
             if (!OperatingSystemVersion.AtLeast(62))
             {
-                throw new ApplicationException("Profile source only availabe on Win8 and beyond.");
+                throw new ApplicationException("Profile source only available on Win8 and beyond.");
             }
 
             var ret = new Dictionary<string, ProfileSourceInfo>(StringComparer.OrdinalIgnoreCase);

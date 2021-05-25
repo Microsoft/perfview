@@ -449,7 +449,7 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
         #region private
         /// <summary>
         /// Returns a list of modules for the stack 'stackIdx'.  It also updates the interning table stackModuleLists, so 
-        /// that the entry cooresponding to stackIdx remembers the answer.  This can speed up processing alot since many
+        /// that the entry cooresponding to stackIdx remembers the answer.  This can speed up processing a lot since many
         /// stacks have the same prefixes to root.  
         /// </summary>
         private ModuleList GetModulesForStack(ModuleList[] stackModuleLists, StackSourceCallStackIndex stackIdx)
@@ -697,7 +697,7 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
     public class MutableTraceEventStackSource : TraceEventStackSource
     {
         /// <summary>
-        /// Create a new MutableTraceEventStackSource that can represent stacks comming from any events in the given TraceLog with a stack.  
+        /// Create a new MutableTraceEventStackSource that can represent stacks coming from any events in the given TraceLog with a stack.  
         /// You use the 'AddSample' and 'DoneAddingSamples' to specify exactly which stacks you want in your source.   
         /// </summary>
         public MutableTraceEventStackSource(TraceLog log)

@@ -440,7 +440,7 @@ public sealed class Command
                                 varValue = "";
                         }
                         // replace this instance of the variable with its definition.  
-                        int varStart = m.Groups[1].Index - 1;     // -1 becasue % chars are not in the group
+                        int varStart = m.Groups[1].Index - 1;     // -1 because % chars are not in the group
                         int varEnd = varStart + m.Groups[1].Length + 2; // +2 because % chars are not in the group
                         value = value.Substring(0, varStart) + varValue + value.Substring(varEnd, value.Length - varEnd);
                         startAt = varStart + varValue.Length;

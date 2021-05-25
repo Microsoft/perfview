@@ -213,7 +213,7 @@ using System.Text;
 /// 
 /// #AutomaticExceptionProcessingAndHelp
 /// 
-/// In the CommandLineParserExample1, while the command line parser did alot of the work there is still work
+/// In the CommandLineParserExample1, while the command line parser did a lot of the work there is still work
 /// needed to make the application user friendly that pretty much all applications need. These include
 ///  
 ///     * Call the code:CommandLineParser constructor and code:CommandLineParser.CompleteValidation
@@ -707,7 +707,7 @@ public class CommandLineParser
     {
         Debug.Assert(helpNeeded);
 
-        // Find the begining of the parameter set paramters, as well as the end of the global parameters
+        // Find the beginning of the parameter set paramters, as well as the end of the global parameters
         // (Which come before any paramters set). 
         int parameterSetBody = 0;         // Points at body of the parameter set (paramters after the parameter set.
         CommandLineParameter parameterSetParameter = null;
@@ -1328,7 +1328,7 @@ public class CommandLineParser
         }
         else if (optionalPositionalArgEncountered)
         {
-            throw new CommandLineParserDesignerException("Optional positional parameters can't preceed required positional parameters");
+            throw new CommandLineParserDesignerException("Optional positional parameters can't precede required positional parameters");
         }
 
         positionalArgEncountered = true;
@@ -1405,7 +1405,7 @@ public class CommandLineParser
 
         if (!paramSetEncountered && positionalArgEncountered)
         {
-            throw new CommandLineParserDesignerException("Positional paramters must not preceed paramter set definitions.");
+            throw new CommandLineParserDesignerException("Positional paramters must not precede paramter set definitions.");
         }
 
         paramSetEncountered = true;

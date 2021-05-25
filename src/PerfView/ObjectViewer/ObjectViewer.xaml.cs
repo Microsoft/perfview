@@ -101,7 +101,7 @@ namespace PerfView
                 m_typeStorage = m_graph.AllocTypeNodeStorage();
                 m_nodeStorage = m_graph.AllocNodeStorage();
                 m_refNodeStorage = m_refGraph.AllocNodeStorage();
-                m_columnNames = new List<string>() { "Value", "Size", "Type" };
+                m_columnNames = new List<string>(3) { "Value", "Size", "Type" };
             }
 
             public object Root
