@@ -70,6 +70,11 @@ namespace TraceEventTests
                 var dir = Path.Combine(UnZippedDataDir, Path.GetFileNameWithoutExtension(folderZip));
                 if (!Directory.Exists(dir) || Directory.GetLastWriteTimeUtc(dir) < File.GetLastWriteTimeUtc(folderZip))
                 {
+                    if (Directory.Exists(dir))
+                    {
+                        Directory.Delete(dir, true);
+                    }
+
                     zipFile.ExtractToDirectory(UnZippedDataDir);
                 }
                 else
@@ -90,7 +95,7 @@ namespace TraceEventTests
             Assert.True(Directory.Exists(OriginalBaselineDir));
             OriginalBaselineDir = Path.GetFullPath(OriginalBaselineDir);
 
-            // This is all atomic because this method is synchronized.  
+            // This is all atomic because this method is synchronized.
             Assert.True(Directory.Exists(TestDataDir));
             UnzipDataFiles();
             if (Directory.Exists(OutputDir))
