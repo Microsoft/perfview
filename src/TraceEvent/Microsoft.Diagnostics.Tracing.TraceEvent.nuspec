@@ -30,13 +30,13 @@
 
     <dependencies>
       <group targetFramework=".NETFramework4.5">
-        <dependency id="System.Runtime.CompilerServices.Unsafe" version="4.5.2" />
+        <dependency id="System.Runtime.CompilerServices.Unsafe" version="4.5.3" />
       </group>
       <group targetFramework=".NETStandard1.6">
-        <dependency id="System.Runtime.CompilerServices.Unsafe" version="4.5.2" />
+        <dependency id="System.Runtime.CompilerServices.Unsafe" version="4.5.3" />
       </group>
       <group targetFramework=".NETStandard2.0">
-        <dependency id="System.Runtime.CompilerServices.Unsafe" version="4.5.2" />
+        <dependency id="System.Runtime.CompilerServices.Unsafe" version="4.5.3" />
       </group>
     </dependencies>
   </metadata>
