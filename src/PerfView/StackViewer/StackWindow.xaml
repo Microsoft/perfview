@@ -5,6 +5,7 @@
     xmlns:src="clr-namespace:PerfView"
     xmlns:src1="clr-namespace:PerfView"
     xmlns:controls="clr-namespace:Controls"
+    xmlns:drawing="clr-namespace:System.Drawing;assembly=System.Drawing"
     Title="PerfView Stacks"
     Width="919" Height="605"
     >
@@ -86,9 +87,7 @@
             <CommandBinding Command="{x:Static src:StackWindow.ExpandCommand}" Executed="DoExpand" CanExecute="CanExpand"/>
             <CommandBinding Command="{x:Static src:StackWindow.CollapseCommand}" Executed="DoCollapse" CanExecute="CanExpand"/>
             <CommandBinding Command="{x:Static src:StackWindow.ExpandAllCommand}" Executed="DoExpandAll" CanExecute="CanExpand"/>
-            <CommandBinding Command="{x:Static src:StackWindow.SetBrownBackgroundColorCommand}" Executed="DoSetBrownBackgroundColor" CanExecute="CanSetBackgroundColor"/>
-            <CommandBinding Command="{x:Static src:StackWindow.SetBlueBackgroundColorCommand}" Executed="DoSetBlueBackgroundColor" CanExecute="CanSetBackgroundColor"/>
-            <CommandBinding Command="{x:Static src:StackWindow.SetRedBackgroundColorCommand}" Executed="DoSetRedBackgroundColor" CanExecute="CanSetBackgroundColor"/>
+            <CommandBinding Command="{x:Static src:StackWindow.SetBackgroundColorCommand}" Executed="DoSetBackgroundColor" CanExecute="CanSetBackgroundColor"/>
             <CommandBinding Command="{x:Static src:StackWindow.FoldPercentCommand}" Executed="DoFoldPercent" />
             <CommandBinding Command="{x:Static src:StackWindow.IncreaseFoldPercentCommand}" Executed="DoIncreaseFoldPercent" />
             <CommandBinding Command="{x:Static src:StackWindow.DecreaseFoldPercentCommand}" Executed="DoDecreaseFoldPercent" />
@@ -163,9 +162,13 @@
                 <MenuItem Command="{x:Static src:StackWindow.ExpandCommand}" />
                 <MenuItem Command="{x:Static src:StackWindow.CollapseCommand}" />
                 <MenuItem Header="Set Background Color">
-                    <MenuItem Command="{x:Static src:StackWindow.SetBrownBackgroundColorCommand}" />
-                    <MenuItem Command="{x:Static src:StackWindow.SetBlueBackgroundColorCommand}" />
-                    <MenuItem Command="{x:Static src:StackWindow.SetRedBackgroundColorCommand}" />
+                    <MenuItem Command="{x:Static src:StackWindow.SetBackgroundColorCommand}" CommandParameter="{x:Static drawing:Color.LightSkyBlue}" Header="Set Background Blue" />
+                    <MenuItem Command="{x:Static src:StackWindow.SetBackgroundColorCommand}" CommandParameter="{x:Static drawing:Color.BurlyWood}" Header="Set Background Brown" />
+                    <MenuItem Command="{x:Static src:StackWindow.SetBackgroundColorCommand}" CommandParameter="{x:Static drawing:Color.LightGreen}" Header="Set Background Green" />
+                    <MenuItem Command="{x:Static src:StackWindow.SetBackgroundColorCommand}" CommandParameter="{x:Static drawing:Color.Gainsboro}" Header="Set Background Gray" />
+                    <MenuItem Command="{x:Static src:StackWindow.SetBackgroundColorCommand}" CommandParameter="{x:Static drawing:Color.Lavender}" Header="Set Background Purple" />
+                    <MenuItem Command="{x:Static src:StackWindow.SetBackgroundColorCommand}" CommandParameter="{x:Static drawing:Color.LightPink}" Header="Set Background Pink" />
+                    <MenuItem Command="{x:Static src:StackWindow.SetBackgroundColorCommand}" CommandParameter="{x:Static drawing:Color.Coral}" Header="Set Background Red" />
                 </MenuItem>
                 <Separator/>
                 <MenuItem Header="FilterParams">

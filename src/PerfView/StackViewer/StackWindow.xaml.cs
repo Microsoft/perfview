@@ -2675,23 +2675,9 @@ namespace PerfView
                            (CalleesTab.IsSelected && m_calleesView.SelectedNode != null);
         }
 
-        private void DoSetBrownBackgroundColor(object sender, ExecutedRoutedEventArgs e)
+        private void DoSetBackgroundColor(object sender, ExecutedRoutedEventArgs e)
         {
-            DoSetBackgroundColor(sender, e, System.Drawing.Color.BurlyWood);
-        }
-
-        private void DoSetBlueBackgroundColor(object sender, ExecutedRoutedEventArgs e)
-        {
-            DoSetBackgroundColor(sender, e, System.Drawing.Color.LightSkyBlue);
-        }
-
-        private void DoSetRedBackgroundColor(object sender, ExecutedRoutedEventArgs e)
-        {
-            DoSetBackgroundColor(sender, e, System.Drawing.Color.Coral);
-        }
-
-        private void DoSetBackgroundColor(object sender, ExecutedRoutedEventArgs e, System.Drawing.Color color)
-        {
+            System.Drawing.Color color = (System.Drawing.Color)e.Parameter;
             CallTreeViewNode selectedNode = null;
             CallTreeView view = null;
             if (CallTreeTab.IsSelected)
@@ -3276,9 +3262,7 @@ namespace PerfView
             new InputGestureCollection() { new KeyGesture(Key.Space) });
         public static RoutedUICommand CollapseCommand = new RoutedUICommand("Collapse", "Collapse", typeof(StackWindow),
             new InputGestureCollection() { new KeyGesture(Key.Space, ModifierKeys.Shift) });
-        public static RoutedUICommand SetBrownBackgroundColorCommand = new RoutedUICommand("Set Brown Background Color", "SetBrownBackgroundColor", typeof(StackWindow));
-        public static RoutedUICommand SetBlueBackgroundColorCommand = new RoutedUICommand("Set Blue Background Color", "SetBlueBackgroundColor", typeof(StackWindow));
-        public static RoutedUICommand SetRedBackgroundColorCommand = new RoutedUICommand("Set Red Background Color", "SetRedBackgroundColor", typeof(StackWindow));
+        public static RoutedUICommand SetBackgroundColorCommand = new RoutedUICommand("Set Background Color", "SetBackgroundColor", typeof(StackWindow));
         public static RoutedUICommand FoldPercentCommand = new RoutedUICommand("Fold %", "FoldPercent", typeof(StackWindow),
             new InputGestureCollection() { new KeyGesture(Key.F6) });
         public static RoutedUICommand IncreaseFoldPercentCommand = new RoutedUICommand("Increase Fold %", "Increase FoldPercent", typeof(StackWindow),
