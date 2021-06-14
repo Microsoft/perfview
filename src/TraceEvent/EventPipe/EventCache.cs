@@ -15,7 +15,7 @@ namespace Microsoft.Diagnostics.Tracing.EventPipe
         public event ParseBufferItemFunction OnEvent;
         public event Action<int> OnEventsDropped;
 
-        public unsafe void ProcessEventBlock(byte[] eventBlockData)
+        public unsafe void ProcessEventBlock(int version, byte[] eventBlockData)
         {
             // parse the header
             if(eventBlockData.Length < 20)
@@ -31,15 +31,32 @@ namespace Microsoft.Diagnostics.Tracing.EventPipe
             }
             ushort flags = BitConverter.ToUInt16(eventBlockData, 2);
             bool useHeaderCompression = (flags & (ushort)EventBlockFlags.HeaderCompression) != 0;
+            bool isULZCompressed = (flags & (ushort)EventBlockFlags.EventBlockULZCompression) != 0;
+
+            int eventBlockSize = eventBlockData.Length;
+            if (isULZCompressed && headerSize >= 24)
+            {
+                int decompressedSize = (int)BitConverter.ToUInt32(eventBlockData, 20); // Decompressed Size is at offset 20
+                ArraySegment<byte> retVal = ULZCompression.Decompress(new ArraySegment<byte>(eventBlockData, headerSize, eventBlockData.Length - headerSize), decompressedSize);
+                eventBlockData = retVal.Array;
+                eventBlockSize = decompressedSize;
+            }
 
             // parse the events
             PinnedBuffer buffer = new PinnedBuffer(eventBlockData);
             byte* cursor = (byte*)buffer.PinningHandle.AddrOfPinnedObject();
-            byte* end = cursor + eventBlockData.Length;
-            cursor += headerSize;
+            byte* end = cursor + eventBlockSize;
+
+            // if we did compression the byte array was replaced and therefore the cursor doesn't need to be advanced
+            if (!isULZCompressed)
+            {
+                cursor += headerSize;
+            }
+            
             EventMarker eventMarker = new EventMarker(buffer);
             long timestamp = 0;
-            EventPipeEventHeader.ReadFromFormatV4(cursor, useHeaderCompression, ref eventMarker.Header);
+
+            EventPipeEventHeader.ReadFromFormat(version, cursor, useHeaderCompression, ref eventMarker.Header);
             if (!_threads.TryGetValue(eventMarker.Header.CaptureThreadId, out EventCacheThread thread))
             {
                 thread = new EventCacheThread();
@@ -49,7 +66,7 @@ namespace Microsoft.Diagnostics.Tracing.EventPipe
             eventMarker = new EventMarker(buffer);
             while (cursor < end)
             {
-                EventPipeEventHeader.ReadFromFormatV4(cursor, useHeaderCompression, ref eventMarker.Header);
+                EventPipeEventHeader.ReadFromFormat(version, cursor, useHeaderCompression, ref eventMarker.Header);
                 bool isSortedEvent = eventMarker.Header.IsSorted;
                 timestamp = eventMarker.Header.TimeStamp;
                 int sequenceNumber = eventMarker.Header.SequenceNumber;

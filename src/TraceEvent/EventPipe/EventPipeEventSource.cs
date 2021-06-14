@@ -218,10 +218,10 @@ namespace Microsoft.Diagnostics.Tracing
             {
                 EventPipeEventHeader.ReadFromFormatV3(headerPtr, ref eventData);
             }
-            else // if (FileFormatVersionNumber == 4)
+            else
             {
-                EventPipeEventHeader.ReadFromFormatV4(headerPtr, useHeaderCompression, ref eventData);
-                if(eventData.MetaDataId != 0 && StackCache.TryGetStack(eventData.StackId, out int stackBytesSize, out IntPtr stackBytes))
+                EventPipeEventHeader.ReadFromFormat(FileFormatVersionNumber, headerPtr, useHeaderCompression, ref eventData);
+                if (eventData.MetaDataId != 0 && StackCache.TryGetStack(eventData.StackId, out int stackBytesSize, out IntPtr stackBytes))
                 {
                     eventData.StackBytesSize = stackBytesSize;
                     eventData.StackBytes = stackBytes;
@@ -887,7 +887,8 @@ namespace Microsoft.Diagnostics.Tracing
     internal enum EventBlockFlags : short
     {
         Uncompressed = 0,
-        HeaderCompression = 1
+        HeaderCompression = 1,
+        EventBlockULZCompression = 2
     }
 
     /// <summary>
@@ -902,12 +903,13 @@ namespace Microsoft.Diagnostics.Tracing
 
         protected unsafe override void ReadBlockContents(PinnedStreamReader reader)
         {
-            if(_source.FileFormatVersionNumber >= 4)
+            int version = _source.FileFormatVersionNumber;
+            if (version >= 4)
             {
                 _source.ResetCompressedHeader();
                 byte[] eventBlockBytes = new byte[_endEventData.Sub(_startEventData)];
                 reader.Read(eventBlockBytes, 0, eventBlockBytes.Length);
-                _source.EventCache.ProcessEventBlock(eventBlockBytes);
+                _source.EventCache.ProcessEventBlock(version, eventBlockBytes);
             }
             else
             {
@@ -1097,6 +1099,7 @@ namespace Microsoft.Diagnostics.Tracing
             //
             // Note: ThreadId isn't 32 bit on all of our platforms but ETW EVENT_RECORD* only has room for a 32 bit
             // ID. We'll need to refactor up the stack if we want to expose a bigger ID.
+            _eventRecord->EventHeader.ProcessId = eventData.ProcessID;
             _eventRecord->EventHeader.ThreadId = unchecked((int)eventData.ThreadId);
             if (eventData.ThreadId == eventData.CaptureThreadId && eventData.CaptureProcNumber != -1)
             {
@@ -1363,7 +1366,25 @@ namespace Microsoft.Diagnostics.Tracing
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 1)]
-        struct LayoutV4
+        struct LayoutV6
+        {
+            public int EventSize;          // Size bytes of this header and the payload and stacks if any.  does NOT encode the size of the EventSize field itself.
+            public int MetaDataId;          // a number identifying the description of this event.
+            public int SequenceNumber;
+            public long ThreadId;
+            public long CaptureThreadId;
+            public int CaptureProcNumber;
+            public int StackId;
+            public long TimeStamp;
+            public Guid ActivityID;
+            public Guid RelatedActivityID;
+            public int ProcessID;           // process id in a multi-process trace
+            public int PayloadSize;         // size in bytes of the user defined payload data.
+            public fixed byte Payload[4];   // Actually of variable size.  4 is used to avoid potential alignment issues.   This 4 also appears in HeaderSize below.
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        struct LayoutV5
         {
             public int EventSize;          // Size bytes of this header and the payload and stacks if any.  does NOT encode the size of the EventSize field itself.
             public int MetaDataId;          // a number identifying the description of this event.
@@ -1388,7 +1409,8 @@ namespace Microsoft.Diagnostics.Tracing
             ActivityId = 1 << 4,
             RelatedActivityId = 1 << 5,
             Sorted = 1 << 6,
-            DataLength = 1 << 7
+            DataLength = 1 << 7,
+            ProcessId = 1 << 8,
         }
 
         static uint ReadVarUInt32(ref byte* pCursor)
@@ -1431,11 +1453,108 @@ namespace Microsoft.Diagnostics.Tracing
             return val;
         }
 
-        public static void ReadFromFormatV4(byte* headerPtr, bool useHeaderCompresion, ref EventPipeEventHeader header)
+        public static void ReadFromFormat(int version, byte* headerPtr, bool useHeaderCompresion, ref EventPipeEventHeader header)
+        {
+            switch (version)
+            {
+                case 4:
+                case 5:
+                    ReadFromFormatV5(headerPtr, useHeaderCompresion, ref header);
+                    break;
+                case 6:
+                    ReadFromFormatV6(headerPtr, useHeaderCompresion, ref header);
+                    break;
+                default:
+                    throw new Exception("Unexpected version");
+            }
+        }
+
+        private static void ReadFromFormatV6(byte* headerPtr, bool useHeaderCompresion, ref EventPipeEventHeader header)
         {
             if (!useHeaderCompresion)
             {
-                LayoutV4* pLayout = (LayoutV4*)headerPtr;
+                LayoutV6* pLayout = (LayoutV6*)headerPtr;
+                header.EventSize = pLayout->EventSize;
+                header.MetaDataId = pLayout->MetaDataId & 0x7FFF_FFFF;
+                header.IsSorted = ((uint)pLayout->MetaDataId & 0x8000_0000) == 0;
+                header.SequenceNumber = pLayout->SequenceNumber;
+                header.ThreadId = pLayout->ThreadId;
+                header.CaptureThreadId = pLayout->CaptureThreadId;
+                header.CaptureProcNumber = pLayout->CaptureProcNumber;
+                header.StackId = pLayout->StackId;
+                header.TimeStamp = pLayout->TimeStamp;
+                header.ActivityID = pLayout->ActivityID;
+                header.RelatedActivityID = pLayout->RelatedActivityID;
+                header.PayloadSize = pLayout->PayloadSize;
+                header.ProcessID = pLayout->ProcessID;
+                header.Payload = (IntPtr)pLayout->Payload;
+                header.HeaderSize = (sizeof(LayoutV6) - 4);
+                int totalSize = header.EventSize + 4;
+                header.TotalNonHeaderSize = totalSize - header.HeaderSize;
+            }
+            else
+            {
+                byte* headerStart = headerPtr;
+                byte flags = *headerPtr;
+                headerPtr++;
+                if ((flags & (byte)CompressedHeaderFlags.MetadataId) != 0)
+                {
+                    header.MetaDataId = (int)ReadVarUInt32(ref headerPtr);
+                }
+                if ((flags & (byte)CompressedHeaderFlags.CaptureThreadAndSequence) != 0)
+                {
+                    header.SequenceNumber += (int)ReadVarUInt32(ref headerPtr) + 1;
+                    header.CaptureThreadId = (long)ReadVarUInt64(ref headerPtr);
+                    header.CaptureProcNumber = (int)ReadVarUInt32(ref headerPtr);
+                }
+                else
+                {
+                    if (header.MetaDataId != 0)
+                    {
+                        header.SequenceNumber++;
+                    }
+                }
+                if ((flags & (byte)CompressedHeaderFlags.ThreadId) != 0)
+                {
+                    header.ThreadId = (int)ReadVarUInt64(ref headerPtr);
+                }
+                if ((flags & (byte)CompressedHeaderFlags.StackId) != 0)
+                {
+                    header.StackId = (int)ReadVarUInt32(ref headerPtr);
+                }
+                ulong timestampDelta = ReadVarUInt64(ref headerPtr);
+                header.TimeStamp += (long)timestampDelta;
+                if ((flags & (byte)CompressedHeaderFlags.ActivityId) != 0)
+                {
+                    header.ActivityID = *(Guid*)headerPtr;
+                    headerPtr += sizeof(Guid);
+                }
+                if ((flags & (byte)CompressedHeaderFlags.RelatedActivityId) != 0)
+                {
+                    header.RelatedActivityID = *(Guid*)headerPtr;
+                    headerPtr += sizeof(Guid);
+                }
+                header.IsSorted = (flags & (byte)CompressedHeaderFlags.Sorted) != 0;
+                if ((flags & (ushort)CompressedHeaderFlags.ProcessId) != 0)
+                {
+                    header.ProcessID = (int)ReadVarUInt32(ref headerPtr);
+                }
+                if ((flags & (byte)CompressedHeaderFlags.DataLength) != 0)
+                {
+                    header.PayloadSize = (int)ReadVarUInt32(ref headerPtr);
+                }
+                header.Payload = (IntPtr)headerPtr;
+
+                header.HeaderSize = (int)(headerPtr - headerStart);
+                header.TotalNonHeaderSize = header.PayloadSize;
+            }
+        }
+
+        private static void ReadFromFormatV5(byte* headerPtr, bool useHeaderCompresion, ref EventPipeEventHeader header)
+        {
+            if (!useHeaderCompresion)
+            {
+                LayoutV5* pLayout = (LayoutV5*)headerPtr;
                 header.EventSize = pLayout->EventSize;
                 header.MetaDataId = pLayout->MetaDataId & 0x7FFF_FFFF;
                 header.IsSorted = ((uint)pLayout->MetaDataId & 0x8000_0000) == 0;
@@ -1449,7 +1568,7 @@ namespace Microsoft.Diagnostics.Tracing
                 header.RelatedActivityID = pLayout->RelatedActivityID;
                 header.PayloadSize = pLayout->PayloadSize;
                 header.Payload = (IntPtr)pLayout->Payload;
-                header.HeaderSize = (sizeof(LayoutV4) - 4);
+                header.HeaderSize = (sizeof(LayoutV5) - 4);
                 int totalSize = header.EventSize + 4;
                 header.TotalNonHeaderSize = totalSize - header.HeaderSize;
             }
@@ -1517,6 +1636,7 @@ namespace Microsoft.Diagnostics.Tracing
         public Guid ActivityID;
         public Guid RelatedActivityID;
         public bool IsSorted;
+        public int ProcessID;           // process id in multi-process trace
         public int PayloadSize;         // size in bytes of the user defined payload data.
         public IntPtr Payload;
         public int StackId;
@@ -1538,9 +1658,14 @@ namespace Microsoft.Diagnostics.Tracing
                 LayoutV3* header = (LayoutV3*)headerPtr;
                 return header->EventSize + sizeof(int);
             }
-            else //if(formatVersion == 4)
+            else if(formatVersion <= 5)
             {
-                LayoutV4* header = (LayoutV4*)headerPtr;
+                LayoutV5* header = (LayoutV5*)headerPtr;
+                return header->EventSize + sizeof(int);
+            }
+            else //if(formatVersion == 6)
+            {
+                LayoutV6* header = (LayoutV6*)headerPtr;
                 return header->EventSize + sizeof(int);
             }
         }
@@ -1554,9 +1679,13 @@ namespace Microsoft.Diagnostics.Tracing
             {
                 return sizeof(LayoutV3) - 4;
             }
-            else //if(formatVersion == 4)
+            else if(formatVersion <= 5)
             {
-                return sizeof(LayoutV4) - 4;
+                return sizeof(LayoutV5) - 4;
+            }
+            else // if (formatVersion == 6)
+            {
+                return sizeof(LayoutV6) - 4;
             }
         }
 
