@@ -95,7 +95,7 @@ public class DotNetHeapInfo : IFastSerializable
     void IFastSerializable.FromStream(Deserializer deserializer)
     {
         SizeOfAllSegments = deserializer.ReadInt64();
-        var count = deserializer.ReadInt();
+        var count = deserializer.ReadInt32();
         Segments = new List<GCHeapDumpSegment>(count);
         for (int i = 0; i < count; i++)
         {

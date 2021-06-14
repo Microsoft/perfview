@@ -1149,7 +1149,7 @@ namespace FastSerialization
         /// <summary>
         /// Read a bool from the stream
         /// </summary>
-        public void Read(out bool ret)
+        public void ReadBoolean(out bool ret)
         {
 #if DEBUG
             StreamLabel label = reader.Current;
@@ -1162,7 +1162,7 @@ namespace FastSerialization
         /// <summary>
         /// Read a byte from the stream
         /// </summary>
-        public void Read(out byte ret)
+        public void ReadByte(out byte ret)
         {
 #if DEBUG
             StreamLabel label = reader.Current;
@@ -1175,7 +1175,7 @@ namespace FastSerialization
         /// <summary>
         /// Read a short from the stream
         /// </summary>
-        public void Read(out short ret)
+        public void ReadInt16(out short ret)
         {
 #if DEBUG
             StreamLabel label = reader.Current;
@@ -1188,7 +1188,7 @@ namespace FastSerialization
         /// <summary>
         /// Read an int from the stream
         /// </summary>
-        public void Read(out int ret)
+        public void ReadInt32(out int ret)
         {
 #if DEBUG
             StreamLabel label = reader.Current;
@@ -1201,7 +1201,7 @@ namespace FastSerialization
         /// <summary>
         /// Read a long from the stream
         /// </summary>
-        public void Read(out long ret)
+        public void ReadInt64(out long ret)
         {
 #if DEBUG
             StreamLabel label = reader.Current;
@@ -1214,7 +1214,7 @@ namespace FastSerialization
         /// <summary>
         /// Read a Guid from the stream
         /// </summary>
-        public unsafe void Read(out Guid ret)
+        public unsafe void ReadGuid(out Guid ret)
         {
 #if DEBUG
             StreamLabel label = reader.Current;
@@ -1233,21 +1233,21 @@ namespace FastSerialization
         /// <summary>
         /// Read a float from the stream
         /// </summary>
-        public void Read(out float ret)
+        public void ReadSingle(out float ret)
         {
-            ret = ReadFloat();
+            ret = ReadSingle();
         }
         /// <summary>
         /// Read a double from the stream
         /// </summary>
-        public void Read(out double ret)
+        public void ReadDouble(out double ret)
         {
             ret = ReadDouble();
         }
         /// <summary>
         /// Read a string from the stream.  Can represent null
         /// </summary>
-        public void Read(out string ret)
+        public void ReadString(out string ret)
         {
 #if DEBUG
             StreamLabel label = reader.Current;
@@ -1263,7 +1263,7 @@ namespace FastSerialization
         /// <summary>
         /// d) from the stream
         /// </summary>
-        public void Read(out StreamLabel ret)
+        public void ReadLabel(out StreamLabel ret)
         {
 #if DEBUG
             StreamLabel label = reader.Current;
@@ -1277,7 +1277,7 @@ namespace FastSerialization
         /// <summary>
         /// Read a IFastSerializable object from the stream and place it in ret
         /// </summary>
-        public void Read<T>(out T ret) where T : IFastSerializable
+        public void ReadObject<T>(out T ret) where T : IFastSerializable
         {
             ret = (T)ReadObject();
         }
@@ -1398,7 +1398,7 @@ namespace FastSerialization
         /// <summary>
         /// Read an int from the stream and return it
         /// </summary>
-        public int ReadInt()
+        public int ReadInt32()
         {
 #if DEBUG
             StreamLabel label = reader.Current;
@@ -1426,7 +1426,7 @@ namespace FastSerialization
         /// <summary>
         /// Read a float from the stream and return it
         /// </summary>
-        public unsafe float ReadFloat()
+        public unsafe float ReadSingle()
         {
             float ret;
             int* intPtr = (int*)&ret;
@@ -1622,13 +1622,13 @@ namespace FastSerialization
         /// <summary>
         /// Try to read tagged value from the stream.  If it is a tagged bool, return int in ret and return true, otherwise leave the cursor unchanged and return false
         /// </summary>
-        public bool TryReadTagged(ref bool ret)
+        public bool TryReadTaggedBoolean(ref bool ret)
         {
             Tags tag = ReadTag();
             if (tag == Tags.Byte)
             {
                 byte data = 0;
-                Read(out data);
+                ReadByte(out data);
                 ret = (data != 0);
                 return true;
             }
@@ -1638,12 +1638,12 @@ namespace FastSerialization
         /// <summary>
         /// Try to read tagged value from the stream.  If it is a tagged byte, return int in ret and return true, otherwise leave the cursor unchanged and return false
         /// </summary>
-        public bool TryReadTagged(ref byte ret)
+        public bool TryReadTaggedByte(ref byte ret)
         {
             Tags tag = ReadTag();
             if (tag == Tags.Byte)
             {
-                Read(out ret);
+                ReadByte(out ret);
                 return true;
             }
             reader.Goto(Current - 1);
@@ -1652,12 +1652,12 @@ namespace FastSerialization
         /// <summary>
         /// Try to read tagged value from the stream.  If it is a tagged short, return int in ret and return true, otherwise leave the cursor unchanged and return false
         /// </summary>
-        public bool TryReadTagged(ref short ret)
+        public bool TryReadTaggedInt16(ref short ret)
         {
             Tags tag = ReadTag();
             if (tag == Tags.Int16)
             {
-                Read(out ret);
+                ReadInt16(out ret);
                 return true;
             }
             reader.Goto(Current - 1);
@@ -1666,12 +1666,12 @@ namespace FastSerialization
         /// <summary>
         /// Try to read tagged value from the stream.  If it is a tagged int, return int in ret and return true, otherwise leave the cursor unchanged and return false
         /// </summary>
-        public bool TryReadTagged(ref int ret)
+        public bool TryReadTaggedInt32(ref int ret)
         {
             Tags tag = ReadTag();
             if (tag == Tags.Int32)
             {
-                Read(out ret);
+                ReadInt32(out ret);
                 return true;
             }
             reader.Goto(Current - 1);
@@ -1680,12 +1680,12 @@ namespace FastSerialization
         /// <summary>
         /// Try to read tagged value from the stream.  If it is a tagged long, return int in ret and return true, otherwise leave the cursor unchanged and return false
         /// </summary>
-        public bool TryReadTagged(ref long ret)
+        public bool TryReadTaggedInt64(ref long ret)
         {
             Tags tag = ReadTag();
             if (tag == Tags.Int64)
             {
-                Read(out ret);
+                ReadInt64(out ret);
                 return true;
             }
             reader.Goto(Current - 1);
@@ -1694,12 +1694,12 @@ namespace FastSerialization
         /// <summary>
         /// Try to read tagged value from the stream.  If it is a tagged string, return int in ret and return true, otherwise leave the cursor unchanged and return false
         /// </summary>
-        public bool TryReadTagged(ref string ret)
+        public bool TryReadTaggedString(ref string ret)
         {
             Tags tag = ReadTag();
             if (tag == Tags.String)
             {
-                Read(out ret);
+                ReadString(out ret);
                 return true;
             }
             reader.Goto(Current - 1);
@@ -1725,7 +1725,7 @@ namespace FastSerialization
         /// <summary>
         /// Try to read tagged value from the stream.  If it is a tagged FastSerializable, return int in ret and return true, otherwise leave the cursor unchanged and return false
         /// </summary>
-        public bool TryReadTagged<T>(ref T ret) where T : IFastSerializable
+        public bool TryReadTaggedObject<T>(ref T ret) where T : IFastSerializable
         {
             // Tagged objects always start with a SkipRegion so we don't need to know its size.  
             Tags tag = ReadTag();
@@ -2428,9 +2428,9 @@ namespace FastSerialization
         }
         void IFastSerializable.FromStream(Deserializer deserializer)
         {
-            deserializer.Read(out version);
-            deserializer.Read(out minimumReaderVersion);
-            deserializer.Read(out fullName);
+            deserializer.ReadInt32(out version);
+            deserializer.ReadInt32(out minimumReaderVersion);
+            deserializer.ReadString(out fullName);
             factory = deserializer.GetFactory(fullName);
             // This is only here for efficiency (you don't have to cast every instance)
             // since most objects won't be versioned.  However it means that you have to

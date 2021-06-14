@@ -132,7 +132,7 @@ namespace Graphs
         {
             base.FromStream(deserializer);
             // Read in the Memory addresses of each object 
-            int addressCount = deserializer.ReadInt();
+            int addressCount = deserializer.ReadInt32();
             m_nodeAddresses = new SegmentedList<Address>(SegmentSize, addressCount);
 
             for (int i = 0; i < addressCount; i++)
@@ -141,7 +141,7 @@ namespace Graphs
             }
 
             bool is64bit = false;
-            deserializer.TryReadTagged(ref is64bit);
+            deserializer.TryReadTaggedBoolean(ref is64bit);
             Is64Bit = is64bit;
         }
 

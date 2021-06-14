@@ -3301,20 +3301,20 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
         }
         void IFastSerializable.FromStream(Deserializer deserializer)
         {
-            deserializer.Read(out driveMapping);
+            deserializer.ReadObject(out driveMapping);
 
-            int count; deserializer.Read(out count);
+            int count; deserializer.ReadInt32(out count);
             Debug.Assert(count >= 0);
             deserializer.Log("<Marker name=\"ProcessIDForThread\"/ count=\"" + count + "\">");
             for (int i = 0; i < count; i++)
             {
-                int key; deserializer.Read(out key);
-                long startTimeQPC; deserializer.Read(out startTimeQPC);
-                int value; deserializer.Read(out value);
+                int key; deserializer.ReadInt32(out key);
+                long startTimeQPC; deserializer.ReadInt64(out startTimeQPC);
+                int value; deserializer.ReadInt32(out value);
                 threadIDtoProcessID.Add(key, startTimeQPC, value);
             }
 
-            deserializer.Read(out count);
+            deserializer.ReadInt32(out count);
             Debug.Assert(count >= 0);
             deserializer.Log("<Marker name=\"ProcessIDForThreadRundown\"/ count=\"" + count + "\">");
             if (count > 0)
@@ -3322,39 +3322,39 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
                 threadIDtoProcessIDRundown = new HistoryDictionary<int, int>(count);
                 for (int i = 0; i < count; i++)
                 {
-                    int key; deserializer.Read(out key);
-                    long startTimeQPC; deserializer.Read(out startTimeQPC);
-                    int value; deserializer.Read(out value);
+                    int key; deserializer.ReadInt32(out key);
+                    long startTimeQPC; deserializer.ReadInt64(out startTimeQPC);
+                    int value; deserializer.ReadInt32(out value);
                     threadIDtoProcessIDRundown.Add(key, startTimeQPC, value);
                 }
             }
 
             lazyFileIDToName.Read(deserializer, delegate
             {
-                deserializer.Read(out count);
+                deserializer.ReadInt32(out count);
                 Debug.Assert(count >= 0);
                 deserializer.Log("<Marker name=\"fileIDToName\"/ count=\"" + count + "\">");
                 for (int i = 0; i < count; i++)
                 {
                     Address key; deserializer.ReadAddress(out key);
-                    long startTimeQPC; deserializer.Read(out startTimeQPC);
-                    string value; deserializer.Read(out value);
+                    long startTimeQPC; deserializer.ReadInt64(out startTimeQPC);
+                    string value; deserializer.ReadString(out value);
                     fileIDToName.Add(key, startTimeQPC, value);
                 }
             });
 
             lazyDiskEventTimeStamp.Read(deserializer, delegate
             {
-                deserializer.Read(out count);
+                deserializer.ReadInt32(out count);
                 Debug.Assert(count >= 0);
                 deserializer.Log("<Marker name=\"diskEventTimeStamp\"/ count=\"" + count + "\">");
                 for (int i = 0; i < count; i++)
                 {
-                    diskEventTimeStamp.Add(new DiskIOTime(deserializer.ReadInt(), deserializer.ReadDouble()));
+                    diskEventTimeStamp.Add(new DiskIOTime(deserializer.ReadInt32(), deserializer.ReadDouble()));
                 }
             });
 
-            deserializer.Read(out count);
+            deserializer.ReadInt32(out count);
             Debug.Assert(count >= 0);
             if (count > 0)
             {
@@ -3362,7 +3362,7 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
                 _objectTypeToName = new Dictionary<int, string>(count);
                 for (int i = 0; i < count; i++)
                 {
-                    _objectTypeToName.Add(deserializer.ReadInt(), deserializer.ReadString());
+                    _objectTypeToName.Add(deserializer.ReadInt32(), deserializer.ReadString());
                 }
             }
         }
@@ -3579,15 +3579,15 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
 
         void IFastSerializable.FromStream(Deserializer deserializer)
         {
-            int numDrives; deserializer.Read(out numDrives);
+            int numDrives; deserializer.ReadInt32(out numDrives);
             for (int i = 0; i < numDrives; i++)
             {
                 string key, value;
-                deserializer.Read(out key);
-                deserializer.Read(out value);
+                deserializer.ReadString(out key);
+                deserializer.ReadString(out value);
                 kernelToDriveMap.Add(new KeyValuePair<string, string>(key, value));
             }
-            deserializer.Read(out systemDrive);
+            deserializer.ReadString(out systemDrive);
         }
         #endregion
     }

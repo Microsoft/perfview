@@ -3686,11 +3686,11 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
         {
             deserializer.Log("<Marker Name=\"RawEvents\"/>");
             byte align;
-            deserializer.Read(out align);
+            deserializer.ReadByte(out align);
             while (align > 0)
             {
                 byte zero;
-                deserializer.Read(out zero);
+                deserializer.ReadByte(out zero);
                 --align;
             }
 
@@ -3699,57 +3699,57 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
 
             deserializer.Log("<Marker Name=\"sessionStartTime\"/>");
             _syncTimeUTC = DateTime.FromFileTimeUtc(deserializer.ReadInt64());
-            deserializer.Read(out pointerSize);
-            deserializer.Read(out numberOfProcessors);
-            deserializer.Read(out cpuSpeedMHz);
+            deserializer.ReadInt32(out pointerSize);
+            deserializer.ReadInt32(out numberOfProcessors);
+            deserializer.ReadInt32(out cpuSpeedMHz);
             osVersion = new Version(deserializer.ReadByte(), deserializer.ReadByte(), deserializer.ReadByte(), deserializer.ReadByte());
-            deserializer.Read(out _QPCFreq);
-            deserializer.Read(out sessionStartTimeQPC);
+            deserializer.ReadInt64(out _QPCFreq);
+            deserializer.ReadInt64(out sessionStartTimeQPC);
             _syncTimeQPC = sessionStartTimeQPC;
-            deserializer.Read(out sessionEndTimeQPC);
-            deserializer.Read(out eventsLost);
-            deserializer.Read(out machineName);
-            deserializer.Read(out memorySizeMeg);
+            deserializer.ReadInt64(out sessionEndTimeQPC);
+            deserializer.ReadInt32(out eventsLost);
+            deserializer.ReadString(out machineName);
+            deserializer.ReadInt32(out memorySizeMeg);
 
-            deserializer.Read(out processes);
-            deserializer.Read(out threads);
-            deserializer.Read(out codeAddresses);
-            deserializer.Read(out stats);
-            deserializer.Read(out callStacks);
-            deserializer.Read(out moduleFiles);
+            deserializer.ReadObject(out processes);
+            deserializer.ReadObject(out threads);
+            deserializer.ReadObject(out codeAddresses);
+            deserializer.ReadObject(out stats);
+            deserializer.ReadObject(out callStacks);
+            deserializer.ReadObject(out moduleFiles);
 
             deserializer.Log("<Marker Name=\"eventPages\"/>");
-            int count = deserializer.ReadInt();
+            int count = deserializer.ReadInt32();
             eventPages = new GrowableArray<EventPageEntry>(count + 1);
             EventPageEntry entry = new EventPageEntry();
             for (int i = 0; i < count; i++)
             {
-                deserializer.Read(out entry.TimeQPC);
-                deserializer.Read(out entry.Position);
+                deserializer.ReadInt64(out entry.TimeQPC);
+                deserializer.ReadLabel(out entry.Position);
                 eventPages.Add(entry);
             }
-            int checkCount = deserializer.ReadInt();
+            int checkCount = deserializer.ReadInt32();
             if (count != checkCount)
             {
                 throw new SerializationException("Redundant count check fail.");
             }
 
-            deserializer.Read(out eventCount);
+            deserializer.ReadInt32(out eventCount);
 
             lazyEventsToStacks.Read(deserializer, delegate
             {
-                int stackCount = deserializer.ReadInt();
+                int stackCount = deserializer.ReadInt32();
                 deserializer.Log("<Marker name=\"eventToStackIndex\" count=\"" + stackCount + "\"/>");
                 eventsToStacks = new GrowableArray<EventsToStackIndex>(stackCount + 1);
                 EventsToStackIndex eventToStackIndex = new EventsToStackIndex();
                 for (int i = 0; i < stackCount; i++)
                 {
-                    eventToStackIndex.EventIndex = (EventIndex)deserializer.ReadInt();
+                    eventToStackIndex.EventIndex = (EventIndex)deserializer.ReadInt32();
                     Debug.Assert((int)eventToStackIndex.EventIndex < eventCount);
-                    eventToStackIndex.CallStackIndex = (CallStackIndex)deserializer.ReadInt();
+                    eventToStackIndex.CallStackIndex = (CallStackIndex)deserializer.ReadInt32();
                     eventsToStacks.Add(eventToStackIndex);
                 }
-                int stackCheckCount = deserializer.ReadInt();
+                int stackCheckCount = deserializer.ReadInt32();
                 if (stackCount != stackCheckCount)
                 {
                     throw new SerializationException("Redundant count check fail.");
@@ -3759,18 +3759,18 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
 
             lazyCswitchBlockingEventsToStacks.Read(deserializer, delegate
             {
-                int stackCount = deserializer.ReadInt();
+                int stackCount = deserializer.ReadInt32();
                 deserializer.Log("<Marker Name=\"lazyCswitchBlockingEventsToStacks\" count=\"" + stackCount + "\"/>");
                 cswitchBlockingEventsToStacks = new GrowableArray<EventsToStackIndex>(stackCount + 1);
                 EventsToStackIndex eventToStackIndex = new EventsToStackIndex();
                 for (int i = 0; i < stackCount; i++)
                 {
-                    eventToStackIndex.EventIndex = (EventIndex)deserializer.ReadInt();
+                    eventToStackIndex.EventIndex = (EventIndex)deserializer.ReadInt32();
                     Debug.Assert((int)eventToStackIndex.EventIndex < eventCount);
-                    eventToStackIndex.CallStackIndex = (CallStackIndex)deserializer.ReadInt();
+                    eventToStackIndex.CallStackIndex = (CallStackIndex)deserializer.ReadInt32();
                     cswitchBlockingEventsToStacks.Add(eventToStackIndex);
                 }
-                int stackCheckCount = deserializer.ReadInt();
+                int stackCheckCount = deserializer.ReadInt32();
                 if (stackCount != stackCheckCount)
                 {
                     throw new SerializationException("Redundant count check fail.");
@@ -3780,18 +3780,18 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
 
             lazyEventsToCodeAddresses.Read(deserializer, delegate
             {
-                int codeAddressCount = deserializer.ReadInt();
+                int codeAddressCount = deserializer.ReadInt32();
                 deserializer.Log("<Marker Name=\"eventToCodeAddressIndex\" count=\"" + codeAddressCount + "\"/>");
                 eventsToCodeAddresses = new GrowableArray<EventsToCodeAddressIndex>(codeAddressCount + 1);
                 EventsToCodeAddressIndex eventToCodeAddressIndex = new EventsToCodeAddressIndex();
                 for (int i = 0; i < codeAddressCount; i++)
                 {
-                    eventToCodeAddressIndex.EventIndex = (EventIndex)deserializer.ReadInt();
+                    eventToCodeAddressIndex.EventIndex = (EventIndex)deserializer.ReadInt32();
                     deserializer.ReadAddress(out eventToCodeAddressIndex.Address);
-                    eventToCodeAddressIndex.CodeAddressIndex = (CodeAddressIndex)deserializer.ReadInt();
+                    eventToCodeAddressIndex.CodeAddressIndex = (CodeAddressIndex)deserializer.ReadInt32();
                     eventsToCodeAddresses.Add(eventToCodeAddressIndex);
                 }
-                int codeAddressCheckCount = deserializer.ReadInt();
+                int codeAddressCheckCount = deserializer.ReadInt32();
                 if (codeAddressCount != codeAddressCheckCount)
                 {
                     throw new SerializationException("Redundant count check fail.");
@@ -3799,52 +3799,52 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
             });
             lazyEventsToCodeAddresses.FinishRead();        // TODO REMOVE
 
-            count = deserializer.ReadInt();
+            count = deserializer.ReadInt32();
             deserializer.Log("<Marker Name=\"userData\" count=\"" + count + "\"/>");
             for (int i = 0; i < count; i++)
             {
                 string key;
-                deserializer.Read(out key);
+                deserializer.ReadString(out key);
                 IFastSerializable value = deserializer.ReadObject();
                 userData[key] = value;
             }
-            checkCount = deserializer.ReadInt();
+            checkCount = deserializer.ReadInt32();
             if (count != checkCount)
             {
                 throw new SerializationException("Redundant count check fail.");
             }
 
-            deserializer.Read(out sampleProfileInterval100ns);
-            deserializer.Read(out osName);
-            deserializer.Read(out osBuild);
-            deserializer.Read(out bootTime100ns);
+            deserializer.ReadInt32(out sampleProfileInterval100ns);
+            deserializer.ReadString(out osName);
+            deserializer.ReadString(out osBuild);
+            deserializer.ReadInt64(out bootTime100ns);
             int encodedUtcOffsetMinutes;
-            deserializer.Read(out encodedUtcOffsetMinutes);
+            deserializer.ReadInt32(out encodedUtcOffsetMinutes);
             if (encodedUtcOffsetMinutes != int.MinValue)
             {
                 utcOffsetMinutes = encodedUtcOffsetMinutes;
             }
 
-            deserializer.Read(out hasPdbInfo);
+            deserializer.ReadBoolean(out hasPdbInfo);
 
-            count = deserializer.ReadInt();
+            count = deserializer.ReadInt32();
             Guid guid;
             relatedActivityIDs.Clear();
             for (int i = 0; i < count; i++)
             {
-                deserializer.Read(out guid);
+                deserializer.ReadGuid(out guid);
                 relatedActivityIDs.Add(guid);
             }
             containerIDs.Clear();
-            count = deserializer.ReadInt();
+            count = deserializer.ReadInt32();
             string containerID;
             for(int i=0; i<count; i++)
             {
-                deserializer.Read(out containerID);
+                deserializer.ReadString(out containerID);
                 containerIDs.Add(containerID);
             }
-            deserializer.Read(out truncated);
-            firstTimeInversion = (EventIndex) (uint) deserializer.ReadInt();
+            deserializer.ReadBoolean(out truncated);
+            firstTimeInversion = (EventIndex) (uint) deserializer.ReadInt32();
         }
         int IFastSerializableVersion.Version
         {
@@ -4551,12 +4551,12 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
         }
         void IFastSerializable.FromStream(Deserializer deserializer)
         {
-            deserializer.Read(out m_log);
+            deserializer.ReadObject(out m_log);
             m_counts.Clear();
-            int count = deserializer.ReadInt();
+            int count = deserializer.ReadInt32();
             for (int i = 0; i < count; i++)
             {
-                TraceEventCounts elem; deserializer.Read(out elem);
+                TraceEventCounts elem; deserializer.ReadObject(out elem);
                 m_counts.Add(elem.m_key, elem);
             }
         }
@@ -4604,9 +4604,9 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
 
         internal TraceEventCountsKey(Deserializer deserializer)
         {
-            deserializer.Read(out m_providerGuid);
-            m_eventId = (TraceEventID)deserializer.ReadInt();
-            deserializer.Read(out m_classicProvider);
+            deserializer.ReadGuid(out m_providerGuid);
+            m_eventId = (TraceEventID)deserializer.ReadInt32();
+            deserializer.ReadBoolean(out m_classicProvider);
         }
 
         public bool Equals(TraceEventCountsKey other)
@@ -4879,11 +4879,11 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
         }
         void IFastSerializable.FromStream(Deserializer deserializer)
         {
-            deserializer.Read(out m_stats);
+            deserializer.ReadObject(out m_stats);
             m_key = new TraceEventCountsKey(deserializer);
-            deserializer.Read(out m_count);
-            deserializer.Read(out m_stackCount);
-            deserializer.Read(out m_eventDataLenTotal);
+            deserializer.ReadInt32(out m_count);
+            deserializer.ReadInt32(out m_stackCount);
+            deserializer.ReadInt64(out m_eventDataLenTotal);
         }
 
         private TraceEventStats m_stats;             // provides the context to get the template (more info about event like its name)
@@ -5477,22 +5477,22 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
         }
         void IFastSerializable.FromStream(Deserializer deserializer)
         {
-            deserializer.Read(out log);
+            deserializer.ReadObject(out log);
 
             Debug.Assert(processes.Count == 0);
-            int count = deserializer.ReadInt();
+            int count = deserializer.ReadInt32();
             processes = new GrowableArray<TraceProcess>(count + 1);
             for (int i = 0; i < count; i++)
             {
-                TraceProcess elem; deserializer.Read(out elem);
+                TraceProcess elem; deserializer.ReadObject(out elem);
                 processes.Add(elem);
             }
 
-            count = deserializer.ReadInt();
+            count = deserializer.ReadInt32();
             processesByPID = new GrowableArray<TraceProcess>(count + 1);
             for (int i = 0; i < count; i++)
             {
-                TraceProcess elem; deserializer.Read(out elem);
+                TraceProcess elem; deserializer.ReadObject(out elem);
                 processesByPID.Add(elem);
             }
         }
@@ -5844,29 +5844,29 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
 
         void IFastSerializable.FromStream(Deserializer deserializer)
         {
-            deserializer.Read(out processID);
-            int processIndex; deserializer.Read(out processIndex); this.processIndex = (ProcessIndex)processIndex;
-            deserializer.Read(out log);
-            deserializer.Read(out commandLine);
-            deserializer.Read(out imageFileName);
-            deserializer.Read(out firstEventSeenQPC);
-            deserializer.Read(out startTimeQPC);
-            deserializer.Read(out endTimeQPC);
+            deserializer.ReadInt32(out processID);
+            int processIndex; deserializer.ReadInt32(out processIndex); this.processIndex = (ProcessIndex)processIndex;
+            deserializer.ReadObject(out log);
+            deserializer.ReadString(out commandLine);
+            deserializer.ReadString(out imageFileName);
+            deserializer.ReadInt64(out firstEventSeenQPC);
+            deserializer.ReadInt64(out startTimeQPC);
+            deserializer.ReadInt64(out endTimeQPC);
             if (deserializer.ReadBool())                // read an int? for exitStatus
             {
-                exitStatus = deserializer.ReadInt();
+                exitStatus = deserializer.ReadInt32();
             }
             else
             {
                 exitStatus = null;
             }
 
-            deserializer.Read(out parentID);
-            deserializer.Read(out parent);
-            deserializer.Read(out loadedModules);
-            deserializer.Read(out cpuSamples);
-            deserializer.Read(out loadedAModuleHigh);
-            deserializer.Read(out anyModuleLoaded);
+            deserializer.ReadInt32(out parentID);
+            deserializer.ReadObject(out parent);
+            deserializer.ReadObject(out loadedModules);
+            deserializer.ReadInt32(out cpuSamples);
+            deserializer.ReadBoolean(out loadedAModuleHigh);
+            deserializer.ReadBoolean(out anyModuleLoaded);
         }
 
         private int processID;
@@ -6292,14 +6292,14 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
 
         void IFastSerializable.FromStream(Deserializer deserializer)
         {
-            deserializer.Read(out log);
+            deserializer.ReadObject(out log);
             Debug.Assert(threads.Count == 0);
-            int count = deserializer.ReadInt();
+            int count = deserializer.ReadInt32();
             threads = new GrowableArray<TraceThread>(count + 1);
 
             for (int i = 0; i < count; i++)
             {
-                TraceThread elem; deserializer.Read(out elem);
+                TraceThread elem; deserializer.ReadObject(out elem);
                 threads.Add(elem);
             }
         }
@@ -6496,20 +6496,20 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
 
         void IFastSerializable.FromStream(Deserializer deserializer)
         {
-            deserializer.Read(out threadID);
-            int threadIndex; deserializer.Read(out threadIndex); this.threadIndex = (ThreadIndex)threadIndex;
-            deserializer.Read(out process);
-            deserializer.Read(out startTimeQPC);
-            deserializer.Read(out endTimeQPC);
-            deserializer.Read(out cpuSamples);
-            deserializer.Read(out threadInfo);
+            deserializer.ReadInt32(out threadID);
+            int threadIndex; deserializer.ReadInt32(out threadIndex); this.threadIndex = (ThreadIndex)threadIndex;
+            deserializer.ReadObject(out process);
+            deserializer.ReadInt64(out startTimeQPC);
+            deserializer.ReadInt64(out endTimeQPC);
+            deserializer.ReadInt32(out cpuSamples);
+            deserializer.ReadString(out threadInfo);
             userStackBase = (Address)deserializer.ReadInt64();
 
-            int count; deserializer.Read(out count);
+            int count; deserializer.ReadInt32(out count);
             activityIds = new GrowableArray<ActivityIndex>(count);
             for (int i = 0; i < count; ++i)
             {
-                activityIds.Add((ActivityIndex)deserializer.ReadInt());
+                activityIds.Add((ActivityIndex)deserializer.ReadInt32());
             }
         }
 
@@ -7023,12 +7023,12 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
         }
         void IFastSerializable.FromStream(Deserializer deserializer)
         {
-            deserializer.Read(out process);
+            deserializer.ReadObject(out process);
             Debug.Assert(modules.Count == 0);
-            int count; deserializer.Read(out count);
+            int count; deserializer.ReadInt32(out count);
             for (int i = 0; i < count; i++)
             {
-                TraceLoadedModule elem; deserializer.Read(out elem);
+                TraceLoadedModule elem; deserializer.ReadObject(out elem);
                 modules.Add(elem);
             }
         }
@@ -7201,13 +7201,13 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
         {
             long address;
 
-            deserializer.Read(out loadTimeQPC);
-            deserializer.Read(out unloadTimeQPC);
-            deserializer.Read(out managedModule);
-            deserializer.Read(out process);
-            deserializer.Read(out moduleFile);
-            deserializer.Read(out address); key = (ulong)address;
-            deserializer.Read(out overlaps);
+            deserializer.ReadInt64(out loadTimeQPC);
+            deserializer.ReadInt64(out unloadTimeQPC);
+            deserializer.ReadObject(out managedModule);
+            deserializer.ReadObject(out process);
+            deserializer.ReadObject(out moduleFile);
+            deserializer.ReadInt64(out address); key = (ulong)address;
+            deserializer.ReadBoolean(out overlaps);
         }
 
         internal ulong key;                          // Either the base address (for unmanaged) or moduleID (managed)
@@ -7290,9 +7290,9 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
         {
             int flags;
             base.FromStream(deserializer);
-            deserializer.Read(out assemblyID);
-            deserializer.Read(out nativeModule);
-            deserializer.Read(out flags); this.flags = (ModuleFlags)flags;
+            deserializer.ReadInt64(out assemblyID);
+            deserializer.ReadObject(out nativeModule);
+            deserializer.ReadInt32(out flags); this.flags = (ModuleFlags)flags;
             InitializeNativeModuleIsReadyToRun();
         }
         #endregion
@@ -7577,19 +7577,19 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
 
         void IFastSerializable.FromStream(Deserializer deserializer)
         {
-            deserializer.Read(out log);
-            deserializer.Read(out codeAddresses);
+            deserializer.ReadObject(out log);
+            deserializer.ReadObject(out codeAddresses);
 
             lazyCallStacks.Read(deserializer, delegate
             {
                 deserializer.Log("<Marker Name=\"callStacks\"/>");
-                int count = deserializer.ReadInt();
+                int count = deserializer.ReadInt32();
                 callStacks = new GrowableArray<CallStackInfo>(count + 1);
                 CallStackInfo callStackInfo = new CallStackInfo();
                 for (int i = 0; i < count; i++)
                 {
-                    callStackInfo.codeAddressIndex = (CodeAddressIndex)deserializer.ReadInt();
-                    callStackInfo.callerIndex = (CallStackIndex)deserializer.ReadInt();
+                    callStackInfo.codeAddressIndex = (CodeAddressIndex)deserializer.ReadInt32();
+                    callStackInfo.callerIndex = (CallStackIndex)deserializer.ReadInt32();
                     callStacks.Add(callStackInfo);
                 }
             });
@@ -8766,22 +8766,22 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
         {
             lazyCodeAddresses.Read(deserializer, delegate
             {
-                deserializer.Read(out log);
-                deserializer.Read(out moduleFiles);
-                deserializer.Read(out methods);
+                deserializer.ReadObject(out log);
+                deserializer.ReadObject(out moduleFiles);
+                deserializer.ReadObject(out methods);
 
                 int storedCodeAddressInfoSerializationVersion = 0;
-                deserializer.TryReadTagged(ref storedCodeAddressInfoSerializationVersion);
-                int count = deserializer.ReadInt();
+                deserializer.TryReadTaggedInt32(ref storedCodeAddressInfoSerializationVersion);
+                int count = deserializer.ReadInt32();
                 deserializer.Log("<Marker name=\"codeAddresses\" count=\"" + count + "\"/>");
                 CodeAddressInfo codeAddressInfo = new CodeAddressInfo();
                 codeAddresses = new GrowableArray<CodeAddressInfo>(count + 1);
                 for (int i = 0; i < count; i++)
                 {
                     deserializer.ReadAddress(out codeAddressInfo.Address);
-                    codeAddressInfo.moduleFileIndex = (ModuleFileIndex)deserializer.ReadInt();
-                    codeAddressInfo.methodOrProcessOrIlMapIndex = deserializer.ReadInt();
-                    deserializer.Read(out codeAddressInfo.InclusiveCount);
+                    codeAddressInfo.moduleFileIndex = (ModuleFileIndex)deserializer.ReadInt32();
+                    codeAddressInfo.methodOrProcessOrIlMapIndex = deserializer.ReadInt32();
+                    deserializer.ReadInt32(out codeAddressInfo.InclusiveCount);
 
                     if (storedCodeAddressInfoSerializationVersion >= 1)
                     {
@@ -8790,12 +8790,12 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
 
                     codeAddresses.Add(codeAddressInfo);
                 }
-                deserializer.Read(out totalCodeAddresses);
+                deserializer.ReadInt32(out totalCodeAddresses);
 
-                ILToNativeMaps.Count = deserializer.ReadInt();
+                ILToNativeMaps.Count = deserializer.ReadInt32();
                 for (int i = 0; i < ILToNativeMaps.Count; i++)
                 {
-                    deserializer.Read(out ILToNativeMaps.UnderlyingArray[i]);
+                    deserializer.ReadObject(out ILToNativeMaps.UnderlyingArray[i]);
                 }
             });
             lazyCodeAddresses.FinishRead();        // TODO REMOVE
@@ -9126,8 +9126,8 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
 
             internal void Deserialize(Deserializer deserializer)
             {
-                deserializer.Read(out ILOffset);
-                deserializer.Read(out NativeOffset);
+                deserializer.ReadInt32(out ILOffset);
+                deserializer.ReadInt32(out NativeOffset);
             }
             internal void Serialize(Serializer serializer)
             {
@@ -9206,11 +9206,11 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
             }
             void IFastSerializable.FromStream(Deserializer deserializer)
             {
-                MethodIndex = (MethodIndex)deserializer.ReadInt();
+                MethodIndex = (MethodIndex)deserializer.ReadInt32();
                 deserializer.ReadAddress(out MethodStart);
-                deserializer.Read(out MethodLength);
+                deserializer.ReadInt32(out MethodLength);
 
-                Map.Count = deserializer.ReadInt();
+                Map.Count = deserializer.ReadInt32();
                 for (int i = 0; i < Map.Count; i++)
                 {
                     Map.UnderlyingArray[i].Deserialize(deserializer);
@@ -9603,17 +9603,17 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
         {
             lazyMethods.Read(deserializer, delegate
             {
-                deserializer.Read(out codeAddresses);
-                int count = deserializer.ReadInt();
+                deserializer.ReadObject(out codeAddresses);
+                int count = deserializer.ReadInt32();
                 deserializer.Log("<Marker name=\"methods\" count=\"" + count + "\"/>");
                 MethodInfo methodInfo = new MethodInfo();
                 methods = new GrowableArray<MethodInfo>(count + 1);
 
                 for (int i = 0; i < count; i++)
                 {
-                    deserializer.Read(out methodInfo.fullMethodName);
-                    deserializer.Read(out methodInfo.methodDefOrRva);
-                    methodInfo.moduleIndex = (ModuleFileIndex)deserializer.ReadInt();
+                    deserializer.ReadString(out methodInfo.fullMethodName);
+                    deserializer.ReadInt32(out methodInfo.methodDefOrRva);
+                    methodInfo.moduleIndex = (ModuleFileIndex)deserializer.ReadInt32();
                     methods.Add(methodInfo);
                 }
             });
@@ -9913,13 +9913,13 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
         }
         void IFastSerializable.FromStream(Deserializer deserializer)
         {
-            deserializer.Read(out log);
-            int count = deserializer.ReadInt();
+            deserializer.ReadObject(out log);
+            int count = deserializer.ReadInt32();
             moduleFiles = new GrowableArray<TraceModuleFile>(count + 1);
             for (int i = 0; i < count; i++)
             {
                 TraceModuleFile elem;
-                deserializer.Read(out elem);
+                deserializer.ReadObject(out elem);
                 moduleFiles.Add(elem);
             }
             moduleFilesByName = null;
@@ -10173,20 +10173,20 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
         }
         void IFastSerializable.FromStream(Deserializer deserializer)
         {
-            deserializer.Read(out fileName);
-            deserializer.Read(out imageSize);
+            deserializer.ReadString(out fileName);
+            deserializer.ReadInt32(out imageSize);
             deserializer.ReadAddress(out imageBase);
 
-            deserializer.Read(out pdbName);
-            deserializer.Read(out pdbSignature);
-            deserializer.Read(out pdbAge);
-            deserializer.Read(out fileVersion);
-            deserializer.Read(out productVersion);
-            deserializer.Read(out timeDateStamp);
-            deserializer.Read(out imageChecksum);
-            moduleFileIndex = (ModuleFileIndex)deserializer.ReadInt();
-            deserializer.Read(out codeAddressesInModule);
-            deserializer.Read(out managedModule);
+            deserializer.ReadString(out pdbName);
+            deserializer.ReadGuid(out pdbSignature);
+            deserializer.ReadInt32(out pdbAge);
+            deserializer.ReadString(out fileVersion);
+            deserializer.ReadString(out productVersion);
+            deserializer.ReadInt32(out timeDateStamp);
+            deserializer.ReadInt32(out imageChecksum);
+            moduleFileIndex = (ModuleFileIndex)deserializer.ReadInt32();
+            deserializer.ReadInt32(out codeAddressesInModule);
+            deserializer.ReadObject(out managedModule);
         }
         #endregion
     }
@@ -10487,17 +10487,17 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
 
         void IFastSerializable.FromStream(Deserializer deserializer)
         {
-            activityIndex = (ActivityIndex)deserializer.ReadInt();
-            deserializer.Read(out creator);
-            creationCallStackIndex = (CallStackIndex)deserializer.ReadInt();
-            deserializer.Read(out thread);
-            creationEventIndex = (EventIndex)deserializer.ReadInt();
-            deserializer.Read(out creationTimeQPC);
-            deserializer.Read(out startTimeQPC);
-            deserializer.Read(out endTimeQPC);
-            deserializer.Read(out multiTrigger);
-            deserializer.Read(out gcBound);
-            short kind; deserializer.Read(out kind); this.kind = (TraceActivity.ActivityKind)kind;
+            activityIndex = (ActivityIndex)deserializer.ReadInt32();
+            deserializer.ReadObject(out creator);
+            creationCallStackIndex = (CallStackIndex)deserializer.ReadInt32();
+            deserializer.ReadObject(out thread);
+            creationEventIndex = (EventIndex)deserializer.ReadInt32();
+            deserializer.ReadInt64(out creationTimeQPC);
+            deserializer.ReadInt64(out startTimeQPC);
+            deserializer.ReadInt64(out endTimeQPC);
+            deserializer.ReadBoolean(out multiTrigger);
+            deserializer.ReadBoolean(out gcBound);
+            short kind; deserializer.ReadInt16(out kind); this.kind = (TraceActivity.ActivityKind)kind;
         }
 
         private ActivityIndex activityIndex;
@@ -10900,7 +10900,7 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
         public static void ReadAddress(this Deserializer deserializer, out Address address)
         {
             long longAddress;
-            deserializer.Read(out longAddress);
+            deserializer.ReadInt64(out longAddress);
             address = (Address)longAddress;
         }
     }

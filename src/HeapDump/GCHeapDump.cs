@@ -308,11 +308,11 @@ public class GCHeapDump : IFastSerializable, IFastSerializableVersion
             throw new SerializationException("Unsupported version GCDump version: 8");
         }
 
-        deserializer.Read(out m_graph);
+        deserializer.ReadObject(out m_graph);
         deserializer.ReadBool();                    // Used to be Is64Bit but that is now on m_graph and we want to keep compatibility. 
 
-        AverageCountMultiplier = deserializer.ReadFloat();
-        AverageSizeMultiplier = deserializer.ReadFloat();
+        AverageCountMultiplier = deserializer.ReadSingle();
+        AverageSizeMultiplier = deserializer.ReadSingle();
 
         JSHeapInfo = (JSHeapInfo)deserializer.ReadObject();
         DotNetHeapInfo = (DotNetHeapInfo)deserializer.ReadObject();
@@ -321,18 +321,18 @@ public class GCHeapDump : IFastSerializable, IFastSerializableVersion
         TimeCollected = new DateTime(deserializer.ReadInt64());
         MachineName = deserializer.ReadString();
         ProcessName = deserializer.ReadString();
-        ProcessID = deserializer.ReadInt();
+        ProcessID = deserializer.ReadInt32();
         TotalProcessCommit = deserializer.ReadInt64();
         TotalProcessWorkingSet = deserializer.ReadInt64();
 
         int count;
-        deserializer.Read(out count);
+        deserializer.ReadInt32(out count);
         if (count != 0)
         {
             var a = new float[count];
             for (int i = 0; i < a.Length; i++)
             {
-                a[i] = deserializer.ReadFloat();
+                a[i] = deserializer.ReadSingle();
             }
 
             CountMultipliersByType = a;
@@ -340,9 +340,9 @@ public class GCHeapDump : IFastSerializable, IFastSerializableVersion
 
         // Things after version 8 go here. Always add the the end, and it should always work
         // and use the tagged variation.  
-        deserializer.TryReadTagged<InteropInfo>(ref m_interop);
+        deserializer.TryReadTaggedObject<InteropInfo>(ref m_interop);
         string creationTool = null;
-        deserializer.TryReadTagged(ref creationTool);
+        deserializer.TryReadTaggedString(ref creationTool);
         CreationTool = creationTool;
     }
 
@@ -353,7 +353,7 @@ public class GCHeapDump : IFastSerializable, IFastSerializableVersion
     {
         DotNetHeapInfo = new DotNetHeapInfo();
 
-        deserializer.Read(out m_graph);
+        deserializer.ReadObject(out m_graph);
         DotNetHeapInfo.SizeOfAllSegments = deserializer.ReadInt64();
         deserializer.ReadInt64(); // Size of dumped objects 
         deserializer.ReadInt64(); // Number of dumped objects 
@@ -365,14 +365,14 @@ public class GCHeapDump : IFastSerializable, IFastSerializableVersion
             TimeCollected = new DateTime(deserializer.ReadInt64());
             MachineName = deserializer.ReadString();
             ProcessName = deserializer.ReadString();
-            ProcessID = deserializer.ReadInt();
+            ProcessID = deserializer.ReadInt32();
             TotalProcessCommit = deserializer.ReadInt64();
             TotalProcessWorkingSet = deserializer.ReadInt64();
 
             if (deserializer.VersionBeingRead >= 6)
             {
                 // Skip the segments
-                var count = deserializer.ReadInt();
+                var count = deserializer.ReadInt32();
                 for (int i = 0; i < count; i++)
                 {
                     deserializer.ReadObject();
@@ -619,16 +619,16 @@ public class InteropInfo : IFastSerializable
 
     void IFastSerializable.FromStream(Deserializer deserializer)
     {
-        int countRCWCCW = deserializer.ReadInt();
+        int countRCWCCW = deserializer.ReadInt32();
         if (countRCWCCW == 0)
         {
             return;
         }
 
-        m_countRCWs = deserializer.ReadInt();
-        m_countCCWs = deserializer.ReadInt();
-        m_countInterfaces = deserializer.ReadInt();
-        m_countModules = deserializer.ReadInt();
+        m_countRCWs = deserializer.ReadInt32();
+        m_countCCWs = deserializer.ReadInt32();
+        m_countInterfaces = deserializer.ReadInt32();
+        m_countModules = deserializer.ReadInt32();
 
         m_listRCWInfo = new List<RCWInfo>(m_countRCWs);
         m_listCCWInfo = new List<CCWInfo>(m_countCCWs);
@@ -640,13 +640,13 @@ public class InteropInfo : IFastSerializable
         for (int i = 0; i < m_countRCWs; i++)
         {
             RCWInfo infoRCW = new RCWInfo();
-            infoRCW.node = (NodeIndex)deserializer.ReadInt();
-            infoRCW.refCount = deserializer.ReadInt();
+            infoRCW.node = (NodeIndex)deserializer.ReadInt32();
+            infoRCW.refCount = deserializer.ReadInt32();
             infoRCW.addrIUnknown = (Address)deserializer.ReadInt64();
             infoRCW.addrJupiter = (Address)deserializer.ReadInt64();
             infoRCW.addrVTable = (Address)deserializer.ReadInt64();
-            infoRCW.firstComInf = deserializer.ReadInt();
-            infoRCW.countComInf = deserializer.ReadInt();
+            infoRCW.firstComInf = deserializer.ReadInt32();
+            infoRCW.countComInf = deserializer.ReadInt32();
             m_listRCWInfo.Add(infoRCW);
             m_countRCWInterfaces += infoRCW.countComInf;
         }
@@ -654,12 +654,12 @@ public class InteropInfo : IFastSerializable
         for (int i = 0; i < m_countCCWs; i++)
         {
             CCWInfo infoCCW = new CCWInfo();
-            infoCCW.node = (NodeIndex)deserializer.ReadInt();
-            infoCCW.refCount = deserializer.ReadInt();
+            infoCCW.node = (NodeIndex)deserializer.ReadInt32();
+            infoCCW.refCount = deserializer.ReadInt32();
             infoCCW.addrIUnknown = (Address)deserializer.ReadInt64();
             infoCCW.addrHandle = (Address)deserializer.ReadInt64();
-            infoCCW.firstComInf = deserializer.ReadInt();
-            infoCCW.countComInf = deserializer.ReadInt();
+            infoCCW.firstComInf = deserializer.ReadInt32();
+            infoCCW.countComInf = deserializer.ReadInt32();
             m_listCCWInfo.Add(infoCCW);
         }
 
@@ -667,8 +667,8 @@ public class InteropInfo : IFastSerializable
         {
             ComInterfaceInfo infoInterface = new ComInterfaceInfo();
             infoInterface.fRCW = ((deserializer.ReadByte() == 1) ? true : false);
-            infoInterface.owner = deserializer.ReadInt();
-            infoInterface.typeID = (NodeTypeIndex)deserializer.ReadInt();
+            infoInterface.owner = deserializer.ReadInt32();
+            infoInterface.typeID = (NodeTypeIndex)deserializer.ReadInt32();
             infoInterface.addrInterface = (Address)deserializer.ReadInt64();
             infoInterface.addrFirstVTable = (Address)deserializer.ReadInt64();
             infoInterface.addrFirstFunc = (Address)deserializer.ReadInt64();
@@ -679,9 +679,9 @@ public class InteropInfo : IFastSerializable
         {
             InteropModuleInfo infoModule = new InteropModuleInfo();
             infoModule.baseAddress = (Address)deserializer.ReadInt64();
-            infoModule.fileSize = (uint)deserializer.ReadInt();
-            infoModule.timeStamp = (uint)deserializer.ReadInt();
-            deserializer.Read(out infoModule.fileName);
+            infoModule.fileSize = (uint)deserializer.ReadInt32();
+            infoModule.timeStamp = (uint)deserializer.ReadInt32();
+            deserializer.ReadString(out infoModule.fileName);
             infoModule.loadOrder = i;
             m_listModules.Add(infoModule);
         }

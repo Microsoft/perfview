@@ -322,7 +322,7 @@ namespace Graphs
             base.FromStream(deserializer);
             // Read in the Memory addresses of each object 
             m_nodeAddresses.Clear();
-            int addressCount = deserializer.ReadInt();
+            int addressCount = deserializer.ReadInt32();
             for (int i = 0; i < addressCount; i++)
             {
                 m_nodeAddresses.Add((Address)deserializer.ReadInt64());

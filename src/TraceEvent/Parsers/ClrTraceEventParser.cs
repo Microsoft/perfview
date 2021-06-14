@@ -13380,7 +13380,7 @@ namespace Microsoft.Diagnostics.Tracing.Parsers.Clr
             lazyTypeIDToName.Read(deserializer, delegate
             {
                 int count;
-                deserializer.Read(out count);
+                deserializer.ReadInt32(out count);
                 Debug.Assert(count >= 0);
                 deserializer.Log("<Marker name=\"typeIDToName\"/ count=\"" + count + "\">");
                 if (count > 0)
@@ -13393,8 +13393,8 @@ namespace Microsoft.Diagnostics.Tracing.Parsers.Clr
                     for (int i = 0; i < count; i++)
                     {
                         Address key; deserializer.ReadAddress(out key);
-                        long startTimeQPC; deserializer.Read(out startTimeQPC);
-                        string value; deserializer.Read(out value);
+                        long startTimeQPC; deserializer.ReadInt64(out startTimeQPC);
+                        string value; deserializer.ReadString(out value);
                         _typeIDToName.Add(key, startTimeQPC, value);
                     }
                 }

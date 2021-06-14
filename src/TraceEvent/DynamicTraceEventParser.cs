@@ -1648,7 +1648,7 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
                 if (fetchType == 1 || fetchType == 2)
                 {
                     IDictionary<long, string> map = null;
-                    int mapCount = deserializer.ReadInt();
+                    int mapCount = deserializer.ReadInt32();
                     if (fetchType == 1)
                     {
                         map = new SortedDictionary<long, string>();
@@ -1670,14 +1670,14 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
                 {
                     PayloadFetchClassInfo classInfo = new PayloadFetchClassInfo();
 
-                    var fieldNamesCount = deserializer.ReadInt();
+                    var fieldNamesCount = deserializer.ReadInt32();
                     classInfo.FieldNames = new string[fieldNamesCount];
                     for (int i = 0; i < fieldNamesCount; i++)
                     {
                         classInfo.FieldNames[i] = deserializer.ReadString();
                     }
 
-                    var fieldFetchCount = deserializer.ReadInt();
+                    var fieldFetchCount = deserializer.ReadInt32();
                     classInfo.FieldFetches = new DynamicTraceEventData.PayloadFetch[fieldFetchCount];
                     for (int i = 0; i < fieldFetchCount; i++)
                     {
@@ -1689,7 +1689,7 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
                 else if (fetchType == 4)  // Array
                 {
                     PayloadFetchArrayInfo arrayInfo = new PayloadFetchArrayInfo();
-                    deserializer.Read(out arrayInfo.FixedCount);
+                    deserializer.ReadInt32(out arrayInfo.FixedCount);
                     arrayInfo.Element.FromStream(deserializer);
                     info = arrayInfo;
                 }
@@ -1751,27 +1751,27 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
         }
         public void FromStream(Deserializer deserializer)
         {
-            eventID = (TraceEventID)deserializer.ReadInt();
-            task = (TraceEventTask)deserializer.ReadInt();
-            deserializer.Read(out taskName);
-            deserializer.Read(out taskGuid);
-            opcode = (TraceEventOpcode)deserializer.ReadInt();
-            deserializer.Read(out opcodeName);
-            deserializer.Read(out providerGuid);
-            deserializer.Read(out providerName);
-            deserializer.Read(out MessageFormat);
-            deserializer.Read(out lookupAsClassic);
-            deserializer.Read(out lookupAsWPP);
-            deserializer.Read(out containsSelfDescribingMetadata);
+            eventID = (TraceEventID)deserializer.ReadInt32();
+            task = (TraceEventTask)deserializer.ReadInt32();
+            deserializer.ReadString(out taskName);
+            deserializer.ReadGuid(out taskGuid);
+            opcode = (TraceEventOpcode)deserializer.ReadInt32();
+            deserializer.ReadString(out opcodeName);
+            deserializer.ReadGuid(out providerGuid);
+            deserializer.ReadString(out providerName);
+            deserializer.ReadString(out MessageFormat);
+            deserializer.ReadBoolean(out lookupAsClassic);
+            deserializer.ReadBoolean(out lookupAsWPP);
+            deserializer.ReadBoolean(out containsSelfDescribingMetadata);
             int count;
-            deserializer.Read(out count);
+            deserializer.ReadInt32(out count);
             payloadNames = new string[count];
             for (int i = 0; i < count; i++)
             {
-                deserializer.Read(out payloadNames[i]);
+                deserializer.ReadString(out payloadNames[i]);
             }
 
-            deserializer.Read(out count);
+            deserializer.ReadInt32(out count);
             payloadFetches = new PayloadFetch[count];
             for (int i = 0; i < count; i++)
             {
@@ -1887,11 +1887,11 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
         void IFastSerializable.FromStream(Deserializer deserializer)
         {
             int count;
-            deserializer.Read(out count);
+            deserializer.ReadInt32(out count);
             for (int i = 0; i < count; i++)
             {
                 ProviderManifest provider;
-                deserializer.Read(out provider);
+                deserializer.ReadObject(out provider);
                 providers.Add(provider.Guid, provider);
             }
         }
@@ -2555,11 +2555,11 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
 
         void IFastSerializable.FromStream(Deserializer deserializer)
         {
-            deserializer.Read(out majorVersion);
-            deserializer.Read(out minorVersion);
-            format = (ManifestEnvelope.ManifestFormats)deserializer.ReadInt();
-            deserializer.Read(out id);
-            int count = deserializer.ReadInt();
+            deserializer.ReadByte(out majorVersion);
+            deserializer.ReadByte(out minorVersion);
+            format = (ManifestEnvelope.ManifestFormats)deserializer.ReadInt32();
+            deserializer.ReadString(out id);
+            int count = deserializer.ReadInt32();
             serializedManifest = new byte[count];
             for (int i = 0; i < count; i++)
             {

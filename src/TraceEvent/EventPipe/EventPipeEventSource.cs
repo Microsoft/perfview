@@ -372,17 +372,17 @@ namespace Microsoft.Diagnostics.Tracing
             short second = deserializer.ReadInt16();
             short milliseconds = deserializer.ReadInt16();
             _syncTimeUTC = new DateTime(year, month, day, hour, minute, second, milliseconds, DateTimeKind.Utc);
-            deserializer.Read(out _syncTimeQPC);
-            deserializer.Read(out _QPCFreq);
+            deserializer.ReadInt64(out _syncTimeQPC);
+            deserializer.ReadInt64(out _QPCFreq);
 
             sessionStartTimeQPC = _syncTimeQPC;
 
             if (3 <= deserializer.VersionBeingRead)
             {
-                deserializer.Read(out pointerSize);
-                deserializer.Read(out _processId);
-                deserializer.Read(out numberOfProcessors);
-                deserializer.Read(out _expectedCPUSamplingRate);
+                deserializer.ReadInt32(out pointerSize);
+                deserializer.ReadInt32(out _processId);
+                deserializer.ReadInt32(out numberOfProcessors);
+                deserializer.ReadInt32(out _expectedCPUSamplingRate);
             }
 #if SUPPORT_V1_V2
             else
@@ -854,7 +854,7 @@ namespace Microsoft.Diagnostics.Tracing
         public unsafe void FromStream(Deserializer deserializer)
         {
             // blockSizeInBytes does not include padding bytes to ensure alignment.
-            var blockSizeInBytes = deserializer.ReadInt();
+            var blockSizeInBytes = deserializer.ReadInt32();
 
             // after the block size comes eventual padding, we just need to skip it by jumping to the nearest aligned address
             if ((long)deserializer.Current % 4 != 0)

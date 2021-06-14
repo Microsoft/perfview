@@ -555,33 +555,33 @@ namespace Graphs
 
         public void FromStream(Deserializer deserializer)
         {
-            deserializer.Read(out m_totalSize);
-            RootIndex = (NodeIndex)deserializer.ReadInt();
+            deserializer.ReadInt64(out m_totalSize);
+            RootIndex = (NodeIndex)deserializer.ReadInt32();
 
             // Read in the Types 
             TypeInfo info = new TypeInfo();
-            int typeCount = deserializer.ReadInt();
+            int typeCount = deserializer.ReadInt32();
             m_types = new GrowableArray<TypeInfo>(typeCount);
             for (int i = 0; i < typeCount; i++)
             {
-                deserializer.Read(out info.Name);
-                deserializer.Read(out info.Size);
-                deserializer.Read(out info.ModuleName);
+                deserializer.ReadString(out info.Name);
+                deserializer.ReadInt32(out info.Size);
+                deserializer.ReadString(out info.ModuleName);
                 m_types.Add(info);
             }
 
             // Read in the Nodes 
-            int nodeCount = deserializer.ReadInt();
+            int nodeCount = deserializer.ReadInt32();
             m_nodes = new SegmentedList<StreamLabel>(SegmentSize, nodeCount);
 
             for (int i = 0; i < nodeCount; i++)
             {
-                m_nodes.Add((StreamLabel)(uint)deserializer.ReadInt());
+                m_nodes.Add((StreamLabel)(uint)deserializer.ReadInt32());
             }
 
             // Read in the Blob stream.  
             // TODO be lazy about reading in the blobs.  
-            int blobCount = deserializer.ReadInt();
+            int blobCount = deserializer.ReadInt32();
             SegmentedMemoryStreamWriter writer = new SegmentedMemoryStreamWriter(blobCount);
             while (8 <= blobCount)
             {
@@ -607,12 +607,12 @@ namespace Graphs
                 expansion.Read(deserializer, delegate ()
                 {
                     // I don't need to use Tagged types for my 'first' version of this new region 
-                    int count = deserializer.ReadInt();
+                    int count = deserializer.ReadInt32();
                     for (int i = 0; i < count; i++)
                     {
                         m_deferedTypes.Add(new DeferedTypeInfo()
                         {
-                            TypeID = deserializer.ReadInt(),
+                            TypeID = deserializer.ReadInt32(),
                             Module = (Module)deserializer.ReadObject(),
                             TypeNameSuffix = deserializer.ReadString()
                         });
@@ -1090,13 +1090,13 @@ namespace Graphs
         /// </summary>
         public void FromStream(Deserializer deserializer)
         {
-            deserializer.Read(out Path);
+            deserializer.ReadString(out Path);
             ImageBase = (Address)deserializer.ReadInt64();
-            deserializer.Read(out Size);
+            deserializer.ReadInt32(out Size);
             BuildTime = new DateTime(deserializer.ReadInt64());
-            deserializer.Read(out PdbName);
-            deserializer.Read(out PdbGuid);
-            deserializer.Read(out PdbAge);
+            deserializer.ReadString(out PdbName);
+            deserializer.ReadGuid(out PdbGuid);
+            deserializer.ReadInt32(out PdbAge);
         }
         #endregion
     }
