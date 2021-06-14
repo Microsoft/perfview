@@ -6,6 +6,7 @@
 // 
 #if false  // This code is currently unused, commented out.  
 using System;
+using System.Diagnostics;
 using System.Text;      // For StringBuilder.
 using System.Threading;
 using System.IO;
@@ -110,8 +111,17 @@ namespace FastSerialization
         public long Length
             => _viewOffset + _offset;
 
-        public DeferedStreamLabel GetLabel()
+        public DeferedStreamLabel GetLabel(bool allowPadding)
         {
+            if ((Length & 0x1) != 0)
+            {
+                if (!allowPadding)
+                    throw new NotSupportedException("Labels must be aligned to a 2-byte boundary.");
+
+                Write((byte)Tags.Padding);
+                Debug.Assert((Length & 0x1) == 0);
+            }
+
             return checked((DeferedStreamLabel)Length);
         }
 
@@ -200,6 +210,9 @@ namespace FastSerialization
 
         public void Write(DeferedStreamLabel value)
         {
+            if (((long)value & 0x1) != 0)
+                throw new NotSupportedException("Labels must be aligned to a 2-byte boundary.");
+
             Write((int)value);
         }
 

@@ -415,7 +415,7 @@ namespace Graphs
         internal void SetNodeTypeAndSize(NodeIndex nodeIndex, NodeTypeIndex typeIndex, int sizeInBytes)
         {
             Debug.Assert(m_nodes[(int)nodeIndex] == m_undefinedObjDef, "Calling SetNode twice for node index " + nodeIndex);
-            m_nodes[(int)nodeIndex] = m_writer.GetLabel();
+            m_nodes[(int)nodeIndex] = m_writer.GetLabel(allowPadding: true);
 
             Debug.Assert(sizeInBytes >= 0);
             // We are going to assume that if this is negative it is because it is a large positive number.  
@@ -473,7 +473,7 @@ namespace Graphs
 
             // Create an undefined node, kind of gross because SetNode expects to have an entry
             // in the m_nodes table, so we make a fake one and then remove it.  
-            m_undefinedObjDef = m_writer.GetLabel();
+            m_undefinedObjDef = m_writer.GetLabel(allowPadding: false);
             m_nodes.Add(m_undefinedObjDef);
             SetNode(0, CreateType("UNDEFINED"), 0, new GrowableArray<NodeIndex>());
             Debug.Assert(m_nodes[0] == m_undefinedObjDef);
@@ -513,6 +513,9 @@ namespace Graphs
             serializer.Write(m_nodes.Count);
             for (int i = 0; i < m_nodes.Count; i++)
             {
+                if (((long)m_nodes[i] & 0x1) != 0)
+                    throw new NotSupportedException("Labels must be aligned to a 2-byte boundary.");
+
                 serializer.Write((int)m_nodes[i]);
             }
 

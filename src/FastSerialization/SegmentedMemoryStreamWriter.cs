@@ -65,8 +65,17 @@ namespace FastSerialization
                 }
             }
         }
-        public virtual StreamLabel GetLabel()
+        public virtual StreamLabel GetLabel(bool allowPadding)
         {
+            if ((Length & 0x1) != 0)
+            {
+                if (!allowPadding)
+                    throw new NotSupportedException("Labels must be aligned to a 2-byte boundary.");
+
+                Write((byte)Tags.Padding);
+                Debug.Assert((Length & 0x1) == 0);
+            }
+
             return (StreamLabel)Length;
         }
         public void WriteSuffixLabel(StreamLabel value)
