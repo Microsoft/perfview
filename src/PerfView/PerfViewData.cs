@@ -8659,19 +8659,45 @@ table {
                 log.WriteLine("Creating ETLX file {0} from {1}", etlxFile, dataFileName);
                 try
                 {
-                    TraceLog.CreateFromLttngTextDataFile(dataFileName, etlxFile, options);
+                    // linux files could contain CLR events collected either via LTTng or dotnet-trace
+                    using (var zip = ZipFile.Open(dataFileName, ZipArchiveMode.Read))
+                    {
+                        var nettraceFile = zip.Entries.FirstOrDefault(e => e.Name.EndsWith(".nettrace"));
+                        if (nettraceFile != null)
+                        {
+                            // look for dotnet-trace recording
+                            var nettraceFilePath = etlxFile + ".nettrace";
+                            nettraceFile.ExtractToFile(nettraceFilePath);
+                            TraceLog.CreateFromEventPipeDataFile(nettraceFilePath, etlxFile, options);
+                            File.Delete(nettraceFilePath);
+                        }
+                        else
+                        {
+                            // look for LTTng recording
+                            try
+                            {
+                                TraceLog.CreateFromLttngTextDataFile(dataFileName, etlxFile, options);
+                            }
+                            catch (Exception e)  // Throws this if there is no CTF Information
+                            {
+                                if (e is EndOfStreamException)
+                                {
+                                    log.WriteLine("Warning: Trying to open CTF stream failed, no CTF (lttng) information");
+                                }
+                                else
+                                {
+                                    log.WriteLine("Error: Exception CTF conversion: {0}", e.ToString());
+                                    log.WriteLine("[Error: exception while opening CTF (lttng) data.]");
+                                }
+
+                                throw;
+                            }
+                        }
+                    }
                 }
-                catch (Exception e)        // Throws this if there is no CTF Information
+                catch (Exception e)
                 {
-                    if (e is EndOfStreamException)
-                    {
-                        log.WriteLine("Warning: Trying to open CTF stream failed, no CTF (lttng) information");
-                    }
-                    else
-                    {
-                        log.WriteLine("Error: Exception CTF conversion: {0}", e.ToString());
-                        log.WriteLine("[Error: exception while opening CTF (lttng) data.]");
-                    }
+                    log.WriteLine("Error: Exception while opening linux file '{0}'\r\n   {1}", e.ToString(), dataFileName);
 
                     Debug.Assert(m_traceLog == null);
                     m_noTraceLogInfo = true;

@@ -27,3 +27,33 @@ if [ "$perf_data_txt_size" == "0" ]
 then
     exit -1
 fi
+
+### Test capturing CLR events
+
+# install sdk
+mkdir sdk
+cd sdk
+curl -OL https://dot.net/v1/dotnet-install.sh
+bash ./dotnet-install.sh --install-dir .
+
+# run ConsoleApp1 in background
+cd /src/tests/ConsoleApp1
+/src/sdk/dotnet run &
+
+appPid=$!
+
+# Capture a short trace with dotnet-trace activated.
+$perfcollect collect test-dotnettrace -pid $appPid -dotnet-trace -collectsec 5
+
+# kill ConsoleApp1
+kill -9 $appPid
+
+# Open the trace
+unzip test-dotnettrace.trace.zip
+
+# Test the size of the trace.nettrace file
+if [[ ! -s test-dotnettrace.trace/trace.nettrace ]]
+then
+    exit -1
+fi
+

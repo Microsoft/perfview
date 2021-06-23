@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "ConsoleApp1": {
+      "commandName": "Executable",
+      "executablePath": "D:\\criteo_repos\\criteoforks\\runtime\\artifacts\\bin\\coreclr\\Windows_NT.x64.Debug\\corerun.exe",
+      "commandLineArgs": "C:\\Users\\spy\\Source\\Repos\\ConsoleApplication1\\ConsoleApp1\\bin\\Debug\\netcoreapp3.1\\win-x64\\publish\\ConsolApp1.dll",
+      "environmentVariables": {
+        "CORE_ROOT": "D:\\criteo_repos\\criteoforks\\runtime\\artifacts\\bin\\coreclr\\Windows_NT.x64.Debug",
+        "CORE_LIBRARIES": "D:\\criteo_repos\\criteoforks\\runtime\\artifacts\\dotnet-runtime-5.0.0-dev-win-x64\\shared\\Microsoft.NETCore.App\\5.0.0-dev"
+      }
+    }
+  }
+}

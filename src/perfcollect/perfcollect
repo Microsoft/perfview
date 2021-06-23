@@ -642,6 +642,10 @@ usePerf=1
 # Use LTTng
 useLTTng=1
 
+# Use dotnet-trace tool to collect CLR events
+useDotnetTrace=0
+sdkAndToolDir="/tmp/perfcollect-dotnet-sdk"
+
 # LTTng Installed
 lttngInstalled=0
 
@@ -736,6 +740,11 @@ InitializeLog()
     if [ "$lttngcmd" != "" ]
     then
         LogAppend 'LTTng version: ' `$lttngcmd --version`
+    fi
+
+    if [ "$dotnettracecmd" != "" ]
+    then
+       LogAppend 'dotnet-trace version:' $(eval $dotnettracecmd --version)
     fi
     LogAppend
 }
@@ -915,6 +924,19 @@ DiscoverCommands()
         fi
     fi
 
+    if [ "$(IsSdkInstalledGlobally)" == 0 ]
+    then
+       dotnettracecmd="dotnet trace"
+    else
+       dotnettracecmd="DOTNET_ROOT=\"$sdkAndToolDir\" $sdkAndToolDir/dotnet-trace"
+    fi
+
+    eval "$dotnettracecmd --version" > /dev/null 2>&1
+    if [ "$?" != "0" ]
+    then
+       FatalError "Unable to find dotnet-trace tool. Try re-installing via ./perfcollect install."
+    fi
+
     lttngcmd=`GetCommandFullPath "lttng"`
     zipcmd=`GetCommandFullPath "zip"`
     unzipcmd=`GetCommandFullPath "unzip"`
@@ -949,8 +971,8 @@ InstallPerf_Alpine()
     # Install perf
     apk add perf --repository=http://dl-cdn.alpinelinux.org/alpine/edge/community
 
-    # Install zip and unzip
-    apk add zip unzip
+    # Install zip, unzip and curl
+    apk add zip unzip curl
 }
 
 IsRHEL()
@@ -969,8 +991,8 @@ InstallPerf_RHEL()
     # Disallow non-root users.
     EnsureRoot
 
-    # Install perf
-    yum install perf zip unzip
+    # Install perf, zip, unzip and curl
+    yum install perf zip unzip curl
 }
 
 IsDebian()
@@ -1006,8 +1028,8 @@ InstallPerf_Debian()
         fi
     fi
 
-    # Install zip and perf.
-    apt-get install -y zip binutils $pkgName
+    # Install zip, curl and perf.
+    apt-get install -y zip curl binutils $pkgName
 }
 
 IsSUSE()
@@ -1026,8 +1048,8 @@ InstallPerf_SUSE()
     # Disallow non-root users.
     EnsureRoot
 
-    # Install perf.
-    zypper install perf zip unzip
+    # Install perf, zip unzip and curl
+    zypper install perf zip unzip curl
 }
 
 IsUbuntu()
@@ -1059,9 +1081,9 @@ InstallPerf_Ubuntu()
     release=`uname -r`
     if [[ "$release" == *"-azure" ]]
     then
-        apt-get install -y linux-tools-azure zip software-properties-common
+        apt-get install -y linux-tools-azure zip curl software-properties-common
     else
-        apt-get install -y linux-tools-common linux-tools-`uname -r` linux-cloud-tools-`uname -r` zip software-properties-common
+        apt-get install -y linux-tools-common linux-tools-`uname -r` linux-cloud-tools-`uname -r` zip curl software-properties-common
     fi
 }
 
@@ -1225,6 +1247,57 @@ InstallLTTng()
     fi
 }
 
+IsSdkInstalledGlobally()
+{
+    installed=1
+    dotnet tool list > /dev/null 2>&1
+    if [ "$?" == "0" ]
+    then
+       installed=0
+    fi
+    echo $installed
+}
+
+InstallSdkAndDotNetTraceLocally()
+{
+   # install SDK, if needed
+   if [ ! -d "$sdkAndToolDir" ] || [ ! -f "$sdkAndToolDir/dotnet" ]
+   then
+       WriteStatus "Installing dotnet sdk in $sdkAndToolDir"
+       ResetText
+       RunSilent "mkdir $sdkAndToolDir"
+       RunSilent "cd $sdkAndToolDir"
+       RunSilent "curl -OL https://dot.net/v1/dotnet-install.sh"
+       RunSilent "bash ./dotnet-install.sh --install-dir ."
+   fi
+
+   # install dotnet-trace, if needed
+   if [ ! -f "$sdkAndToolDir/dotnet-trace" ]
+   then
+       WriteStatus "Installing dotnet trace"
+       RunSilent "$sdkAndToolDir/dotnet tool install dotnet-trace --tool-path $sdkAndToolDir"
+   fi
+
+   # Check if it works
+   DOTNET_ROOT="$sdkAndToolDir" $sdkAndToolDir/dotnet-trace --version > /dev/null 2>&1
+   if [ "$?" != "0" ]
+   then
+      FatalError "dotnet-trace tool was not installed correctly. Delete $sdkAndToolDir and re-install via ./perfcollect install."
+   fi
+}
+
+InstallDotNetTraceTool()
+{
+   if [ "$(IsSdkInstalledGlobally)" == 0 ]
+   then
+      WriteStatus "Installing dotnet trace using the existing SDK"
+      RunSilent "dotnet tool install dotnet-trace"
+   else
+      WriteStatus "Installing .NET SDK and dotnet-trace in $sdkAndToolDir"
+      InstallSdkAndDotNetTraceLocally
+   fi
+}
+
 SupportsAutoInstall()
 {
     local supportsAutoInstall=0
@@ -1275,6 +1348,22 @@ EnsurePrereqsInstalled()
         ResetText
         exit 1
 
+    fi
+
+    # if dotnet-trace is installed consider using it.
+    if [ "$dotnettracecmd" == "" ] && [ "$useDotnetTrace" == "1" ]
+    then
+        RedText
+        echo "dotnet-trace not installed."
+        if [ "$(SupportsAutoInstall)" == "1" ]
+        then
+           echo "Run ./perfcollect install"
+           echo "or install dotnet-trace manually"
+        else
+           echo "Install dotnet-trace to proceed."
+        fi
+        ResetText
+        exit 1
     fi
 
     # If zip or unzip are not installing, then bail.
@@ -1360,6 +1449,7 @@ ProcessArguments()
             if [ "-events" != "$arg" ]
             then
                 # Convert the value to lower case.
+                rawvalue=$value
                 value=`echo $value | tr '[:upper:]' '[:lower:]'`
             fi
         fi
@@ -1405,18 +1495,29 @@ ProcessArguments()
         elif [ "-nolttng" == "$arg" ]
         then
             useLTTng=0
-        elif [ "-noperf" == "$arg" ]
+        elif [ "-dotnet-trace" == "$arg" ]
+        then
+            useDotnetTrace=1
+            useLTTng=0
+        elif [ "-providers" == "$arg" ]
+        then
+            providers=$rawvalue
+            i=$i+1
+       elif [ "-noperf" == "$arg" ]
         then 
             usePerf=0
         elif [ "-gccollectonly" == "$arg" ]
         then
             gcCollectOnly=1
+            usePerf=0
         elif [ "-gconly" == "$arg" ]
         then
             gcOnly=1
+            usePerf=0
         elif [ "-gcwithheap" == "$arg" ]
         then
             gcWithHeap=1
+            usePerf=0
         elif [ "-events" == "$arg" ]
         then
             events=$value
@@ -1432,7 +1533,18 @@ ProcessArguments()
     
 }
 
+ValidateOptions()
+{
+   if [ "$collectionPid" == "" ] && [ "$useDotnetTrace" == "1" ]
+   then
+       FatalError "You must specify a .Net process id (-pid) to collect CLR events with dotnet-trace tool."
+   fi
 
+   if [ "$providers" != "" ] && [ "$useDotnetTrace" == "1" ]
+   then
+      FatalError "You must specify -dotnet-trace when passing '-providers $providers'."
+   fi
+}
 
 ##
 # LTTng collection
@@ -1466,13 +1578,11 @@ SetupLTTngSession()
         RunSilent "$lttngcmd enable-event --userspace --tracepoint DotNETRuntime:EventSource"
     elif [ "$gcCollectOnly" == "1" ]
     then
-        usePerf=0
         EnableLTTngEvents ${DotNETRuntime_GCKeyword_GCCollectOnly[@]}
         EnableLTTngEvents ${DotNETRuntimePrivate_GCPrivateKeyword_GCCollectOnly[@]}
         EnableLTTngEvents ${DotNETRuntime_ExceptionKeyword[@]}
     elif [ "$gcOnly" == "1" ]
     then
-        usePerf=0
         EnableLTTngEvents ${DotNETRuntime_GCKeyword[@]}
         EnableLTTngEvents ${DotNETRuntimePrivate_GCPrivateKeyword[@]}
         EnableLTTngEvents ${DotNETRuntime_JitKeyword[@]}
@@ -1480,7 +1590,6 @@ SetupLTTngSession()
         EnableLTTngEvents ${DotNETRuntime_ExceptionKeyword[@]}
     elif [ "$gcWithHeap" == "1" ]
     then
-        usePerf=0
         EnableLTTngEvents ${DotNETRuntime_GCKeyword[@]}
         EnableLTTngEvents ${DotNETRuntime_GCHeapSurvivalAndMovementKeyword[@]}
     else
@@ -1585,6 +1694,13 @@ ProcessCollectedData()
             RunSilent "mkdir lttngTrace"
             RunSilent "cp -r $lttngTraceDir lttngTrace"
         fi
+    fi
+
+    if [ "$useDotnetTrace" == "1" ]
+    then
+        LogAppend "Saving dotnet-trace trace file."
+        cp $dotnetTraceOutputFile .
+        cp $dotnetTraceLogFile . 
     fi
 
     if [ "$usePerf" == 1 ]
@@ -1860,6 +1976,11 @@ EndCollect()
         StopLTTngCollection
     fi
 
+    if [ "$useDotnetTrace" == "1" ]
+    then
+        StopDotnetTraceCollection
+    fi
+
     # Update the user.
     WriteStatus
     WriteStatus "...STOPPED."
@@ -1889,6 +2010,9 @@ PrintUsage()
     echo "    -threadtime   : Collect events for thread time analysis (on and off cpu)."
     echo "    -offcpu       : Collect events for off-cpu analysis."
     echo "    -hwevents     : Collect (some) hardware counters."
+    echo "    -dotnet-trace : Collect CLR events using dotnet-trace tool."
+    echo "    -providers    : Comma-separated-list of provider/keywords/verbosity (used only with -dotnet-trace option)."
+    echo "                    Example: Microsoft-Windows-DotNETRuntime:0x000000108001C039:5,Microsoft-Windows-DotNETRuntime:0x000000108001C039:4"
     echo ""
     echo "start:"
     echo "    Start collection, but with Lttng trace ONLY. It needs to be used with 'stop' action."
@@ -1982,8 +2106,81 @@ BuildPerfRecordArgs()
         durationString="sleep ${duration}"
     fi
 
-    # Add the events onto the collection command line args.    
+    # Add the events onto the collection command line args.
     collectionArgs="$collectionArgs -e $eventString $durationString"
+}
+
+BuildDotnetTraceArgs()
+{
+    dotnetTraceCollectionArgs="collect -p $collectionPid "
+
+    activated_providers=()
+    if [ "$gcCollectOnly" == "1" ]
+    then
+        ## GC & Exception
+        activated_providers+=("Microsoft-Windows-DotNETRuntime:0x0000000000008001:4")
+        ## Private GC
+        activated_providers+=("Microsoft-Windows-DotNETRuntimePrivate:0x0000000000000001:4")
+    elif [ "$gcOnly" == "1" ]
+    then
+        ## GC & Jit & Loader & Exception
+        activated_providers+=("Microsoft-Windows-DotNETRuntime:0x0000000000080019:5")
+        ## Private GC
+        activated_providers+=("Microsoft-Windows-DotNETRuntimePrivate:0x0000000000000001:5")
+    elif [ "$gcWithHeap" == "1" ]
+    then
+        ## GC & GCHeapSurvivalAndMovement
+        activated_providers+=("Microsoft-Windows-DotNETRuntime:0x0000000000400001:5")
+    else
+        if [ "$providers" == "" ]
+        then
+            # Enable the default set of events.
+
+            #  DotNETRuntime with keywords: Exception, Contention, Jit/NGen, Loader, GC, Compilation
+            #  Threading, ThreadTransfer & Jit
+            activated_providers+=("Microsoft-Windows-DotNETRuntime:0x000000108001C039:5")
+
+            #  DotNETRuntimeRundown with keyword(s): Compilation
+            activated_providers+=("Microsoft-Windows-DotNETRuntimeRundown:0x0000001000000000:4")
+
+            # DotNETRuntimePrivate with keywords: GC, Binding, MulticoreJitPrivate
+            activated_providers+=("Microsoft-Windows-DotNETRuntimePrivate:0x0000000000020003:4")
+
+        elif [ "$providers" == "threading" ]
+        then
+            activated_providers+=("Microsoft-Windows-DotNETRuntime:0x0000000000010000:5")
+        else
+            # Enable other keywords
+            providers=(${providers//","/" "})
+            for provider in ${providers[@]}
+            do
+               activated_providers+=($provider)
+            done
+        fi
+    fi
+    if (( ${#activated_providers[@]} ))
+    then
+        joined_providers=$( IFS=","; echo "${activated_providers[*]}" )
+        dotnetTraceCollectionArgs="$dotnetTraceCollectionArgs --providers $joined_providers"
+    fi
+    dotnetTraceOutputFile="$sdkAndToolDir/trace.nettrace"
+    dotnetTraceLogFile="$sdkAndToolDir/dotnet-trace.log"
+    dotnetTraceCollectionArgs="$dotnetTraceCollectionArgs -o $dotnetTraceOutputFile"
+}
+
+StartDotnetTraceCollection()
+{
+    eval "$dotnettracecmd $dotnetTraceCollectionArgs < /dev/null > $dotnetTraceLogFile 2>&1 &"
+    dotnetTraceCollectionPid=$!
+}
+
+StopDotnetTraceCollection()
+{
+    RunSilent "kill -15 $dotnetTraceCollectionPid"
+    while [ "$dotnetTraceCollectionPid" != "" ] && [ -e /proc/$dotnetTraceCollectionPid ]
+    do
+        sleep .6
+    done
 }
 
 DoCollect()
@@ -2011,6 +2208,12 @@ DoCollect()
         StartLTTngCollection
     fi
 
+    if [ "$useDotnetTrace" == "1" ]
+    then
+        BuildDotnetTraceArgs
+        StartDotnetTraceCollection
+    fi
+
     # Tell the user that collection has started and how to exit.
     if [ "$duration" != "" ]
     then
@@ -2029,7 +2232,7 @@ DoCollect()
         # Pass trace directory and session name to the stop process.
         popd > /dev/null
         usePerf=0
-        declare -p | grep -e lttngTraceDir -e lttngSessionName -e tempDir -e usePerf -e useLttng -e logFile > $collectInfoFile
+        declare -p | grep -e lttngTraceDir -e lttngSessionName -e tempDir -e usePerf -e useLttng -e logFile -e dotnetTraceCollectionPid -e dotnetTraceOutputFile -e dotnetTraceLogFile > $collectInfoFile
     else
         if [ "$usePerf" == "1" ]
         then
@@ -2168,6 +2371,7 @@ then
     fi
     InstallPerf
     InstallLTTng
+    InstallDotNetTraceTool
     exit 0
 fi
 
@@ -2182,6 +2386,8 @@ fi
 
 # Process arguments.
 ProcessArguments $@
+
+ValidateOptions
 
 # Ensure prerequisites are installed.
 EnsurePrereqsInstalled
