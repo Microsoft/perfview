@@ -1,0 +1,13 @@
+body {
+  margin: 0;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+ }
+
+table.table-striped td {
+  border: 1px solid #414141;
+}
+

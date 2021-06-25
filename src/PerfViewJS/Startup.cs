@@ -41,7 +41,7 @@ namespace PerfViewJS
 
         private const string HTMLExtension = ".html";
 
-        private readonly HashSet<string> perfviewJSSupportedFileExtensions = new HashSet<string> { "*.etl", "*.btl", "*.netperf" };
+        private readonly HashSet<string> perfviewJSSupportedFileExtensions = new HashSet<string> { "*.etl", "*.btl", "*.netperf", "*.nettrace" };
 
         private readonly JsonSerializerOptions jsonSerializerSettings = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 

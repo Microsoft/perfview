@@ -1,0 +1,16 @@
+export const Routes = {
+  IndexHtml: "/index.html",
+  Root: "/",
+  UI: "/ui",
+  ProcessInfo: "/ui/processInfo/:dataFile/:processIndex",
+  TraceInfo: "/ui/traceInfo/:dataFile",
+  ProcessList: "/ui/processList/:dataFile",
+  ModuleList: "/ui/moduleList/:dataFile",
+  EventViewer: "/ui/eventviewer/:dataFile",
+  EventList: "/ui/stackviewer/eventlist/:dataFile",
+  ProcessChooser: "/ui/stackviewer/processchooser/:dataFile/:stackType/:stackTypeName",
+  HotSpots: "/ui/stackviewer/hotspots/:routeKey",
+  HotSpotsOld: "/ui/stackviewer/hotspotsOld/:routeKey",
+  Callers: "/ui/stackviewer/callers/:routeKey/:callTreeNodeId",
+  SourceViewer: "/ui/sourceviewer/:routeKey/:callTreeNodeId",
+};

@@ -1,0 +1,1 @@
+export { Hotspots } from "./Hotspots";

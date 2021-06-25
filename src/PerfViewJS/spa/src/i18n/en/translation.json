@@ -1,0 +1,17 @@
+{
+  "toggle": {
+    "dark": "dark",
+    "light": "light"
+  },
+  "loading": "Hang on tight while we are crunching...",
+  "home": {
+    "title": "Trace Viewer (Web)",
+    "intro1": "PerfViewJS is a Web Viewer for ETL and NetPerf data. For more info visit our GitHub",
+    "tracedocs": "dotnet-trace",
+    "intro2": "For more information on how to collect nettrace files, especially on container environment, see ",
+    "githubtext": "page",
+    "bugreporting": "If you have any issues/bugs, please report them over",
+    "bugreportingtext": "here",
+    "dropzonetext": "Drag trace files (\"*.etl\", \"*.btl\", \"*.netperf\", \"*.nettrace\") into the zone or click to select files"
+  }
+}

@@ -13,14 +13,14 @@
     <SpaRoot>spa\</SpaRoot>
     <DefaultItemExcludes>$(DefaultItemExcludes);$(SpaRoot)node_modules\**</DefaultItemExcludes>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <Content Remove="$(SpaRoot)**" />
     <None Remove="$(SpaRoot)**" />
     <None Include="$(SpaRoot)**" Exclude="$(SpaRoot)node_modules\**" />
     <AdditionalFiles Include="stylecop.json" />
   </ItemGroup>
-  
+
   <ItemGroup>
     <None Include="msdia140.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -44,14 +44,21 @@
     <Message Importance="high" Text="Restoring dependencies using 'npm'. This may take several minutes..." />
     <Exec WorkingDirectory="$(SpaRoot)" Command="npm install" />
   </Target>
-
-  <Target Name="PublishRunWebpack" AfterTargets="ComputeFilesToPublish">
+  <ItemGroup>
+    <PerfViewJSbin Include="$(PublishDir)\**\*.*"/>
+  </ItemGroup>
+  <Target Name="PublishRunWebpack" AfterTargets="Publish">
+      <Copy
+        SourceFiles="@(PerfViewJSbin)"
+        DestinationFiles="@(PerfViewJSbin->'$(SpaRoot)public\bin\%(RecursiveDir)%(Filename)%(Extension)')"
+      />
     <Exec WorkingDirectory="$(SpaRoot)" Command="npm install" />
     <Exec WorkingDirectory="$(SpaRoot)" Command="npm run build" />
     <Exec WorkingDirectory="$(SpaRoot)" Command="npm run compress" />
-
+    <Exec WorkingDirectory="$(SpaRoot)" Command="npm run dist" />
     <ItemGroup>
-      <DistFiles Include="$(SpaRoot)build\**" />
+      <DistFiles Include="$(SpaRoot)dist\**" />
+      <!-- <DistFiles Include="$(SpaRoot)build\**" /> -->
       <ResolvedFileToPublish Include="@(DistFiles->'%(FullPath)')" Exclude="@(ResolvedFileToPublish)">
         <RelativePath>%(DistFiles.Identity)</RelativePath>
         <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>

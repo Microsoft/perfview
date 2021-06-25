@@ -1,38 +1,76 @@
-import React, { Component } from 'react';
+import "./i18n/i18n";
+import { ThemeProvider } from "@fluentui/react";
+import React from "react";
+import { Route } from "react-router";
+import { Callers } from "./features/Callers/Callers";
+import { EventList } from "./features/EventList/EventList";
+import { Layout } from "./components/Layout";
+import { ModuleList } from "./features/ModuleList/ModuleList";
+import { ProcessChooser } from "./features/ProcessChooser/ProcessChooser";
+import { ProcessList } from "./features/ProcessChooser/ProcessList/ProcessList";
+import { SourceViewer } from "./components/SourceViewer";
+import { DataFileContextProvider } from "./context/DataFileContext";
+import { EventViewer } from "./features/EventViewer";
+import { Hotspots } from "features/Hotspots/Hotspots";
+import { Toaster } from "react-hot-toast";
+import { Routes } from "common/Routes";
+import { RouteKeyContextProvider } from "context/RouteContext";
+import { Home } from "features/Home/Home";
+import { TraceInfo } from "features/StackViewerFilter/TraceInfo/TraceInfo";
+import { ProcessInfo } from "features/ProcessChooser";
+import { AvailableThemes, Header, IThemeMap } from "features/Header/Header";
+import { useLocalStorage } from "hooks/useLocalStorage";
 
-import { Callers } from './components/Callers';
-import { EventList } from './components/EventList';
-import { EventViewer } from './components/EventViewer';
-import { Home } from './components/Home';
-import { Hotspots } from './components/Hotspots';
-import { Layout } from './components/Layout';
-import { ModuleList } from './components/ModuleList';
-import { ProcessChooser } from './components/ProcessChooser';
-import { ProcessInfo } from './components/ProcessInfo';
-import { ProcessList } from './components/ProcessList';
-import { Route } from 'react-router';
-import { SourceViewer } from './components/SourceViewer';
-import { TraceInfo } from './components/TraceInfo';
-
-export default class App extends Component {
-    static displayName = App.name;
-
-    render() {
-        return (
+const App: React.FC = () => {
+  const [themeKey] = useLocalStorage<keyof IThemeMap>("theme", "Light");
+  return (
+    <ThemeProvider applyTo="body" theme={AvailableThemes[themeKey]}>
+      <DataFileContextProvider>
+        <>
+          <Header />
+          <RouteKeyContextProvider>
             <Layout>
-                <Route exact path='/' component={Home} />
-                <Route exact path='/ui' component={Home} />
-                <Route path='/ui/processInfo/:dataFile/:processIndex' component={ProcessInfo} />
-                <Route path='/ui/traceInfo/:dataFile' component={TraceInfo} />
-                <Route path='/ui/processList/:dataFile' component={ProcessList} />
-                <Route path='/ui/moduleList/:dataFile' component={ModuleList} />
-                <Route path='/ui/eventviewer/:dataFile' component={EventViewer} />
-                <Route path='/ui/stackviewer/eventlist/:dataFile' component={EventList} />
-                <Route path='/ui/stackviewer/processchooser/:dataFile/:stackType/:stackTypeName' component={ProcessChooser} />
-                <Route path='/ui/stackviewer/hotspots/:routeKey' component={Hotspots} />
-                <Route path='/ui/stackviewer/callers/:routeKey/:callTreeNodeId' component={Callers} />
-                <Route path='/ui/sourceviewer/:routeKey/:callTreeNodeId' component={SourceViewer} />
+              <Route exact path={Routes.IndexHtml} component={Home} />
+              <Route exact path={Routes.Root} component={Home} />
+              <Route exact path={Routes.UI} component={Home} />
+              <Route path={Routes.ProcessInfo} component={ProcessInfo} />
+              <Route path={Routes.TraceInfo} component={TraceInfo} />
+              <Route path={Routes.ProcessList} component={ProcessList} />
+              <Route path={Routes.ModuleList} component={ModuleList} />
+              <Route path={Routes.EventViewer} component={EventViewer} />
+              <Route path={Routes.EventList} component={EventList} />
+              <Route path={Routes.ProcessChooser} component={ProcessChooser} />
+              <Route path={Routes.HotSpots} component={Hotspots} />
+              <Route path={Routes.Callers} component={Callers} />
+              <Route path={Routes.SourceViewer} component={SourceViewer} />
             </Layout>
-        );
-    }
-}
+          </RouteKeyContextProvider>
+        </>
+      </DataFileContextProvider>
+      <Toaster
+        position="top-right"
+        containerStyle={{
+          zIndex: 1000001,
+        }}
+        toastOptions={{
+          error: {
+            duration: Infinity,
+            style: {
+              backgroundColor: AvailableThemes[themeKey].semanticColors.severeWarningBackground,
+              color: AvailableThemes[themeKey].semanticColors.bodyText,
+            },
+          },
+          success: {
+            duration: 5000,
+            style: {
+              backgroundColor: AvailableThemes[themeKey].semanticColors.successBackground,
+              color: AvailableThemes[themeKey].semanticColors.bodyText,
+            },
+          },
+        }}
+      />
+    </ThemeProvider>
+  );
+};
+
+export { App };

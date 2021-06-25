@@ -9,16 +9,16 @@ const brotliSettings = {
     quality: 11, // 0 - 11,
     lgwin: 12 // default
 };
-var dirs = ['build', 'build/static/css', 'build/static/js'];
+const dirs = ['build', 'build/static/css', 'build/static/js'];
 dirs.forEach(dir => {
     fs.readdirSync(dir).forEach(file => {
         if (file.endsWith('.js') || file.endsWith('.css') || file.endsWith('.html')) {
             // brotli
-            const result = brotli.compress(fs.readFileSync(dir + '/' + file), brotliSettings);
-            fs.writeFileSync(dir + '/' + file + '.br', result);
+            const result = brotli.compress(fs.readFileSync(`${dir  }/${  file}`), brotliSettings);
+            fs.writeFileSync(`${dir  }/${  file  }.br`, result);
             // gzip
-            const fileContents = fs.createReadStream(dir + '/' + file);
-            const writeStream = fs.createWriteStream(dir + '/' + file + '.gz');
+            const fileContents = fs.createReadStream(`${dir  }/${  file}`);
+            const writeStream = fs.createWriteStream(`${dir  }/${  file  }.gz`);
             const zip = zlib.createGzip();
             fileContents
                 .pipe(zip)
