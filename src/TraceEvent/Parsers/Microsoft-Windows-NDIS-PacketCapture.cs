@@ -142,204 +142,251 @@ namespace Microsoft.Diagnostics.Tracing.Parsers.MicrosoftWindowsNDISPacketCaptur
         public int FragmentSize { get { return GetInt32At(8); } }
         public unsafe byte* Fragment { get { return (byte*)DataStart + 12; } }
 
-        public unsafe string ParsedPacket
+        public string ParsedPacket
         {
             get
             {
-                byte* frag = Fragment;
-                byte* fragEnd = frag + FragmentSize;
-
-                // TODO FIX NOW This is probably a hack
-                if (m_state == null)
+                if (!parsed)
                 {
-                    m_state = new MicrosoftWindowsNDISPacketCaptureTraceEventParserState();
+                    ParsePacket();
+                }
+                return parsedPacket;
+            }
+        }
+
+        public IPHeader IPHeader
+        {
+            get
+            {
+                if (!parsed)
+                {
+                    ParsePacket();
+                }
+                return ipHeader;
+            }
+        }
+
+        public TCPHeader TCPHeader
+        {
+            get
+            {
+                if (!parsed)
+                {
+                    ParsePacket();
+                }
+                return tcpHeader;
+            }
+        }
+
+        public UDPHeader UDPHeader
+        {
+            get
+            {
+                if (!parsed)
+                {
+                    ParsePacket();
+                }
+                return udpHeader;
+            }
+        }
+
+        private unsafe void ParsePacket() {
+            byte* frag = Fragment;
+            byte* fragEnd = frag + FragmentSize;
+
+            // TODO FIX NOW This is probably a hack
+            if (m_state == null)
+            {
+                m_state = new MicrosoftWindowsNDISPacketCaptureTraceEventParserState();
+            }
+
+            bool TCPHeaderInPreviousFragment = m_state.m_TCPHeaderInPreviousFragment;
+            m_state.m_TCPHeaderInPreviousFragment = false;
+
+            // If we have a remembered header, use that.   
+            byte* packetStart = null;
+            bool isContinuationFragment = false;
+            if (m_state.m_FragmentEventIndex + 1 == EventIndex && m_state.m_FragmentActivity == ActivityID)
+            {
+                isContinuationFragment = true;
+                if (TCPHeaderInPreviousFragment)
+                {
+                    packetStart = m_state.m_TCPHeader;
+                    fragEnd = m_state.m_TCPHeaderEnd;
+                }
+            }
+
+            m_state.m_FragmentActivity = ActivityID;
+            m_state.m_FragmentEventIndex = EventIndex;
+            if (packetStart == null)
+            {
+                packetStart = FindIPHeader(frag, fragEnd);
+            }
+
+            if (packetStart != null)
+            {
+                StringBuilder sb = new StringBuilder();
+                if (isContinuationFragment)
+                {
+                    sb.Append("CONT ").Append(ActivityID.ToString().Substring(6, 2)).Append(" ");
                 }
 
-                bool TCPHeaderInPreviousFragment = m_state.m_TCPHeaderInPreviousFragment;
-                m_state.m_TCPHeaderInPreviousFragment = false;
+                ipHeader = new IPHeader(packetStart);
+                sb.Append("IP");
+                sb.Append(" Source=").Append(ipHeader.SourceAddress);
+                sb.Append(" Dest=").Append(ipHeader.DestinationAddress);
 
-                // If we have a remembered header, use that.   
-                byte* packetStart = null;
-                bool isContinuationFragment = false;
-                if (m_state.m_FragmentEventIndex + 1 == EventIndex && m_state.m_FragmentActivity == ActivityID)
+                if (ipHeader.Protocol == 6)  // TCP-IP
                 {
-                    isContinuationFragment = true;
-                    if (TCPHeaderInPreviousFragment)
+                    tcpHeader = new TCPHeader(packetStart + ipHeader.IPHeaderSize);
+                    sb.Append(" TCP");
+
+                    // Create a connection ID.  This is the source IP/port dest IP/port hashed 
+                    int connetionIDHash = ipHeader.SourceAddress.GetHashCode() + ipHeader.DestinationAddress.GetHashCode() + tcpHeader.SourcePort + tcpHeader.DestPort;
+                    int connectionID = (ushort)(((uint)connetionIDHash >> 16) + connetionIDHash);
+                    // Suffix it with a > or < to indicate direction 
+                    char suffix = tcpHeader.SourcePort >= tcpHeader.DestPort ? '>' : '<';
+                    sb.Append(" ConnID=").Append(connectionID.ToString("x")).Append(suffix);
+
+                    sb.Append(" SPort=").Append(tcpHeader.SourcePort);
+                    sb.Append(" DPort=").Append(tcpHeader.DestPort);
+                    if (tcpHeader.Cwr)
                     {
-                        packetStart = m_state.m_TCPHeader;
-                        fragEnd = m_state.m_TCPHeaderEnd;
+                        sb.Append(" CWR");
                     }
-                }
 
-                m_state.m_FragmentActivity = ActivityID;
-                m_state.m_FragmentEventIndex = EventIndex;
-                if (packetStart == null)
-                {
-                    packetStart = FindIPHeader(frag, fragEnd);
-                }
-
-                if (packetStart != null)
-                {
-                    StringBuilder sb = new StringBuilder();
-                    if (isContinuationFragment)
+                    if (tcpHeader.Ece)
                     {
-                        sb.Append("CONT ").Append(ActivityID.ToString().Substring(6, 2)).Append(" ");
+                        sb.Append(" ECE");
                     }
 
-                    IPHeader ip = new IPHeader(packetStart);
-                    sb.Append("IP");
-                    sb.Append(" Source=").Append(ip.SourceAddress);
-                    sb.Append(" Dest=").Append(ip.DestinationAddress);
-
-                    if (ip.Protocol == 6)  // TCP-IP
+                    if (tcpHeader.Urg)
                     {
-                        TCPHeader tcp = new TCPHeader(packetStart + ip.IPHeaderSize);
-                        sb.Append(" TCP");
+                        sb.Append(" URG");
+                    }
 
-                        // Create a connection ID.  This is the source IP/port dest IP/port hashed 
-                        int connetionIDHash = ip.SourceAddress.GetHashCode() + ip.DestinationAddress.GetHashCode() + tcp.SourcePort + tcp.DestPort;
-                        int connectionID = (ushort)(((uint)connetionIDHash >> 16) + connetionIDHash);
-                        // Suffix it with a > or < to indicate direction 
-                        char suffix = tcp.SourcePort >= tcp.DestPort ? '>' : '<';
-                        sb.Append(" ConnID=").Append(connectionID.ToString("x")).Append(suffix);
+                    if (tcpHeader.Ack)
+                    {
+                        sb.Append(" ACK");
+                    }
 
-                        sb.Append(" SPort=").Append(tcp.SourcePort);
-                        sb.Append(" DPort=").Append(tcp.DestPort);
-                        if (tcp.Cwr)
+                    if (tcpHeader.Psh)
+                    {
+                        sb.Append(" PSH");
+                    }
+
+                    if (tcpHeader.Rst)
+                    {
+                        sb.Append(" RST");
+                    }
+
+                    if (tcpHeader.Syn)
+                    {
+                        sb.Append(" SYN");
+                    }
+
+                    if (tcpHeader.Fin)
+                    {
+                        sb.Append(" FIN");
+                    }
+
+                    if (tcpHeader.AnyOptions)
+                    {
+                        var scale = tcpHeader.WindowScale;
+                        if (0 <= scale)
                         {
-                            sb.Append(" CWR");
+                            sb.Append(" WindowScale=").Append(scale);
                         }
 
-                        if (tcp.Ece)
+                        var maxSeg = tcpHeader.MaximumSegmentSize;
+                        if (0 <= maxSeg)
                         {
-                            sb.Append(" ECE");
+                            sb.Append(" MaxSeg=").Append(maxSeg);
                         }
 
-                        if (tcp.Urg)
+                        if (tcpHeader.SelectivAckAllowed)
                         {
-                            sb.Append(" URG");
+                            sb.Append(" SelectiveAck");
                         }
 
-                        if (tcp.Ack)
-                        {
-                            sb.Append(" ACK");
-                        }
+                        sb.Append(" TcpHdrLen=").Append(tcpHeader.TCPHeaderSize);
+                    }
+                    sb.Append(" Ack=0x").Append(tcpHeader.AckNumber.ToString("x"));
+                    sb.Append(" Seq=0x").Append(tcpHeader.SequenceNumber.ToString("x"));
+                    sb.Append(" Window=").Append(tcpHeader.WindowSize);
+                    sb.Append(" Len=").Append(ipHeader.Length - ipHeader.IPHeaderSize - tcpHeader.TCPHeaderSize);
 
-                        if (tcp.Psh)
+                    if (tcpHeader.DestPort == 80 || tcpHeader.SourcePort == 80)        // HTTP
+                    {
+                        byte* httpBase = packetStart + ipHeader.IPHeaderSize + tcpHeader.TCPHeaderSize;
+                        if (TCPHeaderInPreviousFragment)
                         {
-                            sb.Append(" PSH");
+                            httpBase = Fragment;
+                            fragEnd = httpBase + FragmentSize;
                         }
-
-                        if (tcp.Rst)
+                        else if (httpBase == fragEnd)
                         {
-                            sb.Append(" RST");
-                        }
+                            m_state.m_TCPHeaderInPreviousFragment = true;
 
-                        if (tcp.Syn)
-                        {
-                            sb.Append(" SYN");
-                        }
-
-                        if (tcp.Fin)
-                        {
-                            sb.Append(" FIN");
-                        }
-
-                        if (tcp.AnyOptions)
-                        {
-                            var scale = tcp.WindowScale;
-                            if (0 <= scale)
+                            // Copy the bytes.  
+                            var headerSize = ipHeader.IPHeaderSize + tcpHeader.TCPHeaderSize;
+                            if (m_state.m_TCPHeaderMax < headerSize)
                             {
-                                sb.Append(" WindowScale=").Append(scale);
-                            }
-
-                            var maxSeg = tcp.MaximumSegmentSize;
-                            if (0 <= maxSeg)
-                            {
-                                sb.Append(" MaxSeg=").Append(maxSeg);
-                            }
-
-                            if (tcp.SelectivAckAllowed)
-                            {
-                                sb.Append(" SelectiveAck");
-                            }
-
-                            sb.Append(" TcpHdrLen=").Append(tcp.TCPHeaderSize);
-                        }
-                        sb.Append(" Ack=0x").Append(tcp.AckNumber.ToString("x"));
-                        sb.Append(" Seq=0x").Append(tcp.SequenceNumber.ToString("x"));
-                        sb.Append(" Window=").Append(tcp.WindowSize);
-                        sb.Append(" Len=").Append(ip.Length - ip.IPHeaderSize - tcp.TCPHeaderSize);
-
-                        if (tcp.DestPort == 80 || tcp.SourcePort == 80)        // HTTP
-                        {
-                            byte* httpBase = packetStart + ip.IPHeaderSize + tcp.TCPHeaderSize;
-                            if (TCPHeaderInPreviousFragment)
-                            {
-                                httpBase = Fragment;
-                                fragEnd = httpBase + FragmentSize;
-                            }
-                            else if (httpBase == fragEnd)
-                            {
-                                m_state.m_TCPHeaderInPreviousFragment = true;
-
-                                // Copy the bytes.  
-                                var headerSize = ip.IPHeaderSize + tcp.TCPHeaderSize;
-                                if (m_state.m_TCPHeaderMax < headerSize)
+                                if (m_state.m_TCPHeader != null)
                                 {
-                                    if (m_state.m_TCPHeader != null)
-                                    {
-                                        System.Runtime.InteropServices.Marshal.FreeHGlobal((IntPtr)m_state.m_TCPHeader);
-                                    }
+                                    System.Runtime.InteropServices.Marshal.FreeHGlobal((IntPtr)m_state.m_TCPHeader);
+                                }
 
-                                    m_state.m_TCPHeaderMax = headerSize + 16;
-                                    m_state.m_TCPHeader = (byte*)System.Runtime.InteropServices.Marshal.AllocHGlobal(m_state.m_TCPHeaderMax);
-                                }
-                                m_state.m_TCPHeaderEnd = m_state.m_TCPHeader + headerSize;
-                                var ptr = packetStart;
-                                for (int i = 0; i < headerSize; i++)
-                                {
-                                    m_state.m_TCPHeader[i] = *ptr++;
-                                }
+                                m_state.m_TCPHeaderMax = headerSize + 16;
+                                m_state.m_TCPHeader = (byte*)System.Runtime.InteropServices.Marshal.AllocHGlobal(m_state.m_TCPHeaderMax);
                             }
-
-                            sb.Append(" HTTP");
-                            if (httpBase < fragEnd)
+                            m_state.m_TCPHeaderEnd = m_state.m_TCPHeader + headerSize;
+                            var ptr = packetStart;
+                            for (int i = 0; i < headerSize; i++)
                             {
-                                AppendPrintable(httpBase, fragEnd, sb, " Stream=", 16);
+                                m_state.m_TCPHeader[i] = *ptr++;
                             }
                         }
-                    }
-                    else
-                    {
-                        sb.Append(" Len=").Append(ip.Length - ip.IPHeaderSize);
-                        if (ip.Protocol == 17)        // UDP
-                        {
-                            sb.Append(" UDP");
 
-                            UDPHeader udp = new UDPHeader(packetStart + ip.IPHeaderSize);
-                            sb.Append(" SPort=").Append(udp.SourcePort);
-                            sb.Append(" DPort=").Append(udp.DestPort);
-                            sb.Append(" Length=").Append(udp.Length);
-                            sb.Append(" Checksum=").Append(udp.Checksum);
-                        }
-                        else
+                        sb.Append(" HTTP");
+                        if (httpBase < fragEnd)
                         {
-                            sb.Append("IP(").Append(ip.Protocol.ToString()).Append(")");
+                            AppendPrintable(httpBase, fragEnd, sb, " Stream=", 16);
                         }
                     }
-                    return sb.ToString();
-                }
-                else if (isContinuationFragment)
-                {
-                    return "CONTINUATION FRAGMENT " + ActivityID.ToString().Substring(6, 2) + " SIZE=" + FragmentSize;
                 }
                 else
                 {
-                    return "NON-IP FRAGMENT " + ActivityID.ToString().Substring(6, 2) + " SIZE=" + FragmentSize;
+                    sb.Append(" Len=").Append(ipHeader.Length - ipHeader.IPHeaderSize);
+                    if (ipHeader.Protocol == 17)        // UDP
+                    {
+                        sb.Append(" UDP");
+
+                        udpHeader = new UDPHeader(packetStart + ipHeader.IPHeaderSize);
+                        sb.Append(" SPort=").Append(udpHeader.SourcePort);
+                        sb.Append(" DPort=").Append(udpHeader.DestPort);
+                        sb.Append(" Length=").Append(udpHeader.Length);
+                        sb.Append(" Checksum=").Append(udpHeader.Checksum);
+                    }
+                    else
+                    {
+                        sb.Append("IP(").Append(ipHeader.Protocol.ToString()).Append(")");
+                    }
                 }
+                parsedPacket = sb.ToString();
             }
+            else if (isContinuationFragment)
+            {
+                parsedPacket = "CONTINUATION FRAGMENT " + ActivityID.ToString().Substring(6, 2) + " SIZE=" + FragmentSize;
+            }
+            else
+            {
+                parsedPacket = "NON-IP FRAGMENT " + ActivityID.ToString().Substring(6, 2) + " SIZE=" + FragmentSize;
+            }
+
+            parsed = true;
         }
+
         public unsafe string TcpStreamSample
         {
             get
@@ -399,113 +446,6 @@ namespace Microsoft.Diagnostics.Tracing.Parsers.MicrosoftWindowsNDISPacketCaptur
                 }
             }
             return true;
-        }
-
-        private unsafe struct IPHeader
-        {
-            public IPHeader(byte* address) { this.address = address; }
-
-            public int IPHeaderSize { get { return (address[0] & 0xF) * 4; } }
-            public int Length { get { return (address[2] << 8) + address[3]; } }
-            public System.Net.IPAddress SourceAddress { get { return new System.Net.IPAddress(*((uint*)&address[12])); } }
-            public System.Net.IPAddress DestinationAddress { get { return new System.Net.IPAddress(*((uint*)&address[16])); } }
-            public byte Protocol { get { return address[9]; } }
-            public int CheckSum { get { return (address[10] << 8) + address[11]; } }
-
-            private byte* address;
-        }
-
-        private unsafe struct UDPHeader
-        {
-            public UDPHeader(byte* address) { this.address = address; }
-
-            public int SourcePort { get { return (address[0] << 8) + address[1]; } }
-            public int DestPort { get { return (address[2] << 8) + address[3]; } }
-            public int Length { get { return (address[4] << 8) + address[5]; } }
-            public int Checksum { get { return (address[6] << 8) + address[7]; } }
-            public int UDPHeaderSize { get { return 8; } }
-            #region private
-            private byte* address;
-            #endregion
-        }
-
-        private unsafe struct TCPHeader
-        {
-            public TCPHeader(byte* address) { this.address = address; }
-
-            public int SourcePort { get { return (address[0] << 8) + address[1]; } }
-            public int DestPort { get { return (address[2] << 8) + address[3]; } }
-            public int SequenceNumber { get { return (((((address[4] << 8) + address[5]) << 8) + address[6]) << 8) + address[7]; } }
-            public int AckNumber { get { return (((((address[8] << 8) + address[9]) << 8) + address[10]) << 8) + address[11]; } }
-            public int TCPHeaderSize { get { return (address[12] >> 4) * 4; } }
-            public bool Ns { get { return (address[12] & 0x1) != 0; } }
-            public bool Cwr { get { return (address[13] & 0x80) != 0; } }
-            public bool Ece { get { return (address[13] & 0x40) != 0; } }
-            public bool Urg { get { return (address[13] & 0x20) != 0; } }
-            public bool Ack { get { return (address[13] & 0x10) != 0; } }
-            public bool Psh { get { return (address[13] & 0x8) != 0; } }
-            public bool Rst { get { return (address[13] & 0x4) != 0; } }
-            public bool Syn { get { return (address[13] & 0x2) != 0; } }
-            public bool Fin { get { return (address[13] & 0x1) != 0; } }
-            public int WindowSize { get { return (address[14] << 8) + address[15]; } }
-            public int CheckSum { get { return (address[16] << 8) + address[17]; } }
-            public int UrgentPointer { get { return (address[18] << 8) + address[19]; } }
-            // Returns -1 if not present;
-            public int WindowScale { get { return GetOption(3); } }
-            public bool SelectivAckAllowed { get { return GetOption(4) == 0; } }
-            public int MaximumSegmentSize { get { return GetOption(2); } }
-            public bool AnyOptions { get { return 20 < TCPHeaderSize; } }
-
-            #region private 
-            private int GetOption(int optionID)
-            {
-                byte* optionsEnd = address + TCPHeaderSize;
-                byte* optionPtr = address + 20;
-                while (optionPtr < optionsEnd)
-                {
-                    if (*optionPtr == 0)
-                    {
-                        break;
-                    }
-
-                    if (*optionPtr == 1)
-                    {
-                        optionPtr++;
-                    }
-                    else
-                    {
-                        var len = optionPtr[1];
-                        if (len < 2 || 10 < len)        // protect against errors. 
-                        {
-                            break;
-                        }
-
-                        if (*optionPtr == optionID)
-                        {
-                            if (len == 2)
-                            {
-                                return 0;
-                            }
-
-                            if (len == 3)
-                            {
-                                return optionPtr[2];
-                            }
-
-                            if (len == 4)
-                            {
-                                return (optionPtr[2] << 8) + optionPtr[3];
-                            }
-
-                            break;
-                        }
-                        optionPtr += len;
-                    }
-                }
-                return -1;
-            }
-            private byte* address;
-            #endregion
         }
 
         private static unsafe byte* FindIPHeader(byte* frag, byte* fragEnd)
@@ -695,6 +635,119 @@ namespace Microsoft.Diagnostics.Tracing.Parsers.MicrosoftWindowsNDISPacketCaptur
 
         protected override internal void SetState(object newState) { m_state = (MicrosoftWindowsNDISPacketCaptureTraceEventParserState)newState; }
         private MicrosoftWindowsNDISPacketCaptureTraceEventParserState m_state;
+
+        private bool parsed = false;
+        private string parsedPacket;
+        private IPHeader ipHeader;
+        private TCPHeader tcpHeader;
+        private UDPHeader udpHeader;
+        #endregion
+    }
+
+    public unsafe sealed class IPHeader
+    {
+        public IPHeader(byte* address) { this.Address = address; }
+
+        public int IPHeaderSize { get { return (Address[0] & 0xF) * 4; } }
+        public int Length { get { return (Address[2] << 8) + Address[3]; } }
+        public System.Net.IPAddress SourceAddress { get { return new System.Net.IPAddress(*((uint*)&Address[12])); } }
+        public System.Net.IPAddress DestinationAddress { get { return new System.Net.IPAddress(*((uint*)&Address[16])); } }
+        public byte Protocol { get { return Address[9]; } }
+        public int CheckSum { get { return (Address[10] << 8) + Address[11]; } }
+
+        public byte* Address { get; }
+    }
+
+    public unsafe sealed class UDPHeader
+    {
+        public UDPHeader(byte* address) { this.Address = address; }
+
+        public int SourcePort { get { return (Address[0] << 8) + Address[1]; } }
+        public int DestPort { get { return (Address[2] << 8) + Address[3]; } }
+        public int Length { get { return (Address[4] << 8) + Address[5]; } }
+        public int Checksum { get { return (Address[6] << 8) + Address[7]; } }
+        public int UDPHeaderSize { get { return 8; } }
+
+        public byte* Address { get; }
+    }
+
+    public unsafe sealed class TCPHeader
+    {
+        public TCPHeader(byte* address) { this.Address = address; }
+
+        public int SourcePort { get { return (Address[0] << 8) + Address[1]; } }
+        public int DestPort { get { return (Address[2] << 8) + Address[3]; } }
+        public int SequenceNumber { get { return (((((Address[4] << 8) + Address[5]) << 8) + Address[6]) << 8) + Address[7]; } }
+        public int AckNumber { get { return (((((Address[8] << 8) + Address[9]) << 8) + Address[10]) << 8) + Address[11]; } }
+        public int TCPHeaderSize { get { return (Address[12] >> 4) * 4; } }
+        public bool Ns { get { return (Address[12] & 0x1) != 0; } }
+        public bool Cwr { get { return (Address[13] & 0x80) != 0; } }
+        public bool Ece { get { return (Address[13] & 0x40) != 0; } }
+        public bool Urg { get { return (Address[13] & 0x20) != 0; } }
+        public bool Ack { get { return (Address[13] & 0x10) != 0; } }
+        public bool Psh { get { return (Address[13] & 0x8) != 0; } }
+        public bool Rst { get { return (Address[13] & 0x4) != 0; } }
+        public bool Syn { get { return (Address[13] & 0x2) != 0; } }
+        public bool Fin { get { return (Address[13] & 0x1) != 0; } }
+        public int WindowSize { get { return (Address[14] << 8) + Address[15]; } }
+        public int CheckSum { get { return (Address[16] << 8) + Address[17]; } }
+        public int UrgentPointer { get { return (Address[18] << 8) + Address[19]; } }
+        // Returns -1 if not present;
+        public int WindowScale { get { return GetOption(3); } }
+        public bool SelectivAckAllowed { get { return GetOption(4) == 0; } }
+        public int MaximumSegmentSize { get { return GetOption(2); } }
+        public bool AnyOptions { get { return 20 < TCPHeaderSize; } }
+
+        public byte* Address { get; }
+
+        #region private 
+        private int GetOption(int optionID)
+        {
+            byte* optionsEnd = Address + TCPHeaderSize;
+            byte* optionPtr = Address + 20;
+            while (optionPtr < optionsEnd)
+            {
+                if (*optionPtr == 0)
+                {
+                    break;
+                }
+
+                if (*optionPtr == 1)
+                {
+                    optionPtr++;
+                }
+                else
+                {
+                    var len = optionPtr[1];
+                    if (len < 2 || 10 < len)        // protect against errors. 
+                    {
+                        break;
+                    }
+
+                    if (*optionPtr == optionID)
+                    {
+                        if (len == 2)
+                        {
+                            return 0;
+                        }
+
+                        if (len == 3)
+                        {
+                            return optionPtr[2];
+                        }
+
+                        if (len == 4)
+                        {
+                            return (optionPtr[2] << 8) + optionPtr[3];
+                        }
+
+                        break;
+                    }
+                    optionPtr += len;
+                }
+            }
+            return -1;
+        }
         #endregion
     }
 
