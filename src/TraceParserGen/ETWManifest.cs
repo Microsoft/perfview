@@ -277,6 +277,7 @@ namespace ETWManifest
                                     {
                                         m_taskNames = new Dictionary<int, string>();
                                         m_taskValues = new Dictionary<string, int>();
+                                        m_taskGuids = new Dictionary<string, Guid>();
                                     }
                                     string name = reader.GetAttribute("name");
                                     int value = (int)ParseNumber(reader.GetAttribute("value"));
@@ -290,7 +291,12 @@ namespace ETWManifest
                                     m_taskNames.Add(value, message);
                                     m_taskValues.Add(name, value);
 
-                                    // Remember enuough to resolve opcodes nested inside this task.
+                                    if (Guid.TryParse(reader.GetAttribute("eventGUID"), out var guid))
+                                    {
+                                        m_taskGuids.Add(name, guid);
+                                    }
+
+                                    // Remember enough to resolve opcodes nested inside this task.
                                     curTask = value;
                                     curTaskDepth = reader.Depth;
                                     reader.Read();
@@ -556,6 +562,7 @@ namespace ETWManifest
         private List<Event> m_events = new List<Event>();
         internal string[] m_keywordNames;
         internal Dictionary<int, string> m_taskNames;
+        internal Dictionary<string, Guid> m_taskGuids;
         // Note that the key is task << 8 + opcode to allow for private opcode names
         internal Dictionary<int, string> m_opcodeNames;
 
