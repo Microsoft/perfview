@@ -401,17 +401,45 @@ namespace Microsoft.Diagnostics.Tracing
         {
             // Generate the NGen images for any NGEN image needing symbolic information.   
             var pdbFileList = new List<string>(100);
+            var tasks = new List<Task<Tuple<string, string, string, TimeSpan>>>();
             foreach (var imageName in ETWTraceEventSource.GetModulesNeedingSymbols(etlFile))
             {
-                var sw = Stopwatch.StartNew();
-                var pdbName = symbolReader.GenerateNGenSymbolsForModule(imageName);
+                var symbolPath = symbolReader.SymbolPath;
+                var symbolCacheDirectory = symbolReader.SymbolCacheDirectory;
+
+                tasks.Add(Task.Run(() =>
+                {
+                    var sw = Stopwatch.StartNew();
+                    using (var log2 = new StringWriter())
+                    {
+                        var pdbName = SymbolReader.GenerateNGenSymbolsForModule(imageName, log2, symbolPath, symbolCacheDirectory);
+                        return Tuple.Create(imageName, pdbName, log2.ToString(), sw.Elapsed);
+                    }
+                }));
+            }
+
+            Task.WaitAll(tasks.ToArray());
+            foreach (var task in tasks)
+            {
+                var imageName = task.Result.Item1;
+                var pdbName = task.Result.Item2;
+                var taskLog = task.Result.Item3;
+                var elapsed = task.Result.Item4;
+
+                if (!string.IsNullOrEmpty(taskLog))
+                {
+                    symbolReader.Log.Write(taskLog);
+                }
+
                 if (pdbName != null)
                 {
                     pdbFileList.Add(pdbName);
                     log.WriteLine("Found NGEN pdb {0}", pdbName);
                 }
-                log.WriteLine("NGEN PDB creation for {0} took {1:n2} Sec", imageName, sw.Elapsed.TotalSeconds);
+
+                log.WriteLine("NGEN PDB creation for {0} took {1:n2} Sec", imageName, elapsed.TotalSeconds);
             }
+
             return pdbFileList;
         }
 
