@@ -227,7 +227,7 @@ namespace Microsoft.Diagnostics.Symbols
                         if (pdbIndexPath == null)
                         {
                             // symbolsource.org and nuget.smbsrc.net only support upper case of pdbIndexGuid
-                            pdbIndexPath = pdbSimpleName + @"\" + pdbIndexGuid.ToString("N").ToUpper() + pdbIndexAge.ToString() + @"\" + pdbSimpleName;
+                            pdbIndexPath = pdbSimpleName + @"\" + pdbIndexGuid.ToString("N").ToUpper() + pdbIndexAge.ToString("x") + @"\" + pdbSimpleName;
                         }
 
                         string cache = element.Cache;
