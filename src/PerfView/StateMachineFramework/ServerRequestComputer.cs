@@ -531,7 +531,9 @@ namespace PerfView
 
                     // And there should be no threads pointing at anything.  
                     foreach (var thread in m_ThreadStateMap.ThreadState)
+                    {
                         Debug.Assert(thread.Request == null);
+                    }
                 }
 #endif
             }
@@ -696,7 +698,9 @@ namespace PerfView
         {
 #if DEBUG
             if (s_logFile != null)
+            {
                 s_logFile.WriteLine("{0,9:f3} {1,4} {2}", time, threadID, format);
+            }
 #endif
         }
         [Conditional("DEBUG")]
@@ -704,7 +708,9 @@ namespace PerfView
         {
 #if DEBUG
             if (s_logFile != null)
+            {
                 s_logFile.WriteLine("{0,9:f3} {1,4} {2}", time, threadID, string.Format(format, args));
+            }
 #endif
         }
 

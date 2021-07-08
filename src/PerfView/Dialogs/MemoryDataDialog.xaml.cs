@@ -146,21 +146,6 @@ namespace PerfView.Dialogs
                 return;
             }
 
-            if (m_args.MaxDumpCountK >= 10000)
-            {
-                var response = MessageBox.Show("WARNING: you have selected a Max Dump Count larger than 10M objects.\r\n" +
-                    "You should only need 100K to do a good job, even at 10M the GUI will be very sluggish.\r\n" +
-                    "Consider canceling and picking a smaller value.", "Max Dump Size Too Big",
-                    MessageBoxButton.OKCancel);
-                if (response != MessageBoxResult.OK)
-                {
-                    StatusBar.Log("Memory collection canceled.");
-                    Close();
-                    GuiApp.MainWindow.Focus();
-                    return;
-                }
-            }
-
             m_args.NoView = true;
             m_tookASnapshot = true;
             m_mainWindow.ExecuteCommand("Dumping GC Heap to " + System.IO.Path.GetFullPath(App.CommandLineArgs.DataFile),

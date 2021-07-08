@@ -6,7 +6,7 @@ using System.Text;
 
 namespace FastSerialization
 {
-    public class SegmentedMemoryStreamReader
+    public class SegmentedMemoryStreamReader : IStreamReader
     {
          const int BlockCopyCapacity = 10 * 1024 * 1024;
 
@@ -126,6 +126,10 @@ namespace FastSerialization
                 --len;
             }
             return sb.ToString();
+        }
+        void IStreamReader.Read(byte[] data, int offset, int length)
+        {
+            throw new NotImplementedException();
         }
         /// <summary>
         /// Implementation of IStreamReader

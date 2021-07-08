@@ -19,7 +19,7 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
     /// Often Histograms are sparse (most array elements are zero), so the represnetation
     /// is designed to optimzed for this case (an array of non-zero index, value pairs). 
     /// </summary>
-    public class Histogram : IEnumerable<float>
+    public class Histogram : IEnumerable<double>
     {
         /// <summary>
         /// Create a new histogram.  Every histogram needs a controller but these controllers 
@@ -45,7 +45,7 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
         /// </summary>
         /// <param name="metric">The amount to add to the bucket.</param>
         /// <param name="bucket">The bucket to add to.</param>
-        public void AddMetric(float metric, int bucket)
+        public void AddMetric(double metric, int bucket)
         {
             Debug.Assert(0 <= bucket && bucket < Count);
 
@@ -61,7 +61,7 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
             }
             if (m_buckets == null)
             {
-                m_buckets = new float[Count];
+                m_buckets = new double[Count];
                 m_buckets[m_singleBucketNum] = m_singleBucketValue;
             }
             m_buckets[bucket] += metric;
@@ -86,7 +86,7 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
             }
             else if (0 <= histogram.m_singleBucketNum)
             {
-                AddMetric((float)(histogram.m_singleBucketValue * weight), histogram.m_singleBucketNum);
+                AddMetric(histogram.m_singleBucketValue * weight, histogram.m_singleBucketNum);
             }
         }
 
@@ -111,7 +111,7 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
         /// </summary>
         /// <param name="index">The bucket to retrieve.</param>
         /// <returns>The metric contained in that bucket.</returns>
-        public float this[int index]
+        public double this[int index]
         {
             get
             {
@@ -162,7 +162,7 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
             m_singleBucketValue = other.m_singleBucketValue;
             if (other.m_buckets != null)
             {
-                m_buckets = new float[other.m_buckets.Length];
+                m_buckets = new double[other.m_buckets.Length];
                 Array.Copy(other.m_buckets, m_buckets, other.m_buckets.Length);
             }
         }
@@ -170,7 +170,7 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
         /// <summary>
         /// Implementes IEnumerable interface
         /// </summary>
-        public IEnumerator<float> GetEnumerator()
+        public IEnumerator<double> GetEnumerator()
         {
             return GetEnumerable().GetEnumerator();
         }
@@ -182,7 +182,7 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
         /// <summary>
         /// Get an IEnumerable that can be used to enumerate the metrics stored in the buckets of this Histogram.
         /// </summary>
-        private IEnumerable<float> GetEnumerable()
+        private IEnumerable<double> GetEnumerable()
         {
             int end = Count;
             for (int i = 0; i < end; i++)
@@ -196,11 +196,11 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
         /// </summary>
         private readonly HistogramController m_controller;
 
-        private float[] m_buckets;               // If null means is its single value or no values
+        private double[] m_buckets;               // If null means is its single value or no values
 
         // We special case a histogram with a single bucket.  
         private int m_singleBucketNum;          // -1 means no values
-        private float m_singleBucketValue;
+        private double m_singleBucketValue;
         #endregion
     }
 
@@ -290,7 +290,7 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
         /// <summary>
         /// A utility function that turns an array of floats into a ASCII character graph.  
         /// </summary>
-        public static string HistogramString(IEnumerable<float> buckets, int bucketCount, double scale, int maxLegalBucket = 0)
+        public static string HistogramString(IEnumerable<double> buckets, int bucketCount, double scale, int maxLegalBucket = 0)
         {
             if (buckets == null)
             {
@@ -299,7 +299,7 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
 
             var chars = new char[bucketCount];
             int i = 0;
-            foreach (float metric in buckets)
+            foreach (double metric in buckets)
             {
                 char val = '_';
                 if (0 < maxLegalBucket && maxLegalBucket <= i)
@@ -357,7 +357,7 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
         /// <summary>
         /// A utility function that turns an array of floats into a ASCII character graph.  
         /// </summary>
-        public static string HistogramString(float[] buckets, double scale, int maxLegalBucket = 0)
+        public static string HistogramString(double[] buckets, double scale, int maxLegalBucket = 0)
         {
             return (buckets == null) ? "" : HistogramString(buckets, buckets.Length, scale, maxLegalBucket);
         }
@@ -551,7 +551,7 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
         /// <returns>A string representing the histogram that is suitable for UI display.</returns>
         public override string GetDisplayString(Histogram histogram)
         {
-            float[] displayBuckets = new float[CharacterCount];
+            double[] displayBuckets = new double[CharacterCount];
 
             // Sort out and add up our metrics from the model buckets.
             // Each display bucket is the average of the scenarios in the corresponding model bucket.
@@ -690,7 +690,7 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
                     }
 
                     var metricInBucket = Math.Min(nextBucketStart, endSample) - startSampleInBucket;
-                    histogram.AddMetric((float)metricInBucket * metricSign, bucketIndex);
+                    histogram.AddMetric(metricInBucket * metricSign, bucketIndex);
 
                     bucketIndex++;
                     startSampleInBucket = nextBucketStart;
@@ -724,14 +724,14 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
             var cumStats = "";
             if (start != HistogramCharacterIndex.Invalid && end != HistogramCharacterIndex.Invalid && start < end)
             {
-                float cumStart = 0;
+                double cumStart = 0;
                 for (int i = 0; i < (int)start; i++)
                 {
                     cumStart += histogram[i];
                 }
 
-                float cum = cumStart;
-                float cumMax = cumStart;
+                double cum = cumStart;
+                double cumMax = cumStart;
                 HistogramCharacterIndex cumMaxIdx = start;
 
                 for (HistogramCharacterIndex i = start; i < end; i++)

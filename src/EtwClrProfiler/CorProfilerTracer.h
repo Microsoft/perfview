@@ -61,7 +61,7 @@ public:
 	STDMETHODIMP ModuleLoadFinished(ModuleID moduleId, HRESULT hrStatus) { return S_OK; };
 	STDMETHODIMP ModuleUnloadStarted(ModuleID moduleId) { return S_OK; };
 	STDMETHODIMP ModuleUnloadFinished(ModuleID moduleId, HRESULT hrStatus) { return S_OK; };
-	STDMETHODIMP ModuleAttachedToAssembly(ModuleID moduleId, AssemblyID assemblyId) { return S_OK; };
+	STDMETHODIMP ModuleAttachedToAssembly(ModuleID moduleId, AssemblyID assemblyId);
 	STDMETHODIMP ClassLoadStarted(ClassID classId) { return S_OK; };
 	STDMETHODIMP ClassLoadFinished(ClassID classId, HRESULT hrStatus) { return S_OK; };
 	STDMETHODIMP ClassUnloadStarted(ClassID classId) { return S_OK; };

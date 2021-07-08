@@ -57,7 +57,7 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
 
             m_goodTopModuleIndex = ModuleFileIndex.Invalid;
             m_curSample = new StackSourceSample(this);
-            m_curSample.Metric = (float)events.Log.SampleProfileInterval.TotalMilliseconds;
+            m_curSample.Metric = events.Log.SampleProfileInterval.TotalMilliseconds;
             m_events = events;
             m_maxPseudoStack = m_log.CodeAddresses.Count * 2 + m_log.Threads.Count;     // This really is a guess as to how many stacks we need.   You can have as many as codeAddresses*threads   
         }
@@ -527,7 +527,7 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
             m_log = log;
             m_goodTopModuleIndex = ModuleFileIndex.Invalid;
             m_curSample = new StackSourceSample(this);
-            m_curSample.Metric = (float)log.SampleProfileInterval.TotalMilliseconds;
+            m_curSample.Metric = log.SampleProfileInterval.TotalMilliseconds;
         }
 
         // Sometimes we just have a code address and thread, but no actual ETW stack.  Create a 'one element'

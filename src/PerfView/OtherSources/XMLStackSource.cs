@@ -341,7 +341,7 @@ namespace Diagnostics.Tracing.StackSources
                                     }
                                     else if (reader.Name == "Metric")
                                     {
-                                        sample.Metric = float.Parse(reader.ReadContentAsString(), invariantCulture);
+                                        sample.Metric = double.Parse(reader.ReadContentAsString(), invariantCulture);
                                     }
                                 } while (reader.MoveToNextAttribute());
                             }
@@ -467,7 +467,9 @@ namespace Diagnostics.Tracing.StackSources
                             }
 #if DEBUG
                             for (int i = 0; i < m_stacks.Count; i++)
+                            {
                                 m_stacks[i] = new Frame(int.MinValue, int.MinValue);
+                            }
 #endif
                         }
                         else if (reader.Name == "Samples")
@@ -515,7 +517,7 @@ namespace Diagnostics.Tracing.StackSources
                                         }
                                         else if (reader.Name == "Metric")
                                         {
-                                            sample.Metric = (float)reader.ReadElementContentAsDouble();
+                                            sample.Metric = reader.ReadElementContentAsDouble();
                                             goto PROCESS_NODE_SAMPLE;
                                         }
                                         else if (reader.Name == "item")
@@ -563,9 +565,15 @@ namespace Diagnostics.Tracing.StackSources
             Done:;
 #if DEBUG
             for (int i = 0; i < m_samples.Count; i++)
+            {
                 Debug.Assert(m_samples[i] != null);
+            }
+
             for (int i = 0; i < m_frames.Count; i++)
+            {
                 Debug.Assert(m_frames[i] != null);
+            }
+
             for (int i = 0; i < m_stacks.Count; i++)
             {
                 Debug.Assert(m_stacks[i].frameID >= 0);

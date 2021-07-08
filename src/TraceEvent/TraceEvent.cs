@@ -1710,23 +1710,37 @@ namespace Microsoft.Diagnostics.Tracing
             byte[] res = new byte[size];
             for (int i = 0; i < size; i++)
             {
-                res[i] = (byte)GetByteAt(offset + i);
+                res[i] = GetByteAt(offset + i);
             }
             return res;
         }
         /// <summary>
+        /// Returns a <see cref="sbyte"/> value that was serialized at 'offset' in the payload bytes
+        /// </summary>
+        protected internal sbyte GetSByteAt(int offset)
+        {
+            return TraceEventRawReaders.ReadSByte(DataStart, offset);
+        }
+        /// <summary>
         /// Returns a byte value that was serialized at 'offset' in the payload bytes
         /// </summary>
-        protected internal int GetByteAt(int offset)
+        protected internal byte GetByteAt(int offset)
         {
             return TraceEventRawReaders.ReadByte(DataStart, offset);
         }
         /// <summary>
         /// Returns a short value that was serialized at 'offset' in the payload bytes
         /// </summary>
-        protected internal int GetInt16At(int offset)
+        protected internal short GetInt16At(int offset)
         {
             return TraceEventRawReaders.ReadInt16(DataStart, offset);
+        }
+        /// <summary>
+        /// Returns a short value that was serialized at 'offset' in the payload bytes
+        /// </summary>
+        protected internal ushort GetUInt16At(int offset)
+        {
+            return TraceEventRawReaders.ReadUInt16(DataStart, offset);
         }
         /// <summary>
         /// Returns an int value that was serialized at 'offset' in the payload bytes
@@ -1736,11 +1750,25 @@ namespace Microsoft.Diagnostics.Tracing
             return TraceEventRawReaders.ReadInt32(DataStart, offset);
         }
         /// <summary>
+        /// Returns a <see cref="uint"/> value that was serialized at 'offset' in the payload bytes
+        /// </summary>
+        protected internal uint GetUInt32At(int offset)
+        {
+            return TraceEventRawReaders.ReadUInt32(DataStart, offset);
+        }
+        /// <summary>
         /// Returns a long value that was serialized at 'offset' in the payload bytes
         /// </summary>
         protected internal long GetInt64At(int offset)
         {
             return TraceEventRawReaders.ReadInt64(DataStart, offset);
+        }
+        /// <summary>
+        /// Returns a <see cref="ulong"/> value that was serialized at 'offset' in the payload bytes
+        /// </summary>
+        protected internal ulong GetUInt64At(int offset)
+        {
+            return TraceEventRawReaders.ReadUInt64(DataStart, offset);
         }
         /// <summary>
         /// Get something that is machine word sized for the provider that collected the data, but is an
@@ -1751,7 +1779,7 @@ namespace Microsoft.Diagnostics.Tracing
             Debug.Assert(PointerSize == 4 || PointerSize == 8);
             if (PointerSize == 4)
             {
-                return (long)(uint)GetInt32At(offset);
+                return GetUInt32At(offset);
             }
             else
             {
@@ -1763,7 +1791,7 @@ namespace Microsoft.Diagnostics.Tracing
         /// </summary>
         protected internal Address GetAddressAt(int offset)
         {
-            return (Address)GetIntPtrAt(offset);
+            return unchecked((Address)GetIntPtrAt(offset));
         }
 
         /// <summary>
@@ -4427,17 +4455,33 @@ namespace Microsoft.Diagnostics.Tracing
         {
             return Unsafe.ReadUnaligned<long>((byte*)pointer.ToPointer() + offset);
         }
+        internal static unsafe ulong ReadUInt64(IntPtr pointer, int offset)
+        {
+            return Unsafe.ReadUnaligned<ulong>((byte*)pointer.ToPointer() + offset);
+        }
         internal static unsafe int ReadInt32(IntPtr pointer, int offset)
         {
             return Unsafe.ReadUnaligned<int>((byte*)pointer.ToPointer() + offset);
+        }
+        internal static unsafe uint ReadUInt32(IntPtr pointer, int offset)
+        {
+            return Unsafe.ReadUnaligned<uint>((byte*)pointer.ToPointer() + offset);
         }
         internal static unsafe short ReadInt16(IntPtr pointer, int offset)
         {
             return *((short*)((byte*)pointer.ToPointer() + offset));
         }
+        internal static unsafe ushort ReadUInt16(IntPtr pointer, int offset)
+        {
+            return *((ushort*)((byte*)pointer.ToPointer() + offset));
+        }
         internal static unsafe IntPtr ReadIntPtr(IntPtr pointer, int offset)
         {
             return *((IntPtr*)((byte*)pointer.ToPointer() + offset));
+        }
+        internal static unsafe sbyte ReadSByte(IntPtr pointer, int offset)
+        {
+            return *((sbyte*)((byte*)pointer.ToPointer() + offset));
         }
         internal static unsafe byte ReadByte(IntPtr pointer, int offset)
         {

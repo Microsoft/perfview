@@ -6,7 +6,6 @@
     <Platforms>AnyCPU;x64</Platforms>
     <OutputType>Exe</OutputType>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Prefer32Bit>true</Prefer32Bit>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
 
     <RootNamespace>HeapDump</RootNamespace>
@@ -14,6 +13,10 @@
     <Description>HeapDump</Description>
     <Company>Microsoft</Company>
     <Copyright>Copyright © Microsoft 2011</Copyright>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
+    <CheckForOverflowUnderflow>true</CheckForOverflowUnderflow>
   </PropertyGroup>
 
   <PropertyGroup>

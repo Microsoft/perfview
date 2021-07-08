@@ -556,15 +556,15 @@ namespace PerfView
                 return ret;
             }
         }
-        public float InclusiveMetric { get { return Data.InclusiveMetric; } }
-        public float AverageInclusiveMetric { get { return Data.AverageInclusiveMetric; } }
-        public float ExclusiveMetric { get { return Data.ExclusiveMetric; } }
-        public float InclusiveCount { get { return Data.InclusiveCount; } }
-        public float ExclusiveCount { get { return Data.ExclusiveCount; } }
-        public float ExclusiveFoldedCount { get { return Data.ExclusiveFoldedCount; } }
-        public float ExclusiveFoldedMetric { get { return Data.ExclusiveFoldedMetric; } }
-        public float InclusiveMetricPercent { get { return Data.InclusiveMetricPercent; } }
-        public float ExclusiveMetricPercent { get { return Data.ExclusiveMetricPercent; } }
+        public double InclusiveMetric { get { return Data.InclusiveMetric; } }
+        public double AverageInclusiveMetric { get { return Data.AverageInclusiveMetric; } }
+        public double ExclusiveMetric { get { return Data.ExclusiveMetric; } }
+        public double InclusiveCount { get { return Data.InclusiveCount; } }
+        public double ExclusiveCount { get { return Data.ExclusiveCount; } }
+        public double ExclusiveFoldedCount { get { return Data.ExclusiveFoldedCount; } }
+        public double ExclusiveFoldedMetric { get { return Data.ExclusiveFoldedMetric; } }
+        public double InclusiveMetricPercent { get { return Data.InclusiveMetricPercent; } }
+        public double ExclusiveMetricPercent { get { return Data.ExclusiveMetricPercent; } }
         public Histogram InclusiveMetricByTime { get { return Data.InclusiveMetricByTime; } }
         public string InclusiveMetricByTimeString
         {
@@ -613,7 +613,10 @@ namespace PerfView
         {
 
             if (Data == null)
+            {
                 return "";
+            }
+
             return Data.ToString();
         }
 #endif

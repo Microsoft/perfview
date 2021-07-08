@@ -52,6 +52,7 @@ public class JavaScriptDumpGraphReader
     internal void SetupCallbacks(MemoryGraph memoryGraph, TraceEventDispatcher source, int processID = 0, double startTimeRelativeMSec = 0)
     {
         m_graph = memoryGraph;
+        m_children = new HashSet<NodeIndex>();
         m_types = new Dictionary<string, NodeTypeIndex>(10000);
         m_nodeBlocks = new Queue<BulkNodeTraceData>();
         m_attributeBlocks = new Queue<BulkAttributeTraceData>();
@@ -437,7 +438,7 @@ public class JavaScriptDumpGraphReader
     private Queue<BulkAttributeTraceData> m_attributeBlocks;
     private GrowableArray<string> m_stringTable;
     private GrowableArray<double> m_doubleTable;
-    private GrowableArray<NodeIndex> m_children;
+    private HashSet<NodeIndex> m_children;
     private Dictionary<string, NodeTypeIndex> m_types;
     private MemoryGraph m_graph;
     private TextWriter m_log;

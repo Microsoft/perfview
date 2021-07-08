@@ -21,7 +21,6 @@ namespace PerfView.TestUtilities
     {
         public override void Fail(string message, string detailMessage)
         {
-            Xunit.Assert.True(false, message + Environment.NewLine + detailMessage);
             throw new DebugAssertFailureException(message + Environment.NewLine + detailMessage);
         }
 

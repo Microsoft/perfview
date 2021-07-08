@@ -289,7 +289,7 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
 
         internal readonly struct Sample
         {
-            internal Sample(StackSourceCallStackIndex stackIndex, double relativeTime, float metric, int depth, int frameId)
+            internal Sample(StackSourceCallStackIndex stackIndex, double relativeTime, double metric, int depth, int frameId)
             {
                 StackIndex = stackIndex;
                 RelativeTime = relativeTime;
@@ -300,12 +300,12 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
 
             public override string ToString() => RelativeTime.ToString(CultureInfo.InvariantCulture);
 
-            internal Sample IncreaseDuration(float metric) => new Sample(StackIndex, RelativeTime, Metric + metric, Depth, FrameId);
+            internal Sample IncreaseDuration(double metric) => new Sample(StackIndex, RelativeTime, Metric + metric, Depth, FrameId);
 
             #region private
             internal StackSourceCallStackIndex StackIndex { get; }
             internal double RelativeTime { get; }
-            internal float Metric { get; }
+            internal double Metric { get; }
             internal int Depth { get; }
             internal int FrameId { get; }
             #endregion private

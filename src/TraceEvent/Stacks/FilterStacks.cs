@@ -383,7 +383,7 @@ namespace Diagnostics.Tracing.StackSources
                         Debug.Assert(0 <= timeSpan);        // because we checked earlier that minTime < sampleEndTime  
                         // Create a writable sample that has the prorated value
                         sample = new StackSourceSample(sample);
-                        sample.Metric = (float)timeSpan * metricSign;
+                        sample.Metric = timeSpan * metricSign;
                         sample.TimeRelativeMSec = m_minTimeRelativeMSec;
 
                     }
@@ -393,7 +393,7 @@ namespace Diagnostics.Tracing.StackSources
                         timeSpan = m_maxTimeRelativeMSec - sample.TimeRelativeMSec;
                         // Create a writable sample that has the prorated value
                         sample = new StackSourceSample(sample);
-                        sample.Metric = (float)timeSpan * metricSign;
+                        sample.Metric = timeSpan * metricSign;
                     }
                 }
 

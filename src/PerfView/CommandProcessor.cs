@@ -172,7 +172,7 @@ namespace PerfView
             if (parsedArgs.CircularMB == 0)
             {
                 LogFile.WriteLine("Circular buffer size = 0, setting to 500.");
-                parsedArgs.CircularMB = 500;
+                parsedArgs.CircularMB = 4000;
             }
 
             for (int collectionNum = 1; ;)
@@ -3107,7 +3107,7 @@ namespace PerfView
                 cmdLineArgs += " /DumpData";
             }
 
-            if (parsedArgs.MaxDumpCountK != 250)
+            if (parsedArgs.MaxDumpCountK != 0)
             {
                 cmdLineArgs += " /MaxDumpCountK=" + parsedArgs.MaxDumpCountK;
             }

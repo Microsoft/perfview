@@ -120,22 +120,22 @@ public class GCHeapDumpSegment : IFastSerializable
     #region private
     void IFastSerializable.ToStream(Serializer serializer)
     {
-        serializer.Write((long)Start);
-        serializer.Write((long)End);
-        serializer.Write((long)Gen0End);
-        serializer.Write((long)Gen1End);
-        serializer.Write((long)Gen2End);
-        serializer.Write((long)Gen3End);
+        serializer.Write(Start);
+        serializer.Write(End);
+        serializer.Write(Gen0End);
+        serializer.Write(Gen1End);
+        serializer.Write(Gen2End);
+        serializer.Write(Gen3End);
     }
 
     void IFastSerializable.FromStream(Deserializer deserializer)
     {
-        Start = (Address)deserializer.ReadInt64();
-        End = (Address)deserializer.ReadInt64();
-        Gen0End = (Address)deserializer.ReadInt64();
-        Gen1End = (Address)deserializer.ReadInt64();
-        Gen2End = (Address)deserializer.ReadInt64();
-        Gen3End = (Address)deserializer.ReadInt64();
+        Start = deserializer.ReadUInt64();
+        End = deserializer.ReadUInt64();
+        Gen0End = deserializer.ReadUInt64();
+        Gen1End = deserializer.ReadUInt64();
+        Gen2End = deserializer.ReadUInt64();
+        Gen3End = deserializer.ReadUInt64();
     }
     #endregion
 }

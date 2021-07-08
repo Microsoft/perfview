@@ -72,12 +72,14 @@ public:
 class ModuleInfo
 {
 public:
-	ModuleInfo() { ID = 0; AssemblyID = 0; MetaDataImport = NULL; Path = NULL; }
+	ModuleInfo(ModuleID moduleId) : ID(moduleId), MetaDataFailed(false) { AssemblyID = 0; MetaDataImport = NULL; Path = NULL; }
 	~ModuleInfo() {
 		if (MetaDataImport != NULL) MetaDataImport->Release();
 		if (Path != NULL) delete Path;
 	}
-	ModuleID ID;
+
+	const ModuleID ID;
+	bool MetaDataFailed;
 	AssemblyID AssemblyID;
 	IMetaDataImport* MetaDataImport;    // We Release() this pointer on when we die
 	wchar_t* Path;                      // We DO own this pointer (we delete it when we die)
@@ -182,7 +184,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerTracer::InitializeForAttach(
 		// Even if we did not ask for them, turn on the profiler flags that can ONLY be done at startup. 
 		DWORD oldFlags = 0;
 		CALL_N_LOGONBADHR(m_info->GetEventMask(&oldFlags));
-		CALL_N_LOGONBADHR(m_info->SetEventMask(oldFlags | COR_PRF_ENABLE_OBJECT_ALLOCATED));
+		CALL_N_LOGONBADHR(m_info->SetEventMask(oldFlags | COR_PRF_MONITOR_MODULE_LOADS | COR_PRF_ENABLE_OBJECT_ALLOCATED));
 
 		// See if we asked for call sampling or not.  
 		DWORD keywords = 0;
@@ -223,7 +225,7 @@ void CorProfilerTracer::DoETWCommand(ULONG IsEnabled, UCHAR Level, ULONGLONG Mat
 {
 	LOG_TRACE(L"DoETWCommand(IsEnabled=%d, Level=%d Keywords=0x%x,%x)\n", IsEnabled, Level, (int)(MatchAnyKeywords >> 32), (int)MatchAnyKeywords);
 
-	const DWORD FLAGS_CAN_SET = (COR_PRF_MONITOR_OBJECT_ALLOCATED | COR_PRF_MONITOR_GC);
+	const DWORD FLAGS_CAN_SET = (COR_PRF_MONITOR_OBJECT_ALLOCATED | COR_PRF_MONITOR_MODULE_LOADS | COR_PRF_MONITOR_GC);
 	DWORD oldFlags = 0;
 	m_info->GetEventMask(&oldFlags);
 	DWORD newFlags = oldFlags;
@@ -245,6 +247,8 @@ void CorProfilerTracer::DoETWCommand(ULONG IsEnabled, UCHAR Level, ULONGLONG Mat
 
 		// Depending on what we asked for in the Keywords, turn on the cooresponding Profiler callbacks.  
 		newFlags = (oldFlags & ~FLAGS_CAN_SET);
+		newFlags |= COR_PRF_MONITOR_MODULE_LOADS;
+
 		if ((MatchAnyKeywords & (GCKeyword | GCAllocKeyword | GCAllocSampledKeyword | GCHeapKeyword)))
 			newFlags |= COR_PRF_MONITOR_GC;
 		if ((MatchAnyKeywords & (GCAllocKeyword | GCAllocSampledKeyword)) != 0 && m_profilerLoadedAtStartup)
@@ -462,6 +466,37 @@ void CorProfilerTracer::ForceGC()
 			break;
 		Sleep(10);
 	}
+}
+
+STDMETHODIMP CorProfilerTracer::ModuleAttachedToAssembly(ModuleID moduleId, AssemblyID assemblyId)
+{
+	auto moduleInfo = GetModuleInfo(moduleId);
+	if (moduleInfo && moduleInfo->AssemblyID != assemblyId)
+	{
+		if (!moduleInfo->Path)
+		{
+			ULONG pathLength;
+			AppDomainID appDomainId;
+			ModuleID manifestModuleId;
+			m_info->GetAssemblyInfo(assemblyId, 0, &pathLength, nullptr, &appDomainId, &manifestModuleId);
+			if (pathLength > 0)
+			{
+				moduleInfo->Path = new wchar_t[pathLength];
+				m_info->GetAssemblyInfo(assemblyId, pathLength, &pathLength, moduleInfo->Path, &appDomainId, &manifestModuleId);
+			}
+
+			if (!moduleInfo->Path)
+			{
+				moduleInfo->Path = new wchar_t[1];
+				moduleInfo->Path[0] = L'\0';
+			}
+		}
+
+		moduleInfo->AssemblyID = assemblyId;
+		EventWriteModuleIDDefintionEvent(moduleId, assemblyId, moduleInfo->Path);
+	}
+
+	return S_OK;
 }
 
 //==============================================================================
@@ -787,28 +822,37 @@ ModuleInfo* CorProfilerTracer::GetModuleInfo(ModuleID moduleId)
 	// Have I already looked up this class? 
 	ModuleInfo*& moduleInfo = m_moduleInfo[moduleId];
 	if (moduleInfo == NULL)
-		moduleInfo = new ModuleInfo();
+		moduleInfo = new ModuleInfo(moduleId);
 
-	if (moduleInfo->ID == -1)
-		return NULL;
-	if (moduleInfo->ID == 0)
+	if (moduleInfo->MetaDataFailed)
+		return nullptr;
+
+	if (!moduleInfo->MetaDataImport)
 	{
-		moduleInfo->ID = -1;
 		HRESULT hr = m_info->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataImport, (IUnknown**)&moduleInfo->MetaDataImport);
+		if (!moduleInfo->MetaDataImport)
+		{
+			moduleInfo->MetaDataFailed = true;
+			return nullptr;
+		}
+	}
+
+	if (!moduleInfo->Path)
+	{
 		LPCBYTE baseAddr = 0;
 		ULONG pathLength;
-		hr = m_info->GetModuleInfo(moduleId, &baseAddr, 0, &pathLength, 0, &moduleInfo->AssemblyID);
+		HRESULT hr = m_info->GetModuleInfo(moduleId, &baseAddr, 0, &pathLength, nullptr, &moduleInfo->AssemblyID);
 		if (0 < pathLength)
 		{
 			moduleInfo->Path = new wchar_t[pathLength];
 			hr = m_info->GetModuleInfo(moduleId, &baseAddr, pathLength, &pathLength, moduleInfo->Path, &moduleInfo->AssemblyID);
 			if (hr == S_OK)
 			{
-				moduleInfo->ID = moduleId;
 				EventWriteModuleIDDefintionEvent(moduleInfo->ID, moduleInfo->AssemblyID, moduleInfo->Path);
 			}
 		}
 	}
+
 	return moduleInfo;
 }
 

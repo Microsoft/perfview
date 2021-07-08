@@ -216,16 +216,25 @@ namespace PerfViewExtensibility
                     var stackSourceName = stacks.Name.Substring(0, stacks.Name.IndexOf(" file"));
                     perfViewStackSource = file.GetStackSource(stackSourceName);
                     if (perfViewStackSource == null)
+                    {
                         perfViewStackSource = new PerfViewStackSource(file, "");
+                    }
                 }
                 else
                 {
                     if (stacks.m_fileName != null)
+                    {
                         filePath = stacks.m_fileName;
+                    }
                     else
+                    {
                         filePath = stacks.Name;
+                    }
+
                     if (string.IsNullOrWhiteSpace(filePath))
+                    {
                         filePath = "X.PERFVIEW.XML";            // MAJOR HACK.
+                    }
 
                     var perfViewFile = PerfViewFile.Get(filePath);
                     var gcDumpFile = perfViewFile as HeapDumpPerfViewFile;
@@ -249,20 +258,30 @@ namespace PerfViewExtensibility
                     {
                         var xmlFile = perfViewFile as XmlPerfViewFile;
                         if (xmlFile == null)
+                        {
                             throw new ApplicationException("Currently only support ETL files and XML files");
+                        }
+
                         perfViewStackSource = new PerfViewStackSource(xmlFile, "");
                     }
                 }
                 var stackWindow = new StackWindow(GuiApp.MainWindow, perfViewStackSource);
                 if (stacks.HasGuiState)
+                {
                     stackWindow.RestoreWindow(stacks.GuiState, filePath);
+                }
+
                 stackWindow.Filter = stacks.Filter;
                 stackWindow.SetStackSource(stacks.StackSource, delegate
                 {
                     if (stacks.HasGuiState)
+                    {
                         stackWindow.GuiState = stacks.GuiState;
+                    }
                     else
+                    {
                         perfViewStackSource.ConfigureStackWindow(stackWindow);
+                    }
 
                     LogFile.WriteLine("[Opened stack viewer {0}]", filePath);
                     OnOpened?.Invoke(stackWindow);
@@ -287,7 +306,9 @@ namespace PerfViewExtensibility
                 eventSource.Viewer = new EventWindow(GuiApp.MainWindow, eventSource);
                 eventSource.Viewer.Show();
                 if (OnOpened != null)
+                {
                     eventSource.Viewer.Loaded += delegate { OnOpened(eventSource.Viewer); };
+                }
             });
         }
         /// <summary>
@@ -317,13 +338,21 @@ namespace PerfViewExtensibility
                         {
                             e.Cancel = true;
                             if (viewer.StatusBar.Visibility != System.Windows.Visibility.Visible)
+                            {
                                 viewer.StatusBar.Visibility = System.Windows.Visibility.Visible;
+                            }
+
                             viewer.StatusBar.StartWork("Following Hyperlink", delegate ()
                             {
                                 if (DoCommand != null)
+                                {
                                     DoCommand(e.Uri.LocalPath, viewer.StatusBar.LogWriter, viewer);
+                                }
                                 else
+                                {
                                     viewer.StatusBar.Log("This view does not support command URLs.");
+                                }
+
                                 viewer.StatusBar.EndWork(null);
                             });
                         }
@@ -335,8 +364,9 @@ namespace PerfViewExtensibility
                 WebBrowserWindow.Navigate(viewer.Browser, Path.GetFullPath(htmlFilePath));
                 viewer.Show();
                 if (OnOpened != null)
+                {
                     viewer.Loaded += delegate { OnOpened(viewer); };
-
+                }
             });
         }
 #endif
@@ -356,7 +386,10 @@ namespace PerfViewExtensibility
         public static void OpenLog()
         {
             if (App.CommandLineArgs.NoGui)
+            {
                 return;
+            }
+
             GuiApp.MainWindow.Dispatcher.BeginInvoke((Action)delegate ()
             {
                 GuiApp.MainWindow.StatusBar.OpenLog();
@@ -814,7 +847,10 @@ namespace PerfViewExtensibility
                     }
                 }
                 if (hasRest)
+                {
                     csvFile.Write("{0}Rest", listSeparator);
+                }
+
                 csvFile.WriteLine();
 
                 // Write out events 
@@ -822,14 +858,22 @@ namespace PerfViewExtensibility
                 {
                     // Have we exceeded MaxRet?
                     if (_event.EventName == null)
+                    {
                         return false;
+                    }
 
                     csvFile.Write("{0}{1}{2:f3}{1}{3}", _event.EventName, listSeparator, _event.TimeStampRelatveMSec, EscapeForCsv(_event.ProcessName, listSeparator));
                     var fields = _event.DisplayFields;
                     for (int i = 0; i < maxField; i++)
+                    {
                         csvFile.Write("{0}{1}", listSeparator, EscapeForCsv(fields[i], listSeparator));
+                    }
+
                     if (hasRest)
+                    {
                         csvFile.Write("{0}{1}", listSeparator, EscapeForCsv(_event.Rest, listSeparator));
+                    }
+
                     csvFile.WriteLine();
                     return true;
                 });
@@ -849,7 +893,9 @@ namespace PerfViewExtensibility
                 {
                     csvFile = baseFile + i.ToString() + ".excel.csv";
                     if (!File.Exists(csvFile))
+                    {
                         break;
+                    }
                 }
             }
 
@@ -875,10 +921,14 @@ namespace PerfViewExtensibility
         {
             // TODO FIX NOW is this a hack?
             if (str == null)
+            {
                 return "";
+            }
             // If you don't have a comma, you are OK (we are losing leading and trailing whitespace but I don't care about that. 
             if (str.IndexOf(listSeparator) < 0)
+            {
                 return str;
+            }
 
             // Escape all " by repeating them
             str = str.Replace("\"", "\"\"");
@@ -1004,7 +1054,9 @@ namespace PerfViewExtensibility
             // TODO remember the status log even when we don't have a gui. 
 #if !PERFVIEW_COLLECT
             if (GuiApp.MainWindow != null)
+            {
                 GuiState.Log = File.ReadAllText(App.LogFileName);
+            }
 #endif
 
             Action<XmlWriter> additionalData = null;
@@ -1256,14 +1308,23 @@ namespace PerfViewExtensibility
                             lineNum++;
                             line = startupFile.ReadLine();
                             if (line == null)
+                            {
                                 return;
+                            }
+
                             line = line.Trim();
                             if (line.Length == 0 || line.StartsWith("#"))
+                            {
                                 continue;
+                            }
+
                             List<string> commandAndArgs = MainWindow.ParseWordsOrQuotedStrings(line);
                             var command = "";
                             if (0 < commandAndArgs.Count)
+                            {
                                 command = commandAndArgs[0];
+                            }
+
                             if (command == "OnStartup")
                             {
                                 if (commandAndArgs.Count != 2)
@@ -1296,7 +1357,10 @@ namespace PerfViewExtensibility
                             else
                             {
                                 if (string.IsNullOrWhiteSpace(line))
+                                {
                                     continue;
+                                }
+
                                 errorMessage = "Unrecognized command.";
                                 goto Failed;
                             }

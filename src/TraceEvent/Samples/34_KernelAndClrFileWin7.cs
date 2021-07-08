@@ -132,11 +132,15 @@ namespace TraceEventSamples
                 source.UnhandledEvents += delegate(TraceEvent data)
                 {
                     if ((int)data.ID == 0xFFFE)         // The EventSource manifest events show up as unhandled, filter them out.
+                    {
                         return;
+                    }
 
                     // To avoid 'rundown' events that happen in the beginning and end of the trace filter out things during those times
                     if (data.TimeStampRelativeMSec < 1000 || 9000 < data.TimeStampRelativeMSec)
+                    {
                         return;
+                    }
 
                     Out.WriteLine("GOT UNHANDLED EVENT: " + data.Dump());
                 };

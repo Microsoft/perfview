@@ -209,7 +209,9 @@ namespace Microsoft.Diagnostics.Tracing.Ctf
 
 #if DEBUG
             if (value != -1)
+            {
                 _fileOffset++;
+            }
 #endif
 
             Debug.Assert(value != -1);

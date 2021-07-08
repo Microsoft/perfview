@@ -89,7 +89,7 @@ namespace Microsoft.Diagnostics.Symbols
             if (!(symbolRva <= rva && rva < symbolRva + symbolLen) && symbolLen != 0)
             {
                 m_reader.Log.WriteLine("Warning: NOT IN RANGE: address 0x{0:x} start {2:x} end {3:x} Offset {4:x} Len {5:x}, symbol {1}, prefixing with ??.",
-                    rva, ret, symbolRva, symbolRva + symbolLen, rva - symbolRva, symbolLen);
+                    rva, ret, symbolRva, symbolRva + symbolLen, unchecked(rva - symbolRva), symbolLen);
                 ret = "??" + ret;   // Prefix with ?? to indicate it is questionable.  
             }
 

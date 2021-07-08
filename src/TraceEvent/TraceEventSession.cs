@@ -1206,7 +1206,7 @@ namespace Microsoft.Diagnostics.Tracing.Session
         /// The rate at which CPU samples are collected.  By default this is 1 (once a millisecond per CPU).
         /// There is a lower bound on this (typically .125 Msec)
         /// </summary>
-        public float CpuSampleIntervalMSec
+        public double CpuSampleIntervalMSec
         {
             get { return m_CpuSampleIntervalMSec; }
             set
@@ -2295,7 +2295,7 @@ namespace Microsoft.Diagnostics.Tracing.Session
         private int m_CircularBufferMB;
         private int m_MultiFileMB;
 
-        private float m_CpuSampleIntervalMSec;
+        private double m_CpuSampleIntervalMSec;
         private bool m_StackCompression;
         private bool m_restarted;
 
@@ -2634,19 +2634,19 @@ namespace Microsoft.Diagnostics.Tracing.Session
             // Write the bytes most-significant byte first.  
             for (int i = 3; 0 <= i; --i)
             {
-                bytes[i] = (byte)namespace1;
+                bytes[i] = unchecked((byte)namespace1);
                 namespace1 >>= 8;
-                bytes[i + 4] = (byte)namespace2;
+                bytes[i + 4] = unchecked((byte)namespace2);
                 namespace2 >>= 8;
-                bytes[i + 8] = (byte)namespace3;
+                bytes[i + 8] = unchecked((byte)namespace3);
                 namespace3 >>= 8;
-                bytes[i + 12] = (byte)namespace4;
+                bytes[i + 12] = unchecked((byte)namespace4);
                 namespace4 >>= 8;
             }
             // Write out  the name, most significant byte first
             for (int i = 0; i < name.Length; i++)
             {
-                bytes[2 * i + 16 + 1] = (byte)name[i];
+                bytes[2 * i + 16 + 1] = unchecked((byte)name[i]);
                 bytes[2 * i + 16] = (byte)(name[i] >> 8);
             }
 
@@ -2656,11 +2656,11 @@ namespace Microsoft.Diagnostics.Tracing.Session
 
             // Create a GUID out of the first 16 bytes of the hash (SHA-1 create a 20 byte hash)
             int a = (((((hash[3] << 8) + hash[2]) << 8) + hash[1]) << 8) + hash[0];
-            short b = (short)((hash[5] << 8) + hash[4]);
-            short c = (short)((hash[7] << 8) + hash[6]);
+            ushort b = (ushort)((hash[5] << 8) + hash[4]);
+            ushort c = (ushort)((hash[7] << 8) + hash[6]);
 
-            c = (short)((c & 0x0FFF) | 0x5000);   // Set high 4 bits of octet 7 to 5, as per RFC 4122
-            Guid guid = new Guid(a, b, c, hash[8], hash[9], hash[10], hash[11], hash[12], hash[13], hash[14], hash[15]);
+            c = (ushort)((c & 0x0FFF) | 0x5000);   // Set high 4 bits of octet 7 to 5, as per RFC 4122
+            Guid guid = new Guid(a, unchecked((short)b), unchecked((short)c), hash[8], hash[9], hash[10], hash[11], hash[12], hash[13], hash[14], hash[15]);
 
             Debug.Assert(TraceEventProviders.MaybeAnEventSource(guid));
             return guid;

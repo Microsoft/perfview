@@ -205,7 +205,9 @@ namespace TraceEventSamples
                 source.UnhandledEvents += delegate(TraceEvent data)
                 {
                     if ((int)data.ID != 0xFFFE)         // The EventSource manifest events show up as unhandled, filter them out.
+                    {
                         Out.WriteLine("GOT UNHANDLED EVENT: " + data.Dump());
+                    }
                 };
 #endif
 

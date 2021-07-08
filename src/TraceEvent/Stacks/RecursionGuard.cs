@@ -4,7 +4,7 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
 {
     public static class RecursionGuardConfiguration
     {
-        private static ushort _maxResets = 80;
+        private static ushort _maxResets = ushort.MaxValue;
 
         /// <summary>
         /// The number of times to trampoline to a new thread before assuming infinite recursion and failing the operation.
@@ -25,7 +25,6 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
     {
         private readonly ushort _currentThreadRecursionDepth;
         private readonly ushort _resetCount;
-
 
         /// <summary>
         /// For recursive methods that need to process deep stacks, this constant defines the limit for recursion within

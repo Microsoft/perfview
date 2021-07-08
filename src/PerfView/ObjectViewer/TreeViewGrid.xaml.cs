@@ -726,7 +726,10 @@ namespace PerfView
             public override string ToString()
             {
                 if (Data == null)
+                {
                     return "";
+                }
+
                 return Data.ToString();
             }
 #endif

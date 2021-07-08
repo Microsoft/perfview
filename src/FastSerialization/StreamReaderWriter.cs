@@ -8,6 +8,9 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;      // For StringBuilder.
+using System.IO.MemoryMappedFiles;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace FastSerialization
 {
@@ -150,7 +153,7 @@ namespace FastSerialization
         /// </summary>
         public StreamLabel ReadLabel()
         {
-            return (StreamLabel)(uint)ReadInt32();
+            return (StreamLabel)((ulong)unchecked((uint)ReadInt32()) << 1);
         }
         /// <summary>
         /// Implementation of IStreamReader
@@ -327,8 +330,11 @@ namespace FastSerialization
         /// </summary>
         public void Write(StreamLabel value)
         {
-            Debug.Assert((long)value <= int.MaxValue);
-            Write((int)value);
+            if (((long)value & 0x1) != 0)
+                throw new NotSupportedException("Labels must be aligned to a 2-byte boundary.");
+
+            uint packedLabel = (uint)((long)value >> 1);
+            Write(unchecked((int)packedLabel));
         }
         /// <summary>
         /// Implementation of IStreamWriter
@@ -365,11 +371,47 @@ namespace FastSerialization
                 }
             }
         }
+        public void Write(byte[] data, int offset, int length)
+        {
+            if (data == null)
+            {
+                throw new ArgumentNullException(nameof(data));
+            }
+
+            if (offset < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(offset));
+            }
+
+            if (length < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(length));
+            }
+
+            if (length > data.Length - offset)
+            {
+                throw new ArgumentNullException(nameof(length));
+            }
+
+            for (int i = 0; i < length; i++)
+            {
+                Write(data[offset + i]);
+            }
+        }
         /// <summary>
         /// Implementation of IStreamWriter
         /// </summary>
-        public virtual StreamLabel GetLabel()
+        public virtual StreamLabel GetLabel(bool allowPadding)
         {
+            if ((Length & 0x1) != 0)
+            {
+                if (!allowPadding)
+                    throw new NotSupportedException("Labels must be aligned to a 2-byte boundary.");
+
+                Write((byte)Tags.Padding);
+                Debug.Assert((Length & 0x1) == 0);
+            }
+
             return (StreamLabel)Length;
         }
         /// <summary>
@@ -1068,12 +1110,21 @@ namespace FastSerialization
         /// <summary>
         /// Implementation of the IStreamWriter interface 
         /// </summary>
-        public override StreamLabel GetLabel()
+        public override StreamLabel GetLabel(bool allowPadding)
         {
             long len = Length;
-            if (len != (uint)len)
+            if ((len >> 1) != (uint)(len >> 1))
             {
-                throw new NotSupportedException("Streams larger than 4 GB.  You need to use /MaxEventCount to limit the size.");
+                throw new NotSupportedException("Streams larger than 8 GB.  You need to use /MaxEventCount to limit the size.");
+            }
+
+            if ((len & 0x1) != 0)
+            {
+                if (!allowPadding)
+                    throw new NotSupportedException("Labels must be aligned to a 2-byte boundary.");
+
+                Write((byte)Tags.Padding);
+                len++;
             }
 
             return (StreamLabel)len;

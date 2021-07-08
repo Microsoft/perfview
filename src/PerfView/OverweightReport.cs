@@ -67,11 +67,11 @@ namespace PerfView
 
             TextWriter log = GuiApp.MainWindow.StatusBar.LogWriter;
 
-            var d1 = new Dictionary<string, float>();
-            var d2 = new Dictionary<string, float>();
+            var d1 = new Dictionary<string, double>();
+            var d2 = new Dictionary<string, double>();
             var results = new List<Result>();
-            float total1 = LoadOneTrace(baselineSource, d1);
-            float total2 = LoadOneTrace(source, d2);
+            double total1 = LoadOneTrace(baselineSource, d1);
+            double total2 = LoadOneTrace(source, d2);
 
             if (total1 != total2)
             {
@@ -82,8 +82,8 @@ namespace PerfView
                 w.WriteLine("<h1>Overweight report for symbols common between both files</h1>");
                 w.WriteLine("<br>");
 
-                float delta = total2 - total1;
-                float growthPercent = delta / total1 * 100;
+                double delta = total2 - total1;
+                double growthPercent = delta / total1 * 100;
 
                 w.WriteLine("<table style=\"font-size:10pt;\" border=\"1\">");
                 w.WriteLine("<tr><td>Base (old) Time:</td><td>{0:f1}</td></tr>", total1);
@@ -143,24 +143,24 @@ namespace PerfView
         private class Result
         {
             public string name;
-            public float before;
-            public float after;
-            public float delta;
-            public float overweight;
-            public float percent;
+            public double before;
+            public double after;
+            public double delta;
+            public double overweight;
+            public double percent;
             public int interest;
         }
 
         private static void ComputeOverweights(
-            Dictionary<string, float> d1,
-            Dictionary<string, float> d2,
+            Dictionary<string, double> d1,
+            Dictionary<string, double> d2,
             List<Result> results,
-            float total1,
-            float total2)
+            double total1,
+            double total2)
         {
 
-            float totalDelta = total2 - total1;
-            float growth = total2 / total1;
+            double totalDelta = total2 - total1;
+            double growth = total2 / total1;
 
             foreach (var key in d1.Keys)
             {
@@ -227,12 +227,12 @@ namespace PerfView
             });
         }
 
-        private static float LoadOneTrace(StackSource source, Dictionary<string, float> dict)
+        private static double LoadOneTrace(StackSource source, Dictionary<string, double> dict)
         {
             var calltree = new CallTree(ScalingPolicyKind.ScaleToData);
             calltree.StackSource = source;
 
-            float total = 0;
+            double total = 0;
             foreach (var node in calltree.ByID)
             {
                 if (node.InclusiveMetric == 0)
@@ -240,7 +240,7 @@ namespace PerfView
                     continue;
                 }
 
-                float weight = 0;
+                double weight = 0;
 
                 string key = node.Name;
                 dict.TryGetValue(key, out weight);

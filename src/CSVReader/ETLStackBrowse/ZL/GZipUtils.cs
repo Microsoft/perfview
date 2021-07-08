@@ -155,21 +155,35 @@ namespace System.IO.Compression2
         // See RFC1952 for details.
         public static uint UpdateCrc32(uint crc32, byte[] buffer, int offset, int length)
         {
-            Debug.Assert((buffer != null) && (offset >= 0) && (length >= 0)
-                          && (offset <= buffer.Length - length), "check the caller");
+            ValidateBufferArguments(buffer, offset, length);
 
             crc32 ^= 0xffffffffU;
 
-            while (--length >= 0)
+            unsafe
             {
-                crc32 = crcTable[(crc32 ^ buffer[offset++]) & 0xFF] ^ (crc32 >> 8);
+                fixed (uint* crcTablePtr = &crcTable[0])
+                fixed (byte* bufferPtr = &buffer[0])
+                {
+                    while (--length >= 0)
+                    {
+                        crc32 = crcTablePtr[(crc32 ^ bufferPtr[offset++]) & 0xFF] ^ (crc32 >> 8);
+                    }
+                }
             }
 
             crc32 ^= 0xffffffffU;
             return crc32;
         }
 
-
+        private static void ValidateBufferArguments(byte[] buffer, int offset, int count)
+        {
+            if (buffer is null)
+                throw new ArgumentNullException(nameof(buffer));
+            if (offset < 0)
+                throw new ArgumentOutOfRangeException(nameof(offset));
+            if ((uint)count > buffer.Length - offset)
+                throw new ArgumentOutOfRangeException(nameof(count));
+        }
     }
 
 

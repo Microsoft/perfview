@@ -1485,7 +1485,7 @@ namespace PerfView
 
             if (stack != CallStackIndex.Invalid)
             {
-                m_sample.Metric = (float)cost;
+                m_sample.Metric = cost;
                 m_sample.Count = 1;
                 m_sample.TimeRelativeMSec = timeStamp;
 

@@ -3818,7 +3818,7 @@ namespace Microsoft.Diagnostics.Tracing.Parsers.Clr
         /// </summary>
         public int TypeNameID { get { return m_data.GetInt32At(m_baseOffset + 16); } }
         public TypeFlags Flags { get { return (TypeFlags)m_data.GetInt32At(m_baseOffset + 20); } }
-        public byte CorElementType { get { return (byte)m_data.GetByteAt(m_baseOffset + 24); } }
+        public byte CorElementType { get { return m_data.GetByteAt(m_baseOffset + 24); } }
 
         /// <summary>
         /// Note that this method returns the type name with generic parameters in .NET Runtime
@@ -10715,7 +10715,7 @@ namespace Microsoft.Diagnostics.Tracing.Parsers.Clr
         public Address MethodStartAddress { get { return (Address)GetInt64At(16); } }
         public int MethodSize { get { return GetInt32At(24); } }
         public int MethodToken { get { return GetInt32At(28); } }
-        public MethodFlags MethodFlags { get { return (MethodFlags)((uint)GetInt32At(32) & MethodFlagsMask); } }
+        public MethodFlags MethodFlags { get { return (MethodFlags)(GetUInt32At(32) & MethodFlagsMask); } }
         public bool IsDynamic { get { return (MethodFlags & MethodFlags.Dynamic) != 0; } }
         public bool IsGeneric { get { return (MethodFlags & MethodFlags.Generic) != 0; } }
         public bool IsJitted { get { return (MethodFlags & MethodFlags.Jitted) != 0; } }
@@ -10738,7 +10738,7 @@ namespace Microsoft.Diagnostics.Tracing.Parsers.Clr
             }
         }
 
-        public int MethodExtent { get { return (int)((uint)GetInt32At(32) >> MethodExtentShift); } }
+        public int MethodExtent { get { return (int)(GetUInt32At(32) >> MethodExtentShift); } }
 
         #region Private
         internal MethodLoadUnloadTraceDataBase(int eventID, int task, string taskName, Guid taskGuid, int opcode, string opcodeName, Guid providerGuid, string providerName)
@@ -11942,14 +11942,14 @@ namespace Microsoft.Diagnostics.Tracing.Parsers.Clr
     {
         public int ClrInstanceID { get { return GetInt16At(0); } }
         public RuntimeSku Sku { get { return (RuntimeSku)GetInt16At(2); } }
-        public int BclMajorVersion { get { return (ushort)GetInt16At(4); } }
-        public int BclMinorVersion { get { return (ushort)GetInt16At(6); } }
-        public int BclBuildNumber { get { return (ushort)GetInt16At(8); } }
-        public int BclQfeNumber { get { return (ushort)GetInt16At(10); } }
-        public int VMMajorVersion { get { return (ushort)GetInt16At(12); } }
-        public int VMMinorVersion { get { return (ushort)GetInt16At(14); } }
-        public int VMBuildNumber { get { return (ushort)GetInt16At(16); } }
-        public int VMQfeNumber { get { return (ushort)GetInt16At(18); } }
+        public int BclMajorVersion { get { return GetUInt16At(4); } }
+        public int BclMinorVersion { get { return GetUInt16At(6); } }
+        public int BclBuildNumber { get { return GetUInt16At(8); } }
+        public int BclQfeNumber { get { return GetUInt16At(10); } }
+        public int VMMajorVersion { get { return GetUInt16At(12); } }
+        public int VMMinorVersion { get { return GetUInt16At(14); } }
+        public int VMBuildNumber { get { return GetUInt16At(16); } }
+        public int VMQfeNumber { get { return GetUInt16At(18); } }
         public StartupFlags StartupFlags { get { return (StartupFlags)GetInt32At(20); } }
         public StartupMode StartupMode { get { return (StartupMode)GetByteAt(24); } }
         public string CommandLine { get { return GetUnicodeStringAt(25); } }
@@ -13482,8 +13482,7 @@ namespace Microsoft.Diagnostics.Tracing.Parsers.Clr
         {
             lazyTypeIDToName.Read(deserializer, delegate
             {
-                int count;
-                deserializer.Read(out count);
+                int count = deserializer.ReadInt();
                 Debug.Assert(count >= 0);
                 deserializer.Log("<Marker name=\"typeIDToName\"/ count=\"" + count + "\">");
                 if (count > 0)
@@ -13495,9 +13494,9 @@ namespace Microsoft.Diagnostics.Tracing.Parsers.Clr
 
                     for (int i = 0; i < count; i++)
                     {
-                        Address key; deserializer.ReadAddress(out key);
-                        long startTimeQPC; deserializer.Read(out startTimeQPC);
-                        string value; deserializer.Read(out value);
+                        Address key = deserializer.ReadUInt64();
+                        long startTimeQPC = deserializer.ReadInt64();
+                        string value = deserializer.ReadString();
                         _typeIDToName.Add(key, startTimeQPC, value);
                     }
                 }

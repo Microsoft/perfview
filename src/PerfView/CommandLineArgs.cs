@@ -69,7 +69,7 @@ namespace PerfView
         public bool SaveETL;                // Save the ETL file when dumping the JS heap
         public bool DumpData;               // Dump the heap data as well as the connectivity info
         public bool Freeze;                 // Freeze the process while the dump is taken
-        public int MaxDumpCountK = 250;     // Maximum size of the File to generate.   We sample aggressively enough to try to hit this count of objects in the file
+        public int MaxDumpCountK;           // Maximum size of the File to generate.   We sample aggressively enough to try to hit this count of objects in the file
         public int MaxNodeCountK;           // Maximum size to even look at in the heap 
 
 #if CROSS_GENERATION_LIVENESS
@@ -96,7 +96,7 @@ namespace PerfView
         public string StopOnException;
         public int StopOnGCOverMsec;
         public int StopOnBGCFinalPauseOverMsec; // Stop on a BGC whose final pause is over this many ms
-        public float DecayToZeroHours;          //causes 'StopOn*OverMSec' timeouts to decay to zero over this time period
+        public double DecayToZeroHours;          //causes 'StopOn*OverMSec' timeouts to decay to zero over this time period
         public int MinSecForTrigger = 3;        // affects StopOnPerfCounter and StartOnPerfCounter
         public string StopOnEventLogMessage;    // stop collection on event logs
         public string StopCommand;              // is executed when a stop is triggered.   
@@ -195,7 +195,7 @@ namespace PerfView
         public int RundownTimeout = 120;
         public int MinRundownTime;
         public bool NoView;
-        public float CpuSampleMSec = 1.0F;
+        public double CpuSampleMSec = 1.0;
         public bool KeepAllEvents;
         public int MaxEventCount;
         public bool ContinueOnError;

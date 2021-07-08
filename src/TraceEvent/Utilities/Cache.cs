@@ -60,7 +60,7 @@ namespace Utilities
         public bool TryGet(K key, out T valueRet)
         {
             int hash = key.GetHashCode();
-            uint tableIndex = (uint)((uint)hash % (uint)m_hashTable.Length);
+            uint tableIndex = unchecked((uint)((uint)hash % (uint)m_hashTable.Length));
             int entryIndex = m_hashTable[tableIndex];
             int entryHash = (hash ^ (hash >> 16)) & HashMask;
             for (; ; )
@@ -92,7 +92,7 @@ namespace Utilities
         public void Add(K key, T value)
         {
             int hash = key.GetHashCode();
-            uint tableIndex = (uint)((uint)hash % (uint)m_hashTable.Length);
+            uint tableIndex = unchecked((uint)((uint)hash % (uint)m_hashTable.Length));
             int entryHash = (hash ^ (hash >> 16)) & HashMask;
 
             ushort entryIndex = GetFreeEntry();

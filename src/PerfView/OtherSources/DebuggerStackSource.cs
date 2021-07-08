@@ -52,7 +52,7 @@ namespace Diagnostics.Tracing.StackSources
             var stack = new GrowableArray<DebuggerCallStackFrame>();
             bool newCallStackFound = false;
             var sample = new StackSourceSample(this);
-            float time = 0;
+            double time = 0;
             for (; ; )
             {
                 var line = reader.ReadLine();

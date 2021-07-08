@@ -17,7 +17,7 @@ namespace Graphs
             : base(10000)
         {
             // Needed for the callback in ReadFile 
-            m_tempChildren = new GrowableArray<NodeIndex>(1000);
+            m_tempChildren = new HashSet<NodeIndex>();
             ClearWorker();
 
             m_clrProfilerParser = new ClrProfilerParser();
@@ -71,7 +71,7 @@ namespace Graphs
 
             // These are only needed for the callbacks in 'ReadFile' save space by clearing them out.  
             m_clrProfilerParser = null;
-            m_tempChildren = new GrowableArray<NodeIndex>();                // Clear the array
+            m_tempChildren = new HashSet<NodeIndex>();                // Clear the array
             m_profilerTypeToNodeType = new GrowableArray<NodeTypeIndex>();  // Clear the array
             m_rootNode = null;
             m_rootNodeForUnknownRoot = null;
@@ -237,7 +237,7 @@ namespace Graphs
         // These fields are only used during MemoryGraph construction.  
         private ClrProfilerParser m_clrProfilerParser;                  // Object use to parse the records from a CLRProfiler log.  
         private GrowableArray<NodeTypeIndex> m_profilerTypeToNodeType;  // maps profilers types to node types. 
-        private GrowableArray<NodeIndex> m_tempChildren;                        // The array is reused again and again when processing children.  
+        private HashSet<NodeIndex> m_tempChildren;                        // The array is reused again and again when processing children.  
 
         private bool m_seenObjects;
         private bool m_hasGCRootInfo;
@@ -314,7 +314,7 @@ namespace Graphs
             serializer.Write(m_nodeAddresses.Count);
             for (int i = 0; i < m_nodeAddresses.Count; i++)
             {
-                serializer.Write((long)m_nodeAddresses[i]);
+                serializer.Write(m_nodeAddresses[i]);
             }
         }
         void IFastSerializable.FromStream(Deserializer deserializer)
@@ -325,7 +325,7 @@ namespace Graphs
             int addressCount = deserializer.ReadInt();
             for (int i = 0; i < addressCount; i++)
             {
-                m_nodeAddresses.Add((Address)deserializer.ReadInt64());
+                m_nodeAddresses.Add(checked((nuint)deserializer.ReadInt64()));
             }
         }
 

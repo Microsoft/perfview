@@ -454,7 +454,7 @@ namespace PEFile
         /// <summary>
         /// The the PE file was created represented as the number of seconds since Jan 1 1970 
         /// </summary>
-        public int TimeDateStampSec { get { return (int)ntHeader->FileHeader.TimeDateStamp; } }
+        public int TimeDateStampSec { get { return unchecked((int)ntHeader->FileHeader.TimeDateStamp); } }
         /// <summary>
         /// The the PE file was created represented as a DateTime object
         /// </summary>

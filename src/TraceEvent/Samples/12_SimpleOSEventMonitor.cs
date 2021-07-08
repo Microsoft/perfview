@@ -129,7 +129,9 @@ namespace TraceEventSamples
                 session.Source.UnhandledEvents += delegate(TraceEvent data)
                 {
                     if ((int)data.ID != 0xFFFE)         // The EventSource manifest events show up as unhanded, filter them out.
+                    {
                         Out.WriteLine("GOT UNHANDLED EVENT: " + data.Dump());
+                    }
                 };
 #endif
                 // At this point we have created a TraceEventSession, hooked it up to a TraceEventSource, and hooked the

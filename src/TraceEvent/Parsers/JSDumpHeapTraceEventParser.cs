@@ -406,7 +406,7 @@ namespace Microsoft.Diagnostics.Tracing.Parsers.JSDumpHeap
         public Address Address { get { return m_data.GetAddressAt(m_data.HostOffset(m_baseOffset + 8, 1)); } }
         public int TypeNameId { get { return m_data.GetInt32At(m_data.HostOffset(m_baseOffset + 12, 2)); } }
         public ObjectFlags Flags { get { return (ObjectFlags)m_data.GetInt32At(m_data.HostOffset(m_baseOffset + 16, 2)); } }
-        public int AttributeCount { get { return (ushort)m_data.GetInt16At(m_data.HostOffset(m_baseOffset + 20, 2)); } }
+        public int AttributeCount { get { return m_data.GetUInt16At(m_data.HostOffset(m_baseOffset + 20, 2)); } }
         public int EdgeCount { get { return m_data.GetInt32At(m_data.HostOffset(m_baseOffset + 22, 2)); } }
 
         #region private

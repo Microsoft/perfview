@@ -43,7 +43,7 @@ internal class Program
         string outputFile = null;
         try
         {
-            float decayToZeroHours = 0;
+            double decayToZeroHours = 0;
             bool forceGC = false;
             bool processDump = false;
             string inputSpec = null;
@@ -114,7 +114,7 @@ internal class Program
                     }
                     else if (arg.StartsWith("/DecayToZeroHours:", StringComparison.OrdinalIgnoreCase))
                     {
-                        decayToZeroHours = float.Parse(arg.Substring(18));
+                        decayToZeroHours = double.Parse(arg.Substring(18));
                     }
                     else if (arg.StartsWith("/StopOnPerfCounter:", StringComparison.OrdinalIgnoreCase))
                     {

@@ -1773,7 +1773,7 @@ namespace Microsoft.Diagnostics.Tracing.Analysis.GC
 
             if (HeapCount > 1)
             {
-                GCCpuServerGCThreads = new float[HeapCount];
+                GCCpuServerGCThreads = new double[HeapCount];
             }
 
             pinnedObjectSizes = -1;
@@ -1817,7 +1817,7 @@ namespace Microsoft.Diagnostics.Tracing.Analysis.GC
         /// <summary>
         /// Percentage time the GC took compared to the process lifetime
         /// </summary>
-        public double PercentTimeInGC { get { return (float)(GetTotalGCTime() * 100 / ProcessCpuMSec); } }          // Of all the CPU, how much as a percentage is spent in the GC since end of last GC.
+        public double PercentTimeInGC { get { return GetTotalGCTime() * 100 / ProcessCpuMSec; } }          // Of all the CPU, how much as a percentage is spent in the GC since end of last GC.
         /// <summary>
         /// The number of CPU samples gathered for the lifetime of this process
         /// </summary>
@@ -2936,14 +2936,14 @@ namespace Microsoft.Diagnostics.Tracing.Analysis.GC
         }
 
 
-        internal void AddServerGCThreadTime(int heapIndex, float cpuMSec)
+        internal void AddServerGCThreadTime(int heapIndex, double cpuMSec)
         {
             if (GCCpuServerGCThreads != null)
             {
                 if (heapIndex >= GCCpuServerGCThreads.Length)
                 {
                     var old = GCCpuServerGCThreads;
-                    GCCpuServerGCThreads = new float[heapIndex + 1];
+                    GCCpuServerGCThreads = new double[heapIndex + 1];
                     Array.Copy(old, GCCpuServerGCThreads, old.Length);
                 }
                 GCCpuServerGCThreads[heapIndex] += cpuMSec;
@@ -3145,7 +3145,7 @@ namespace Microsoft.Diagnostics.Tracing.Analysis.GC
         // so we can see if there's an imbalance. We concurrently don't do this
         // for server background GC as the imbalance there is much less important.
 
-        private float[] GCCpuServerGCThreads = null;
+        private double[] GCCpuServerGCThreads = null;
 
 #endregion
     }

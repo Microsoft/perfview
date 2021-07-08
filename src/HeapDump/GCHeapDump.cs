@@ -57,11 +57,11 @@ public class GCHeapDump : IFastSerializable, IFastSerializableVersion
     /// <summary>
     /// If we have sampled, sampleCount * ThisMultiplier = originalCount.   If sampling not done then == 1
     /// </summary>
-    public float AverageCountMultiplier { get; internal set; }
+    public double AverageCountMultiplier { get; internal set; }
     /// <summary>
     /// If we have sampled sampledSize * thisMultiplier = originalSize.  If sampling not done then == 1
     /// </summary>
-    public float AverageSizeMultiplier { get; internal set; }
+    public double AverageSizeMultiplier { get; internal set; }
     /// <summary>
     /// This can be null.  If non-null it indicates that only a sample of the GC graph was persisted in 
     /// the MemoryGraph filed.  To get an approximation of the original heap, each type's count should be 
@@ -70,7 +70,7 @@ public class GCHeapDump : IFastSerializable, IFastSerializableVersion
     /// We can't use a uniform number for all types because we want to see all large objects, and we 
     /// want to include paths to root for all objects, which means we can only approximate a uniform scaling.  
     /// </summary>
-    public float[] CountMultipliersByType { get; internal set; }
+    public double[] CountMultipliersByType { get; internal set; }
 
     public DotNetHeapInfo DotNetHeapInfo { get; internal set; }
     public JSHeapInfo JSHeapInfo { get; internal set; }
@@ -242,14 +242,19 @@ public class GCHeapDump : IFastSerializable, IFastSerializableVersion
         {
             var newLineIdx = output.IndexOf('\n', idx);
             if (newLineIdx < 0)
+            {
                 break;
+            }
+
             if (idx + 5 <= newLineIdx && output[idx] != '#')
             {
                 info.UsesDotNet = (output[idx] == 'N');
                 info.UsesJavaScript = (output[idx + 1] == 'J');
                 var idStr = output.Substring(idx + 3, newLineIdx - idx - 4);
                 if (int.TryParse(idStr, out info.ID))
+                {
                     ret[info.ID] = info;
+                }
             }
             idx = newLineIdx + 1;
         }
@@ -261,8 +266,8 @@ public class GCHeapDump : IFastSerializable, IFastSerializableVersion
         serializer.Write(m_graph);
         serializer.Write(m_graph.Is64Bit);  // This is redundant but graph did not used to hold this value 
         // we write the bit here to preserve compatibility. 
-        serializer.Write(AverageCountMultiplier);
-        serializer.Write(AverageSizeMultiplier);
+        serializer.Write((float)AverageCountMultiplier);
+        serializer.Write((float)AverageSizeMultiplier);
 
         serializer.Write(JSHeapInfo);
         serializer.Write(DotNetHeapInfo);
@@ -284,7 +289,7 @@ public class GCHeapDump : IFastSerializable, IFastSerializableVersion
             serializer.Write(CountMultipliersByType.Length);
             for (int i = 0; i < CountMultipliersByType.Length; i++)
             {
-                serializer.Write(CountMultipliersByType[i]);
+                serializer.Write((float)CountMultipliersByType[i]);
             }
         }
 
@@ -325,11 +330,10 @@ public class GCHeapDump : IFastSerializable, IFastSerializableVersion
         TotalProcessCommit = deserializer.ReadInt64();
         TotalProcessWorkingSet = deserializer.ReadInt64();
 
-        int count;
-        deserializer.Read(out count);
+        int count = deserializer.ReadInt();
         if (count != 0)
         {
-            var a = new float[count];
+            var a = new double[count];
             for (int i = 0; i < a.Length; i++)
             {
                 a[i] = deserializer.ReadFloat();
@@ -581,9 +585,9 @@ public class InteropInfo : IFastSerializable
         {
             serializer.Write((int)m_listRCWInfo[i].node);
             serializer.Write(m_listRCWInfo[i].refCount);
-            serializer.Write((long)m_listRCWInfo[i].addrIUnknown);
-            serializer.Write((long)m_listRCWInfo[i].addrJupiter);
-            serializer.Write((long)m_listRCWInfo[i].addrVTable);
+            serializer.Write(m_listRCWInfo[i].addrIUnknown);
+            serializer.Write(m_listRCWInfo[i].addrJupiter);
+            serializer.Write(m_listRCWInfo[i].addrVTable);
             serializer.Write(m_listRCWInfo[i].firstComInf);
             serializer.Write(m_listRCWInfo[i].countComInf);
         }
@@ -592,8 +596,8 @@ public class InteropInfo : IFastSerializable
         {
             serializer.Write((int)m_listCCWInfo[i].node);
             serializer.Write(m_listCCWInfo[i].refCount);
-            serializer.Write((long)m_listCCWInfo[i].addrIUnknown);
-            serializer.Write((long)m_listCCWInfo[i].addrHandle);
+            serializer.Write(m_listCCWInfo[i].addrIUnknown);
+            serializer.Write(m_listCCWInfo[i].addrHandle);
             serializer.Write(m_listCCWInfo[i].firstComInf);
             serializer.Write(m_listCCWInfo[i].countComInf);
         }
@@ -603,16 +607,16 @@ public class InteropInfo : IFastSerializable
             serializer.Write(m_listComInterfaceInfo[i].fRCW ? (byte)1 : (byte)0);
             serializer.Write(m_listComInterfaceInfo[i].owner);
             serializer.Write((int)m_listComInterfaceInfo[i].typeID);
-            serializer.Write((long)m_listComInterfaceInfo[i].addrInterface);
-            serializer.Write((long)m_listComInterfaceInfo[i].addrFirstVTable);
-            serializer.Write((long)m_listComInterfaceInfo[i].addrFirstFunc);
+            serializer.Write(m_listComInterfaceInfo[i].addrInterface);
+            serializer.Write(m_listComInterfaceInfo[i].addrFirstVTable);
+            serializer.Write(m_listComInterfaceInfo[i].addrFirstFunc);
         }
 
         for (int i = 0; i < m_listModules.Count; i++)
         {
-            serializer.Write((long)m_listModules[i].baseAddress);
-            serializer.Write((int)m_listModules[i].fileSize);
-            serializer.Write((int)m_listModules[i].timeStamp);
+            serializer.Write(m_listModules[i].baseAddress);
+            serializer.Write(m_listModules[i].fileSize);
+            serializer.Write(m_listModules[i].timeStamp);
             serializer.Write(m_listModules[i].fileName);
         }
     }
@@ -642,9 +646,9 @@ public class InteropInfo : IFastSerializable
             RCWInfo infoRCW = new RCWInfo();
             infoRCW.node = (NodeIndex)deserializer.ReadInt();
             infoRCW.refCount = deserializer.ReadInt();
-            infoRCW.addrIUnknown = (Address)deserializer.ReadInt64();
-            infoRCW.addrJupiter = (Address)deserializer.ReadInt64();
-            infoRCW.addrVTable = (Address)deserializer.ReadInt64();
+            infoRCW.addrIUnknown = deserializer.ReadUInt64();
+            infoRCW.addrJupiter = deserializer.ReadUInt64();
+            infoRCW.addrVTable = deserializer.ReadUInt64();
             infoRCW.firstComInf = deserializer.ReadInt();
             infoRCW.countComInf = deserializer.ReadInt();
             m_listRCWInfo.Add(infoRCW);
@@ -656,8 +660,8 @@ public class InteropInfo : IFastSerializable
             CCWInfo infoCCW = new CCWInfo();
             infoCCW.node = (NodeIndex)deserializer.ReadInt();
             infoCCW.refCount = deserializer.ReadInt();
-            infoCCW.addrIUnknown = (Address)deserializer.ReadInt64();
-            infoCCW.addrHandle = (Address)deserializer.ReadInt64();
+            infoCCW.addrIUnknown = deserializer.ReadUInt64();
+            infoCCW.addrHandle = deserializer.ReadUInt64();
             infoCCW.firstComInf = deserializer.ReadInt();
             infoCCW.countComInf = deserializer.ReadInt();
             m_listCCWInfo.Add(infoCCW);
@@ -669,18 +673,18 @@ public class InteropInfo : IFastSerializable
             infoInterface.fRCW = ((deserializer.ReadByte() == 1) ? true : false);
             infoInterface.owner = deserializer.ReadInt();
             infoInterface.typeID = (NodeTypeIndex)deserializer.ReadInt();
-            infoInterface.addrInterface = (Address)deserializer.ReadInt64();
-            infoInterface.addrFirstVTable = (Address)deserializer.ReadInt64();
-            infoInterface.addrFirstFunc = (Address)deserializer.ReadInt64();
+            infoInterface.addrInterface = deserializer.ReadUInt64();
+            infoInterface.addrFirstVTable = deserializer.ReadUInt64();
+            infoInterface.addrFirstFunc = deserializer.ReadUInt64();
             m_listComInterfaceInfo.Add(infoInterface);
         }
 
         for (int i = 0; i < m_countModules; i++)
         {
             InteropModuleInfo infoModule = new InteropModuleInfo();
-            infoModule.baseAddress = (Address)deserializer.ReadInt64();
-            infoModule.fileSize = (uint)deserializer.ReadInt();
-            infoModule.timeStamp = (uint)deserializer.ReadInt();
+            infoModule.baseAddress = deserializer.ReadUInt64();
+            infoModule.fileSize = deserializer.ReadUInt32();
+            infoModule.timeStamp = deserializer.ReadUInt32();
             deserializer.Read(out infoModule.fileName);
             infoModule.loadOrder = i;
             m_listModules.Add(infoModule);
@@ -758,7 +762,7 @@ internal class XmlGcHeapDump
                         ret.ProcessID = reader.ReadElementContentAsInt();
                         break;
                     case "CountMultipliersByType":
-                        var multipliers = new List<float>();
+                        var multipliers = new List<double>();
                         ReadCountMultipliersByTypeFromXml(reader, multipliers);
                         ret.CountMultipliersByType = multipliers.ToArray();
                         break;
@@ -897,7 +901,7 @@ internal class XmlGcHeapDump
     }
 
     #region private
-    private static void ReadCountMultipliersByTypeFromXml(XmlReader reader, List<float> countMultipliers)
+    private static void ReadCountMultipliersByTypeFromXml(XmlReader reader, List<double> countMultipliers)
     {
         Debug.Assert(reader.NodeType == XmlNodeType.Element);
         var inputDepth = reader.Depth;
@@ -909,7 +913,7 @@ internal class XmlGcHeapDump
                 switch (reader.Name)
                 {
                     case "CountMultiplier":
-                        countMultipliers.Add(FetchFloat(reader, "Value", 1));
+                        countMultipliers.Add(FetchDouble(reader, "Value", 1));
                         reader.Skip();
                         break;
                     default:
@@ -988,7 +992,7 @@ internal class XmlGcHeapDump
         var inputDepth = reader.Depth;
         reader.Read();      // Advance to children 
 
-        var children = new GrowableArray<NodeIndex>(1000);
+        var children = new HashSet<NodeIndex>();
         var typeStorage = graph.AllocTypeNodeStorage();
         while (inputDepth < reader.Depth)
         {
@@ -1070,13 +1074,13 @@ internal class XmlGcHeapDump
         return ret;
     }
 
-    private static float FetchFloat(XmlReader reader, string attributeName, float defaultValue = 0)
+    private static double FetchDouble(XmlReader reader, string attributeName, double defaultValue = 0)
     {
-        float ret = defaultValue;
+        double ret = defaultValue;
         var attrValue = reader.GetAttribute(attributeName);
         if (attrValue != null)
         {
-            float.TryParse(attrValue, out ret);
+            double.TryParse(attrValue, out ret);
         }
 
         return ret;

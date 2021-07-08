@@ -331,7 +331,7 @@ namespace PerfView
                 RundownTimeoutTextBox.IsEnabled = !args.NoRundown;
                 if (args.CircularMB == 0)
                 {
-                    CircularTextBox.Text = "500";
+                    CircularTextBox.Text = "4000";
                 }
 
                 OKButton.Content = "Start Collection";
@@ -597,7 +597,7 @@ namespace PerfView
                 return false;
             }
 
-            if (!float.TryParse(SampleIntervalTextBox.Text, out m_args.CpuSampleMSec))
+            if (!double.TryParse(SampleIntervalTextBox.Text, out m_args.CpuSampleMSec))
             {
                 m_mainWindow.StatusBar.LogError("Could not parse sample interval timeout value: " + SampleIntervalTextBox.Text);
                 return false;

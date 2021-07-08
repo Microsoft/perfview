@@ -4,14 +4,14 @@
 // This program uses code hyperlinks available as part of the HyperAddin Visual Studio plug-in.
 // It is available from http://www.codeplex.com/hyperAddin 
 // 
-#if false  // This code is currently unused, commented out.  
+
 using System;
+using System.Diagnostics;
 using System.Text;      // For StringBuilder.
 using System.Threading;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
-using DeferedStreamLabel = FastSerialization.StreamLabel;
 
 #if !NETSTANDARD1_3
 using System.Runtime.CompilerServices;
@@ -110,9 +110,18 @@ namespace FastSerialization
         public long Length
             => _viewOffset + _offset;
 
-        public DeferedStreamLabel GetLabel()
+        public StreamLabel GetLabel(bool allowPadding)
         {
-            return checked((DeferedStreamLabel)Length);
+            if ((Length & 0x1) != 0)
+            {
+                if (!allowPadding)
+                    throw new NotSupportedException("Labels must be aligned to a 2-byte boundary.");
+
+                Write((byte)Tags.Padding);
+                Debug.Assert((Length & 0x1) == 0);
+            }
+
+            return checked((StreamLabel)Length);
         }
 
         public void Write(byte[] data, int offset, int length)
@@ -142,7 +151,7 @@ namespace FastSerialization
                 Resize(length);
             }
 
-#if NETSTANDARD1_3
+#if NETSTANDARD1_6
 
             for (int i = 0; i < length; i++)
             {
@@ -198,9 +207,13 @@ namespace FastSerialization
             _offset += sizeof(long);
         }
 
-        public void Write(DeferedStreamLabel value)
+        public void Write(StreamLabel value)
         {
-            Write((int)value);
+            if (((long)value & 0x1) != 0)
+                throw new NotSupportedException("Labels must be aligned to a 2-byte boundary.");
+
+            uint packedLabel = (uint)((long)value >> 1);
+            Write(unchecked((int)packedLabel));
         }
 
         public unsafe void Write(string value)
@@ -217,7 +230,7 @@ namespace FastSerialization
                 {
                     byte* pointer = null;
 
-#if !NETSTANDARD1_3
+#if !NETSTANDARD1_6
                     RuntimeHelpers.PrepareConstrainedRegions();
 #endif
                     try
@@ -228,7 +241,7 @@ namespace FastSerialization
                         int charsUsed;
                         int bytesUsed;
                         bool completed;
-#if NETSTANDARD1_3
+#if NETSTANDARD1_6
                         char[] charArray = value.ToCharArray();
                         byte[] bytes = new byte[_capacity - _offset];
                         encoder.Convert(charArray, 0, charArray.Length, bytes, 0, bytes.Length, false, out charsUsed, out bytesUsed, out completed);
@@ -244,7 +257,7 @@ namespace FastSerialization
 
                             int finalCharsUsed;
                             int finalBytesUsed;
-#if NETSTANDARD1_3
+#if NETSTANDARD1_6
                             bytes = new byte[_capacity - _offset];
                             encoder.Convert(charArray, charsUsed, charArray.Length - charsUsed, bytes, 0, bytes.Length, true, out finalCharsUsed, out finalBytesUsed, out completed);
                             Marshal.Copy(bytes, 0, (IntPtr)(pointer + bytesUsed), finalBytesUsed);
@@ -264,7 +277,7 @@ namespace FastSerialization
             }
         }
 
-        public void WriteSuffixLabel(DeferedStreamLabel value)
+        public void WriteSuffixLabel(StreamLabel value)
         {
             // This is guaranteed to be uncompressed, but since we are not compressing anything, we can
             // simply write the value.  
@@ -353,4 +366,3 @@ namespace FastSerialization
         }
     }
 }
-#endif

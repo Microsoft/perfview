@@ -128,10 +128,14 @@ namespace FastSerialization
         /// </summary>
         void Write(string value);
         /// <summary>
+        /// Write a span of bytes to the stream;
+        /// </summary>
+        void Write(byte[] data, int offset, int length);
+        /// <summary>
         /// Get the stream label for the current position (points at whatever is written next
         /// </summary>
         /// <returns></returns>
-        StreamLabel GetLabel();
+        StreamLabel GetLabel(bool allowPadding = false);
         /// <summary>
         /// Write a SuffixLabel it must be the last thing written to the stream.   The stream 
         /// guarantees that this value can be efficiently read at any time (probably by seeking
@@ -520,7 +524,7 @@ namespace FastSerialization
                 WriteTag(Tags.EndObject);
 
                 // Write the forward forwardReference table (for random access lookup)  
-                StreamLabel forwardRefsLabel = writer.GetLabel();
+                StreamLabel forwardRefsLabel = writer.GetLabel(allowPadding: true);
                 Log("<ForwardRefTable StreamLabel=\"0x" + forwardRefsLabel.ToString("x") + "\">");
                 if (forwardReferenceDefinitions != null)
                 {
@@ -586,6 +590,14 @@ namespace FastSerialization
             writer.Write(value);
         }
         /// <summary>
+        /// Write a <see cref="ushort"/> to a stream.
+        /// </summary>
+        public void Write(ushort value)
+        {
+            Log("<Write Type=\"ushort\" Value=\"" + value + "\" StreamLabel=\"0x" + writer.GetLabel().ToString("x") + "\"/>");
+            writer.Write(unchecked((short)value));
+        }
+        /// <summary>
         /// Write an int to a stream
         /// </summary>
         public void Write(int value)
@@ -594,12 +606,28 @@ namespace FastSerialization
             writer.Write(value);
         }
         /// <summary>
+        /// Write a <see cref="uint"/> to a stream
+        /// </summary>
+        public void Write(uint value)
+        {
+            Log("<Write Type=\"uint\" Value=\"" + value + "\" StreamLabel=\"0x" + writer.GetLabel().ToString("x") + "\"/>");
+            writer.Write(unchecked((int)value));
+        }
+        /// <summary>
         /// Write a long to a stream
         /// </summary>
         public void Write(long value)
         {
             Log("<Write Type=\"long\" Value=\"" + value + "\" StreamLabel=\"0x" + writer.GetLabel().ToString("x") + "\"/>");
             writer.Write(value);
+        }
+        /// <summary>
+        /// Write a <see cref="ulong"/> to a stream
+        /// </summary>
+        public void Write(ulong value)
+        {
+            Log("<Write Type=\"ulong\" Value=\"" + value + "\" StreamLabel=\"0x" + writer.GetLabel().ToString("x") + "\"/>");
+            writer.Write(unchecked((long)value));
         }
         /// <summary>
         /// Write a Guid to a stream
@@ -620,11 +648,19 @@ namespace FastSerialization
         {
 #if DEBUG
             if (value == null)
+            {
                 Log("<Write Type=\"null string\" StreamLabel=\"0x" + writer.GetLabel().ToString("x") + "\"/>");
+            }
             else
+            {
                 Log("<Write Type=\"string\" Value=" + value + " StreamLabel=\"0x" + writer.GetLabel().ToString("x") + "\"/>");
+            }
 #endif
             writer.Write(value);
+        }
+        public void Write(byte[] data, int offset, int length)
+        {
+            writer.Write(data, offset, length);
         }
         /// <summary>
         /// Write a float to a stream
@@ -718,7 +754,7 @@ namespace FastSerialization
         /// <param name="forwardReference"></param>
         public void DefineForwardReference(ForwardReference forwardReference)
         {
-            forwardReferenceDefinitions[(int)forwardReference] = writer.GetLabel();
+            forwardReferenceDefinitions[(int)forwardReference] = writer.GetLabel(allowPadding: true);
         }
 
         // data added after V1 needs to be tagged so that V1 deserializers can skip it. 
@@ -864,7 +900,7 @@ namespace FastSerialization
 
             // At this point we are writing an actual object and not a reference. 
             // 
-            StreamLabel objLabel = writer.GetLabel();
+            StreamLabel objLabel = writer.GetLabel(allowPadding: true);
             Log("<WriteObject obj=\"0x" + obj.GetHashCode().ToString("x") +
                 "\" StreamLabel=\"0x" + objLabel.ToString("x") +
                 "\" type=\"" + obj.GetType().Name + "\">");
@@ -906,6 +942,7 @@ namespace FastSerialization
         }
         private void WriteObjectData(IFastSerializable obj, Tags beginTag)
         {
+            Debug.Assert(writer.GetLabel(allowPadding: false) != StreamLabel.Invalid, "Objects should be pre-aligned to a label.");
             Debug.Assert(beginTag == Tags.BeginObject || beginTag == Tags.BeginPrivateObject);
             WriteTag(beginTag);
             WriteTypeForObject(obj);
@@ -1118,8 +1155,8 @@ namespace FastSerialization
                 {
                     for (; ; )
                     {
-                        StreamLabel objectLabel = reader.Current;
                         Tags tag = ReadTag();
+                        StreamLabel objectLabel = reader.Current - 1;
                         if (tag == Tags.EndObject)
                         {
                             break;
@@ -1199,6 +1236,19 @@ namespace FastSerialization
 #endif
         }
         /// <summary>
+        /// Read a <see cref="uint"/> from the stream
+        /// </summary>
+        public void Read(out uint ret)
+        {
+#if DEBUG
+            StreamLabel label = reader.Current;
+#endif
+            ret = unchecked((uint)reader.ReadInt32());
+#if DEBUG
+            Log("<ReadInt32 Value=\"" + ret.ToString() + "\" StreamLabel=\"0x" + label.ToString("x") + "\"/>");
+#endif
+        }
+        /// <summary>
         /// Read a long from the stream
         /// </summary>
         public void Read(out long ret)
@@ -1207,6 +1257,19 @@ namespace FastSerialization
             StreamLabel label = reader.Current;
 #endif
             ret = reader.ReadInt64();
+#if DEBUG
+            Log("<ReadInt64 Value=\"" + ret.ToString() + "\" StreamLabel=\"0x" + label.ToString("x") + "\"/>");
+#endif
+        }
+        /// <summary>
+        /// Read a <see cref="ulong"/> from the stream
+        /// </summary>
+        public void Read(out ulong ret)
+        {
+#if DEBUG
+            StreamLabel label = reader.Current;
+#endif
+            ret = unchecked((ulong)reader.ReadInt64());
 #if DEBUG
             Log("<ReadInt64 Value=\"" + ret.ToString() + "\" StreamLabel=\"0x" + label.ToString("x") + "\"/>");
 #endif
@@ -1255,9 +1318,13 @@ namespace FastSerialization
             ret = reader.ReadString();
 #if DEBUG
             if (ret == null)
+            {
                 Log("<ReadString StreamLabel=\"0x" + label.ToString("x") + "\"/>");
+            }
             else
+            {
                 Log("<ReadString Value=" + ret + " StreamLabel=\"0x" + label.ToString("x") + "\"/>");
+            }
 #endif
         }
         /// <summary>
@@ -1288,8 +1355,8 @@ namespace FastSerialization
         {
             Log("<ReadObjectReference StreamLabel=\"0x" + reader.Current.ToString("x") + "\">");
 
-            StreamLabel objectLabel = reader.Current;
             Tags tag = ReadTag();
+            StreamLabel objectLabel = reader.Current - 1;
             IFastSerializable ret;
             if (tag == Tags.ObjectReference)
             {
@@ -1395,6 +1462,12 @@ namespace FastSerialization
 #endif
             return ret;
         }
+
+        public ushort ReadUInt16()
+        {
+            return unchecked((ushort)ReadInt16());
+        }
+
         /// <summary>
         /// Read an int from the stream and return it
         /// </summary>
@@ -1409,6 +1482,15 @@ namespace FastSerialization
 #endif
             return ret;
         }
+
+        /// <summary>
+        /// Read a <see cref="uint"/> from the stream and return it
+        /// </summary>
+        public uint ReadUInt32()
+        {
+            return unchecked((uint)ReadInt());
+        }
+
         /// <summary>
         /// Read a long from the stream and return it
         /// </summary>
@@ -1423,6 +1505,15 @@ namespace FastSerialization
 #endif
             return ret;
         }
+
+        /// <summary>
+        /// Read a <see cref="ulong"/> from the stream and return it
+        /// </summary>
+        public ulong ReadUInt64()
+        {
+            return unchecked((ulong)ReadInt64());
+        }
+
         /// <summary>
         /// Read a float from the stream and return it
         /// </summary>
@@ -1624,6 +1715,7 @@ namespace FastSerialization
         /// </summary>
         public bool TryReadTagged(ref bool ret)
         {
+            var originalPosition = reader.Current;
             Tags tag = ReadTag();
             if (tag == Tags.Byte)
             {
@@ -1632,7 +1724,7 @@ namespace FastSerialization
                 ret = (data != 0);
                 return true;
             }
-            reader.Goto(Current - 1);
+            reader.Goto(originalPosition);
             return false;
         }
         /// <summary>
@@ -1640,13 +1732,14 @@ namespace FastSerialization
         /// </summary>
         public bool TryReadTagged(ref byte ret)
         {
+            var originalPosition = reader.Current;
             Tags tag = ReadTag();
             if (tag == Tags.Byte)
             {
                 Read(out ret);
                 return true;
             }
-            reader.Goto(Current - 1);
+            reader.Goto(originalPosition);
             return false;
         }
         /// <summary>
@@ -1654,13 +1747,14 @@ namespace FastSerialization
         /// </summary>
         public bool TryReadTagged(ref short ret)
         {
+            var originalPosition = reader.Current;
             Tags tag = ReadTag();
             if (tag == Tags.Int16)
             {
                 Read(out ret);
                 return true;
             }
-            reader.Goto(Current - 1);
+            reader.Goto(originalPosition);
             return false;
         }
         /// <summary>
@@ -1668,13 +1762,14 @@ namespace FastSerialization
         /// </summary>
         public bool TryReadTagged(ref int ret)
         {
+            var originalPosition = reader.Current;
             Tags tag = ReadTag();
             if (tag == Tags.Int32)
             {
                 Read(out ret);
                 return true;
             }
-            reader.Goto(Current - 1);
+            reader.Goto(originalPosition);
             return false;
         }
         /// <summary>
@@ -1682,13 +1777,14 @@ namespace FastSerialization
         /// </summary>
         public bool TryReadTagged(ref long ret)
         {
+            var originalPosition = reader.Current;
             Tags tag = ReadTag();
             if (tag == Tags.Int64)
             {
                 Read(out ret);
                 return true;
             }
-            reader.Goto(Current - 1);
+            reader.Goto(originalPosition);
             return false;
         }
         /// <summary>
@@ -1696,13 +1792,14 @@ namespace FastSerialization
         /// </summary>
         public bool TryReadTagged(ref string ret)
         {
+            var originalPosition = reader.Current;
             Tags tag = ReadTag();
             if (tag == Tags.String)
             {
                 Read(out ret);
                 return true;
             }
-            reader.Goto(Current - 1);
+            reader.Goto(originalPosition);
             return false;
         }
         /// <summary>
@@ -1713,13 +1810,14 @@ namespace FastSerialization
         /// </summary>
         public int TryReadTaggedBlobHeader()
         {
+            var originalPosition = reader.Current;
             Tags tag = ReadTag();
             if (tag == Tags.Blob)
             {
                 return reader.ReadInt32();
             }
 
-            reader.Goto(Current - 1);
+            reader.Goto(originalPosition);
             return 0;
         }
         /// <summary>
@@ -1727,15 +1825,17 @@ namespace FastSerialization
         /// </summary>
         public bool TryReadTagged<T>(ref T ret) where T : IFastSerializable
         {
+            var originalPosition = reader.Current;
             // Tagged objects always start with a SkipRegion so we don't need to know its size.  
             Tags tag = ReadTag();
             if (tag == Tags.SkipRegion)
             {
-                ReadForwardReference();     // Skip the forward reference which is part of SkipRegion 
+                var endRegion = ReadForwardReference();     // Skip the forward reference which is part of SkipRegion 
                 ret = (T)ReadObject();      // Read the real object 
+                reader.Goto(ResolveForwardReference(endRegion));
                 return true;
             }
-            reader.Goto(Current - 1);
+            reader.Goto(originalPosition);
             return false;
         }
         /// <summary>
@@ -1743,14 +1843,17 @@ namespace FastSerialization
         /// </summary>
         public IFastSerializable TryReadTaggedObject()
         {
+            var originalPosition = reader.Current;
             // Tagged objects always start with a SkipRegion so we don't need to know its size.  
             Tags tag = ReadTag();
             if (tag == Tags.SkipRegion)
             {
-                ReadForwardReference();     // Skip the forward reference which is part of SkipRegion 
-                return ReadObject();        // Read the real object 
+                var endRegion = ReadForwardReference();     // Skip the forward reference which is part of SkipRegion 
+                var result = ReadObject();        // Read the real object 
+                reader.Goto(ResolveForwardReference(endRegion));
+                return result;
             }
-            reader.Goto(Current - 1);
+            reader.Goto(originalPosition);
             return null;
         }
 
@@ -1824,8 +1927,8 @@ namespace FastSerialization
 
         private IFastSerializable ReadObjectDefintion()
         {
-            StreamLabel objectLabel = reader.Current;
             Tags tag = ReadTag();
+            StreamLabel objectLabel = reader.Current - 1;
             return ReadObjectDefinition(tag, objectLabel);
         }
         private IFastSerializable ReadObjectDefinition(Tags tag, StreamLabel objectLabel)
@@ -1977,9 +2080,9 @@ namespace FastSerialization
             for (; ; )
             {
                 Debug.Assert(i == 0 || type.Version != 0);
-                StreamLabel objectLabel = reader.Current;
                 // If this fails, the likely culprit is the FromStream of the objectBeingDeserialized. 
                 Tags tag = ReadTag();
+                StreamLabel objectLabel = reader.Current - 1;
 
                 // TODO this is a hack.   The .NET Core Runtime < V2.1 do not emit an EndObject tag
                 // properly for its V1 EventPipeFile object.   The next object is always data that happens
@@ -2081,7 +2184,14 @@ namespace FastSerialization
 #if DEBUG
             StreamLabel label = reader.Current;
 #endif
+
             Tags tag = (Tags)reader.ReadByte();
+            if (tag == Tags.Padding)
+            {
+                tag = (Tags)reader.ReadByte();
+                Debug.Assert(tag != Tags.Padding);
+            }
+
 #if DEBUG
             Log("<ReadTag Type=\"" + tag + "\" Value=\"" + ((int)tag).ToString() + "\" StreamLabel=\"0x" + label.ToString("x") + "\"/>");
 #endif
@@ -2499,6 +2609,7 @@ namespace FastSerialization
         SkipRegion,
         String,             // Size of string (in bytes) followed by UTF8 bytes.  
         Blob,
+        Padding,
         Limit,              // Just past the last valid tag, used for asserts.  
     }
     #endregion

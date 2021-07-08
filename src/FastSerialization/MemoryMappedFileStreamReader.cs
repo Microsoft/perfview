@@ -10,15 +10,12 @@ using System.Text;      // For StringBuilder.
 using System.Threading;
 using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
-using DeferedStreamLabel = FastSerialization.StreamLabel;
 using System.Diagnostics;
 
 namespace FastSerialization
 {
     public class MemoryMappedFileStreamReader : IStreamReader
     {
-        const int BlockCopyCapacity = 10 * 1024 * 1024;
-
         private MemoryMappedFile _file;
         private long _fileLength;
         private bool _leaveOpen;
@@ -42,7 +39,7 @@ namespace FastSerialization
 
             if (IntPtr.Size == 4)
             {
-                _capacity = Math.Min(_fileLength, BlockCopyCapacity);
+                _capacity = Math.Min(_fileLength, MemoryMappedFileStreamWriter.BlockCopyCapacity);
             }
             else
             {
@@ -60,11 +57,11 @@ namespace FastSerialization
             return new MemoryMappedFileStreamReader(file, capacity, leaveOpen: false);
         }
 
-        public DeferedStreamLabel Current
+        public StreamLabel Current
         {
             get
             {
-                return checked((DeferedStreamLabel)(_viewOffset + _offset));
+                return checked((StreamLabel)(_viewOffset + _offset));
             }
         }
 
@@ -109,7 +106,7 @@ namespace FastSerialization
             long availableInFile = _fileLength - offset;
             long viewOffset = offset & ~0xFFFF;
             long offsetInView = offset - viewOffset;
-            long viewLength = Math.Min(BlockCopyCapacity, availableInFile + offsetInView);
+            long viewLength = Math.Min(MemoryMappedFileStreamWriter.BlockCopyCapacity, availableInFile + offsetInView);
             _view = _file.CreateViewAccessor(viewOffset, viewLength, MemoryMappedFileAccess.Read);
             _viewAddress = _view.SafeMemoryMappedViewHandle.DangerousGetHandle();
             _viewOffset = viewOffset;
@@ -117,7 +114,7 @@ namespace FastSerialization
             _offset = offsetInView;
         }
 
-        public void Goto(DeferedStreamLabel label)
+        public void Goto(StreamLabel label)
         {
             if (label < 0)
             {
@@ -125,11 +122,10 @@ namespace FastSerialization
             }
 
             // see if we can just change the offset
-            Debug.Assert((long)label <= int.MaxValue);
-            int absoluteOffset = (int)label;
+            long absoluteOffset = (long)label;
             if (absoluteOffset >= _viewOffset && absoluteOffset < _viewOffset + _capacity)
             {
-                _offset = (int)(absoluteOffset - _viewOffset);
+                _offset = absoluteOffset - _viewOffset;
                 return;
             }
 
@@ -138,7 +134,7 @@ namespace FastSerialization
             long availableInFile = _fileLength - absoluteOffset;
             long viewOffset = absoluteOffset & ~0xFFFF;
             long offset = absoluteOffset - viewOffset;
-            long viewLength = Math.Min(BlockCopyCapacity, availableInFile + offset);
+            long viewLength = Math.Min(MemoryMappedFileStreamWriter.BlockCopyCapacity, availableInFile + offset);
             _view = _file.CreateViewAccessor(viewOffset, viewLength, MemoryMappedFileAccess.Read);
             _viewAddress = _view.SafeMemoryMappedViewHandle.DangerousGetHandle();
             _viewOffset = viewOffset;
@@ -149,7 +145,7 @@ namespace FastSerialization
         public void GotoSuffixLabel()
         {
             const int sizeOfSerializedStreamLabel = 4;
-            Goto((DeferedStreamLabel)(Length - sizeOfSerializedStreamLabel));
+            Goto((StreamLabel)(Length - sizeOfSerializedStreamLabel));
             Goto(ReadLabel());
         }
 
@@ -199,7 +195,7 @@ namespace FastSerialization
 
             T result;
 
-#if NETSTANDARD1_3
+#if NETSTANDARD1_6
             byte[] rawData = new byte[size];
             Read(rawData, 0, size);
             unsafe
@@ -265,9 +261,9 @@ namespace FastSerialization
             return result;
         }
 
-        public DeferedStreamLabel ReadLabel()
+        public StreamLabel ReadLabel()
         {
-            return (DeferedStreamLabel)ReadInt32();
+            return (StreamLabel)((ulong)unchecked((uint)ReadInt32()) << 1);
         }
 
         public unsafe string ReadString()
@@ -286,7 +282,7 @@ namespace FastSerialization
                 int bytesUsed;
                 int charsUsed;
                 bool completed;
-#if NETSTANDARD1_3
+#if NETSTANDARD1_6
                 byte[] bytes = new byte[(int)Math.Min(int.MaxValue - 50, _capacity - _offset)];
                 Marshal.Copy(_viewAddress, bytes, 0, bytes.Length);
                 char[] charArray = new char[charCount];
@@ -304,7 +300,7 @@ namespace FastSerialization
 
                     int finalBytesUsed;
                     int finalCharsUsed;
-#if NETSTANDARD1_3
+#if NETSTANDARD1_6
                     bytes = new byte[(int)Math.Min(int.MaxValue - 50, _capacity - _offset)];
                     Marshal.Copy(_viewAddress + bytesUsed, bytes, 0, bytes.Length);
                     charArray = new char[charCount - charsUsed];
@@ -340,7 +336,7 @@ namespace FastSerialization
 
             long viewOffset = (_viewOffset + _offset) & ~0xFFFF;
             long offset = (_viewOffset + _offset) - viewOffset;
-            long viewLength = Math.Max(Math.Min(BlockCopyCapacity, availableInFile + offset), capacity + offset);
+            long viewLength = Math.Max(Math.Min(MemoryMappedFileStreamWriter.BlockCopyCapacity, availableInFile + offset), capacity + offset);
             _view = _file.CreateViewAccessor(viewOffset, viewLength, MemoryMappedFileAccess.Read);
             _viewAddress = _view.SafeMemoryMappedViewHandle.DangerousGetHandle();
             _viewOffset = viewOffset;

@@ -1845,7 +1845,7 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
                 }
             };
 
-            const int defaultMaxEventCount = 20000000;                   // 20M events produces about 3GB of data.  which is close to the limit of ETLX.
+            const int defaultMaxEventCount = 50000000;                   // 50M events produces about 6GB of data.  which is close to the limit of ETLX.
             int maxEventCount = defaultMaxEventCount;
             double startMSec = 0;
             if (options != null)
@@ -1886,9 +1886,9 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
                 // Show status every 128K events
                 if ((rawEventCount & 0x1FFFF) == 0)
                 {
-                    var curOutputSizeMB = ((double)(uint)writer.GetLabel()) / 1000000.0;
-                    // Currently ETLX has a size restriction of 4Gig.  Thus if we are getting big, start truncating.
-                    if (curOutputSizeMB > 3500)
+                    var curOutputSizeMB = (long)writer.GetLabel() / 1000000.0;
+                    // Currently ETLX has a size restriction of 8Gig.  Thus if we are getting big, start truncating.
+                    if (curOutputSizeMB > 7000)
                     {
                         processingDisabled = true;
                     }
@@ -1918,7 +1918,7 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
                             {
                                 message = "  Hit MaxEventCount, truncating.";
                             }
-                            else if (curOutputSizeMB > 3500)
+                            else if (curOutputSizeMB > 7000)
                             {
                                 message = "  Hit File size limit (3.5Gig) truncating.";
                             }
@@ -2246,7 +2246,7 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
             // Confirm that the CPU stats make sense.
             foreach (var process in Processes)
             {
-                float cpuFromThreads = 0;
+                double cpuFromThreads = 0;
                 foreach (var curThread in process.Threads)
                 {
                     cpuFromThreads += curThread.CPUMSec;
@@ -2731,10 +2731,17 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
             public void LogUserStackFragment(CallStackIndex userModeStackIndex, TraceLog eventLog)
             {
                 Debug.Assert(!IsDead);
-                //Debug.Assert(UserModeStackIndex == CallStackIndex.Invalid);
-                UserModeStackIndex = userModeStackIndex;
+                if (UserModeStackIndex == CallStackIndex.Invalid)
+                {
+                    UserModeStackIndex = userModeStackIndex;
+                }
+                else
+                {
+                    Debug.Assert(UserModeStackIndex >= 0 && userModeStackIndex < 0);
+                }
+
                 bool emitted = EmitStackForEventIfReady(eventLog);
-                //Debug.Assert((emitted && IsDead) || KernelModeStackKey != 0);   // Only not having the kernel stack def can be left
+                Debug.Assert((emitted && IsDead) || KernelModeStackKey != 0 || WaitingToLeaveKernel);   // Only not having the kernel stack def can be left
             }
             public void LogUserStackFragment(Address userModeStackKey, TraceLog eventLog)
             {
@@ -2782,7 +2789,7 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
 
                     // We know that user stacks come after kernel stacks, and we have a user stack.  Thus
                     // if we have a kernel stack or there is no kernel stack, then we can emit it
-                    if (hasKernelStack || KernelModeStackKey == 0)
+                    if ((hasKernelStack || KernelModeStackKey == 0) && !WaitingToLeaveKernel)
                     {
 
                         // If the userModeStack is negative, that means it represents a thread (since we know it can't be
@@ -3554,7 +3561,7 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
                     }
                     else
                     {
-                        serializer.Write((long)0);          // The important field here is the EventDataSize field
+                        serializer.Write(0L);          // The important field here is the EventDataSize field
                     }
                 }
 
@@ -3571,8 +3578,8 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
             serializer.Write(cpuSpeedMHz);
             serializer.Write((byte)osVersion.Major);
             serializer.Write((byte)osVersion.Minor);
-            serializer.Write((byte)osVersion.MajorRevision);
-            serializer.Write((byte)osVersion.MinorRevision);
+            serializer.Write(unchecked((byte)osVersion.MajorRevision));
+            serializer.Write(unchecked((byte)osVersion.MinorRevision));
             serializer.Write(QPCFreq);
             serializer.Write(sessionStartTimeQPC);
             serializer.Write(sessionEndTimeQPC);
@@ -3638,7 +3645,7 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
                 foreach (EventsToCodeAddressIndex eventsToCodeAddress in eventsToCodeAddresses)
                 {
                     serializer.Write((int)eventsToCodeAddress.EventIndex);
-                    serializer.Write((long)eventsToCodeAddress.Address);
+                    serializer.Write(eventsToCodeAddress.Address);
                     serializer.Write((int)eventsToCodeAddress.CodeAddressIndex);
                 }
                 serializer.Write(eventsToCodeAddresses.Count);       // Redundant as a checksum
@@ -3680,7 +3687,7 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
             serializer.Log("</WriteCollection>\r\n");
 
             serializer.Write(truncated);
-            serializer.Write((int) firstTimeInversion);
+            serializer.Write((uint)firstTimeInversion);
         }
         void IFastSerializable.FromStream(Deserializer deserializer)
         {
@@ -3844,7 +3851,7 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
                 containerIDs.Add(containerID);
             }
             deserializer.Read(out truncated);
-            firstTimeInversion = (EventIndex) (uint) deserializer.ReadInt();
+            firstTimeInversion = (EventIndex)deserializer.ReadUInt32();
         }
         int IFastSerializableVersion.Version
         {
@@ -4156,7 +4163,7 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
                 public TraceEventCounts CountForEvent;
             }
 
-            private const int historySize = 2048;               // Must be a power of 2
+            private const int historySize = 32768;               // Must be a power of 2
             private PastEventInfoEntry[] pastEventInfo;
             private int curPastEventInfo;                       // points at the first INVALD entry.
             private TraceLog log;
@@ -5575,7 +5582,7 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
         /// <summary>
         /// The amount of CPU time spent in this process based on the kernel CPU sampling events.
         /// </summary>
-        public float CPUMSec { get { return (float)(cpuSamples * Log.SampleProfileInterval.TotalMilliseconds); } }
+        public double CPUMSec { get { return cpuSamples * Log.SampleProfileInterval.TotalMilliseconds; } }
         /// <summary>
         /// Returns true if the process is a 64 bit process
         /// </summary>
@@ -5845,7 +5852,7 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
         void IFastSerializable.FromStream(Deserializer deserializer)
         {
             deserializer.Read(out processID);
-            int processIndex; deserializer.Read(out processIndex); this.processIndex = (ProcessIndex)processIndex;
+            processIndex = (ProcessIndex)deserializer.ReadInt();
             deserializer.Read(out log);
             deserializer.Read(out commandLine);
             deserializer.Read(out imageFileName);
@@ -6357,7 +6364,7 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
         /// <summary>
         /// The amount of CPU time spent on this thread based on the kernel CPU sampling events.
         /// </summary>
-        public float CPUMSec { get { return (float)(cpuSamples * Process.Log.SampleProfileInterval.TotalMilliseconds); } }
+        public double CPUMSec { get { return cpuSamples * Process.Log.SampleProfileInterval.TotalMilliseconds; } }
         /// <summary>
         /// Filters events to only those for a particular thread.
         /// </summary>
@@ -6482,7 +6489,7 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
             serializer.Write(endTimeQPC);
             serializer.Write(cpuSamples);
             serializer.Write(threadInfo);
-            serializer.Write((long)userStackBase);
+            serializer.Write(userStackBase);
 
             serializer.Write(activityIds.Count);
             serializer.Log("<WriteCollection name=\"ActivityIDForThread\" count=\"" + activityIds.Count + "\">\r\n");
@@ -6497,15 +6504,15 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
         void IFastSerializable.FromStream(Deserializer deserializer)
         {
             deserializer.Read(out threadID);
-            int threadIndex; deserializer.Read(out threadIndex); this.threadIndex = (ThreadIndex)threadIndex;
+            threadIndex = (ThreadIndex)deserializer.ReadInt();
             deserializer.Read(out process);
             deserializer.Read(out startTimeQPC);
             deserializer.Read(out endTimeQPC);
             deserializer.Read(out cpuSamples);
             deserializer.Read(out threadInfo);
-            userStackBase = (Address)deserializer.ReadInt64();
+            userStackBase = deserializer.ReadUInt64();
 
-            int count; deserializer.Read(out count);
+            int count = deserializer.ReadInt();
             activityIds = new GrowableArray<ActivityIndex>(count);
             for (int i = 0; i < count; ++i)
             {
@@ -7025,7 +7032,7 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
         {
             deserializer.Read(out process);
             Debug.Assert(modules.Count == 0);
-            int count; deserializer.Read(out count);
+            int count = deserializer.ReadInt();
             for (int i = 0; i < count; i++)
             {
                 TraceLoadedModule elem; deserializer.Read(out elem);
@@ -7190,7 +7197,7 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
             serializer.Write(managedModule);
             serializer.Write(process);
             serializer.Write(moduleFile);
-            serializer.Write((long)key);
+            serializer.Write(key);
             serializer.Write(overlaps);
         }
         /// <summary>
@@ -7199,14 +7206,12 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
         void IFastSerializable.FromStream(Deserializer deserializer) { FromStream(deserializer); }
         internal void FromStream(Deserializer deserializer)
         {
-            long address;
-
             deserializer.Read(out loadTimeQPC);
             deserializer.Read(out unloadTimeQPC);
             deserializer.Read(out managedModule);
             deserializer.Read(out process);
             deserializer.Read(out moduleFile);
-            deserializer.Read(out address); key = (ulong)address;
+            deserializer.Read(out key);
             deserializer.Read(out overlaps);
         }
 
@@ -7288,11 +7293,10 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
         }
         void IFastSerializable.FromStream(Deserializer deserializer)
         {
-            int flags;
             base.FromStream(deserializer);
             deserializer.Read(out assemblyID);
             deserializer.Read(out nativeModule);
-            deserializer.Read(out flags); this.flags = (ModuleFlags)flags;
+            flags = (ModuleFlags)deserializer.ReadInt();
             InitializeNativeModuleIsReadyToRun();
         }
         #endregion
@@ -8745,7 +8749,7 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
                 {
                     serializer.WriteAddress(codeAddresses[i].Address);
                     serializer.Write((int)codeAddresses[i].moduleFileIndex);
-                    serializer.Write((int)codeAddresses[i].methodOrProcessOrIlMapIndex);
+                    serializer.Write(codeAddresses[i].methodOrProcessOrIlMapIndex);
                     serializer.Write(codeAddresses[i].InclusiveCount);
 
                     // 'CodeAddressInfoSerializationVersion' >= 1
@@ -9195,7 +9199,7 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
             void IFastSerializable.ToStream(Serializer serializer)
             {
                 serializer.Write((int)MethodIndex);
-                serializer.Write((long)MethodStart);
+                serializer.Write(MethodStart);
                 serializer.Write(MethodLength);
 
                 serializer.Write(Map.Count);
@@ -10895,13 +10899,13 @@ namespace Microsoft.Diagnostics.Tracing.Etlx
     {
         public static void WriteAddress(this Serializer serializer, Address address)
         {
-            serializer.Write((long)address);
+            serializer.Write(address);
         }
         public static void ReadAddress(this Deserializer deserializer, out Address address)
         {
             long longAddress;
             deserializer.Read(out longAddress);
-            address = (Address)longAddress;
+            address = unchecked((Address)longAddress);
         }
     }
 

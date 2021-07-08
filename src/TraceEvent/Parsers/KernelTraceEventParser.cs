@@ -3303,14 +3303,14 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
         {
             deserializer.Read(out driveMapping);
 
-            int count; deserializer.Read(out count);
+            int count = deserializer.ReadInt();
             Debug.Assert(count >= 0);
             deserializer.Log("<Marker name=\"ProcessIDForThread\"/ count=\"" + count + "\">");
             for (int i = 0; i < count; i++)
             {
-                int key; deserializer.Read(out key);
-                long startTimeQPC; deserializer.Read(out startTimeQPC);
-                int value; deserializer.Read(out value);
+                int key = deserializer.ReadInt();
+                long startTimeQPC = deserializer.ReadInt64();
+                int value = deserializer.ReadInt();
                 threadIDtoProcessID.Add(key, startTimeQPC, value);
             }
 
@@ -3322,9 +3322,9 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
                 threadIDtoProcessIDRundown = new HistoryDictionary<int, int>(count);
                 for (int i = 0; i < count; i++)
                 {
-                    int key; deserializer.Read(out key);
-                    long startTimeQPC; deserializer.Read(out startTimeQPC);
-                    int value; deserializer.Read(out value);
+                    int key = deserializer.ReadInt();
+                    long startTimeQPC = deserializer.ReadInt64();
+                    int value = deserializer.ReadInt();
                     threadIDtoProcessIDRundown.Add(key, startTimeQPC, value);
                 }
             }
@@ -3336,9 +3336,9 @@ namespace Microsoft.Diagnostics.Tracing.Parsers
                 deserializer.Log("<Marker name=\"fileIDToName\"/ count=\"" + count + "\">");
                 for (int i = 0; i < count; i++)
                 {
-                    Address key; deserializer.ReadAddress(out key);
-                    long startTimeQPC; deserializer.Read(out startTimeQPC);
-                    string value; deserializer.Read(out value);
+                    Address key = deserializer.ReadUInt64();
+                    long startTimeQPC = deserializer.ReadInt64();
+                    string value = deserializer.ReadString();
                     fileIDToName.Add(key, startTimeQPC, value);
                 }
             });
@@ -7180,7 +7180,7 @@ namespace Microsoft.Diagnostics.Tracing.Parsers.Kernel
         {
             get
             {
-                var addr = (uint)((Version >= 1) ? GetInt32At(8) : GetInt32At(0));
+                var addr = Version >= 1 ? GetUInt32At(8) : GetUInt32At(0);
                 return new System.Net.IPAddress(addr);
             }
         }
@@ -7188,7 +7188,7 @@ namespace Microsoft.Diagnostics.Tracing.Parsers.Kernel
         {
             get
             {
-                var addr = (uint)((Version >= 1) ? GetInt32At(12) : GetInt32At(4));
+                var addr = Version >= 1 ? GetUInt32At(12) : GetUInt32At(4);
                 return new System.Net.IPAddress(addr);
             }
         }
@@ -7360,8 +7360,8 @@ namespace Microsoft.Diagnostics.Tracing.Parsers.Kernel
         // PID
         public int size { get { return GetInt32At(4); } }
 
-        public System.Net.IPAddress daddr { get { return new System.Net.IPAddress((uint)GetInt32At(8)); } }
-        public System.Net.IPAddress saddr { get { return new System.Net.IPAddress((uint)GetInt32At(12)); } }
+        public System.Net.IPAddress daddr { get { return new System.Net.IPAddress(GetUInt32At(8)); } }
+        public System.Net.IPAddress saddr { get { return new System.Net.IPAddress(GetUInt32At(12)); } }
         public int dport { get { return TcpIpTraceData.ByteSwap16(GetInt16At(16)); } }
         public int sport { get { return TcpIpTraceData.ByteSwap16(GetInt16At(18)); } }
         public int startime { get { return GetInt32At(20); } }
@@ -7463,8 +7463,8 @@ namespace Microsoft.Diagnostics.Tracing.Parsers.Kernel
 
         // PID
         public int size { get { return GetInt32At(4); } }
-        public System.Net.IPAddress daddr { get { return new System.Net.IPAddress((uint)GetInt32At(8)); } }
-        public System.Net.IPAddress saddr { get { return new System.Net.IPAddress((uint)GetInt32At(12)); } }
+        public System.Net.IPAddress daddr { get { return new System.Net.IPAddress(GetUInt32At(8)); } }
+        public System.Net.IPAddress saddr { get { return new System.Net.IPAddress(GetUInt32At(12)); } }
         public int dport { get { return TcpIpTraceData.ByteSwap16(GetInt16At(16)); } }
         public int sport { get { return TcpIpTraceData.ByteSwap16(GetInt16At(18)); } }
         public int mss { get { return GetInt16At(20); } }
@@ -9172,7 +9172,7 @@ namespace Microsoft.Diagnostics.Tracing.Parsers.Kernel
 
     public sealed class MemInfoTraceData : TraceEvent
     {
-        public byte PriorityLevels { get { return (byte)GetByteAt(0); } }
+        public byte PriorityLevels { get { return GetByteAt(0); } }
         public long ZeroPageCount { get { return (long)GetAddressAt(1); } }
         public long FreePageCount { get { return (long)GetAddressAt(HostOffset(5, 1)); } }
         public long ModifiedPageCount { get { return (long)GetAddressAt(HostOffset(9, 2)); } }
@@ -10126,7 +10126,7 @@ namespace Microsoft.Diagnostics.Tracing.Parsers.Kernel
         /// <summary>
         /// Returns a key that can be used to look up the stack in KeyDelete or KeyRundown events 
         /// </summary>
-        public Address StackKey { get { return (Address)GetIntPtrAt(16); } }
+        public Address StackKey { get { return GetAddressAt(16); } }
         #region Private
         internal StackWalkRefTraceData(Action<StackWalkRefTraceData> action, int eventID, int task, string taskName, Guid taskGuid, int opcode, string opcodeName, Guid providerGuid, string providerName, KernelTraceEventParserState state)
             : base(eventID, task, taskName, taskGuid, opcode, opcodeName, providerGuid, providerName)
@@ -10209,7 +10209,7 @@ namespace Microsoft.Diagnostics.Tracing.Parsers.Kernel
         /// <summary>
         /// Returns a key that can be used to look up the stack in KeyDelete or KeyRundown events 
         /// </summary>
-        public Address StackKey { get { return (Address)GetIntPtrAt(0); } }
+        public Address StackKey { get { return GetAddressAt(0); } }
         /// <summary>
         /// The total number of eventToStack frames collected.  The Windows OS currently has a maximum of 96 frames. 
         /// </summary>

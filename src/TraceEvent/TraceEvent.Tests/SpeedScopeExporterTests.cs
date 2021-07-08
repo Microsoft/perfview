@@ -24,7 +24,7 @@ namespace TraceEventTests
             const string ThreadName = "Thread (123)";
             const string MethodName = "A";
             const double relativeTime = 0.1;
-            const float metric = 0.1f;
+            const double metric = 0.1;
 
             // we have two samples here:
             // processName -> ThreadName() => MehtodName() starting at 0.1 and lasting 0.1
@@ -154,13 +154,13 @@ namespace TraceEventTests
             const double endTime = 1.0;
             const double metric = 0.01;
 
-            float metricSum = 0.0f;
+            double metricSum = 0.0;
 
             for (double i = startTime; i <= endTime; i += metric)
             {
-                currentSamples.Add(new Sample((StackSourceCallStackIndex)1, relativeTime: i, (float)metric, depth: 0, frameId: 0));
+                currentSamples.Add(new Sample((StackSourceCallStackIndex)1, relativeTime: i, metric, depth: 0, frameId: 0));
                 HandleSamples(previousSamples, currentSamples, results);
-                metricSum += (float) metric;
+                metricSum += metric;
             }
 
             // we have simple opened profile event 
@@ -180,7 +180,7 @@ namespace TraceEventTests
 
             const double firstTime = 0.0;
             const double secondTime = 1.0;
-            const float metric = 0.01f;
+            const double metric = 0.01;
 
             // lasts from <0.0, 0.01>
             currentSamples.Add(new Sample((StackSourceCallStackIndex)1, relativeTime: firstTime, metric, depth: 0, frameId: 0));
@@ -208,7 +208,7 @@ namespace TraceEventTests
             var currentSamples = new List<Sample>();
 
             const double firstTime = 0.0;
-            const float metric = 0.01f;
+            const double metric = 0.01;
             const double secondTime = firstTime + metric;
             const int firstDepth = 0, secondDepth = 1;
 
@@ -241,7 +241,7 @@ namespace TraceEventTests
             var currentSamples = new List<Sample>();
 
             const double firstTime = 0.0;
-            const float metric = 0.01f;
+            const double metric = 0.01;
             const double secondTime = firstTime + metric;
             const int firstFrameId = 0, secondFrameId = 1;
 
@@ -270,7 +270,7 @@ namespace TraceEventTests
         public void ValidationDetectsIncompleteResults_NoCloseProfileEvent()
         {
             // there is just open event, but no closing one
-            var profileEvent = new ProfileEvent(ProfileEventType.Open, 1, 1.0f, 1);
+            var profileEvent = new ProfileEvent(ProfileEventType.Open, 1, 1.0, 1);
 
             Assert.False(Validate(new[] { profileEvent }));
         }
@@ -279,7 +279,7 @@ namespace TraceEventTests
         public void ValidationDetectsIncompleteResults_NoOpenProfileEvent()
         {
             // there is just close event, but no opening one
-            var profileEvent = new ProfileEvent(ProfileEventType.Close, 1, 1.0f, 1);
+            var profileEvent = new ProfileEvent(ProfileEventType.Close, 1, 1.0, 1);
 
             Assert.False(Validate(new [] { profileEvent }));
         }
@@ -287,8 +287,8 @@ namespace TraceEventTests
         [Fact]
         public void ValidationDetectsIncompleteResults_DifferentFrameIds()
         {
-            var openEvent = new ProfileEvent(ProfileEventType.Open, frameId: 1, 1.0f, 1);
-            var closeEvent = new ProfileEvent(ProfileEventType.Close, frameId: openEvent.FrameId + 1, 1.0f, 1);
+            var openEvent = new ProfileEvent(ProfileEventType.Open, frameId: 1, 1.0, 1);
+            var closeEvent = new ProfileEvent(ProfileEventType.Close, frameId: openEvent.FrameId + 1, 1.0, 1);
 
             Assert.False(Validate(new[] { openEvent, closeEvent }));
         }
@@ -296,8 +296,8 @@ namespace TraceEventTests
         [Fact]
         public void ValidationDetectsIncompleteResults_DifferentDepths()
         {
-            var openEvent = new ProfileEvent(ProfileEventType.Open, 1, 1.0f, depth: 1);
-            var closeEvent = new ProfileEvent(ProfileEventType.Close, 1, 1.0f, depth: openEvent.Depth + 1);
+            var openEvent = new ProfileEvent(ProfileEventType.Open, 1, 1.0, depth: 1);
+            var closeEvent = new ProfileEvent(ProfileEventType.Close, 1, 1.0, depth: openEvent.Depth + 1);
 
             Assert.False(Validate(new[] { openEvent, closeEvent }));
         }
@@ -305,8 +305,8 @@ namespace TraceEventTests
         [Fact]
         public void ValidationDetectsIncompleteResults_InvalidOrder()
         {
-            var openEvent = new ProfileEvent(ProfileEventType.Open, frameId: 1, 1.0f, depth: 1);
-            var closeEvent = new ProfileEvent(ProfileEventType.Close, frameId: 1, 1.0f, depth: 1);
+            var openEvent = new ProfileEvent(ProfileEventType.Open, frameId: 1, 1.0, depth: 1);
+            var closeEvent = new ProfileEvent(ProfileEventType.Close, frameId: 1, 1.0, depth: 1);
 
             Assert.False(Validate(new[] { closeEvent, openEvent })); // close and then open
         }
@@ -314,8 +314,8 @@ namespace TraceEventTests
         [Fact]
         public void ValidationDetectsIncompleteResults_InvalidTimeOrder()
         {
-            var openEvent = new ProfileEvent(ProfileEventType.Open, frameId: 1, 2.0f, depth: 1);
-            var closeEvent = new ProfileEvent(ProfileEventType.Close, frameId: 1, 1.0f, depth: 1);
+            var openEvent = new ProfileEvent(ProfileEventType.Open, frameId: 1, 2.0, depth: 1);
+            var closeEvent = new ProfileEvent(ProfileEventType.Close, frameId: 1, 1.0, depth: 1);
 
             Assert.False(Validate(new[] { openEvent, closeEvent })); // close and then open
         }
@@ -323,8 +323,8 @@ namespace TraceEventTests
         [Fact]
         public void ValidationAllowsForCompleteResults()
         {
-            var openEvent = new ProfileEvent(ProfileEventType.Open, frameId: 1, 1.0f, depth: 1);
-            var closeEvent = new ProfileEvent(ProfileEventType.Close, frameId: 1, 1.0f, depth: 1);
+            var openEvent = new ProfileEvent(ProfileEventType.Open, frameId: 1, 1.0, depth: 1);
+            var closeEvent = new ProfileEvent(ProfileEventType.Close, frameId: 1, 1.0, depth: 1);
 
             Assert.True(Validate(new[] { openEvent, closeEvent }));
         }
@@ -405,7 +405,7 @@ namespace TraceEventTests
         #region private
         internal class FakeStackSourceSample
         {
-            public FakeStackSourceSample(bool isLastOnCallStack, double relativeTime, float metric, string name, StackSourceFrameIndex frameIndex,
+            public FakeStackSourceSample(bool isLastOnCallStack, double relativeTime, double metric, string name, StackSourceFrameIndex frameIndex,
                 StackSourceCallStackIndex stackIndex, StackSourceCallStackIndex callerIndex)
             {
                 IsLastOnCallStack = isLastOnCallStack;
@@ -420,7 +420,7 @@ namespace TraceEventTests
             #region private
             public bool IsLastOnCallStack { get; }
             public double RelativeTime { get; }
-            public float Metric { get; }
+            public double Metric { get; }
             public string Name { get; }
             public StackSourceFrameIndex FrameIndex { get; }
             public StackSourceCallStackIndex StackIndex { get; }

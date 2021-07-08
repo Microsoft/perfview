@@ -44,8 +44,6 @@ public class GCHeapDumper
         m_origLog = log;
         m_copyOfLog = new StringWriter();
         m_log = new TeeTextWriter(m_copyOfLog, m_origLog);
-
-        MaxDumpCountK = 250;
     }
 
     /// <summary>
@@ -265,6 +263,7 @@ public class GCHeapDumper
     {
         m_sw = Stopwatch.StartNew();
         m_gcHeapDump = new GCHeapDump((MemoryGraph)null);
+
         DataTarget target;
         ClrRuntime runtime;
         InitializeClrRuntime(processDumpFile, out target, out runtime);
@@ -295,9 +294,121 @@ public class GCHeapDumper
         return collectionMetadata;
     }
 
+    private sealed class DataReaderWrapper : IDisposable, IDataReader
+    {
+        private readonly IDataReader dataReader;
+
+        public DataReaderWrapper(IDataReader dataReader)
+        {
+            this.dataReader = dataReader;
+        }
+
+        public bool IsMinidump => dataReader.IsMinidump;
+
+        public void Close()
+        {
+            dataReader.Close();
+        }
+
+        public void Dispose()
+        {
+            (dataReader as IDisposable)?.Dispose();
+        }
+
+        public IEnumerable<uint> EnumerateAllThreads()
+        {
+            return dataReader.EnumerateAllThreads();
+        }
+
+        public IList<ModuleInfo> EnumerateModules()
+        {
+            return dataReader.EnumerateModules();
+        }
+
+        public void Flush()
+        {
+            dataReader.Flush();
+        }
+
+        public Microsoft.Diagnostics.Runtime.Architecture GetArchitecture()
+        {
+            return dataReader.GetArchitecture();
+        }
+
+        public uint GetPointerSize()
+        {
+            return dataReader.GetPointerSize();
+        }
+
+        public bool GetThreadContext(uint threadID, uint contextFlags, uint contextSize, IntPtr context)
+        {
+            return dataReader.GetThreadContext(threadID, contextFlags, contextSize, context);
+        }
+
+        public bool GetThreadContext(uint threadID, uint contextFlags, uint contextSize, byte[] context)
+        {
+            return dataReader.GetThreadContext(threadID, contextFlags, contextSize, context);
+        }
+
+        public ulong GetThreadTeb(uint thread)
+        {
+            return dataReader.GetThreadTeb(thread);
+        }
+
+        public void GetVersionInfo(ulong baseAddress, out VersionInfo version)
+        {
+            dataReader.GetVersionInfo(baseAddress, out version);
+        }
+
+        public uint ReadDwordUnsafe(ulong addr)
+        {
+            return dataReader.ReadDwordUnsafe(SignExtend(addr));
+        }
+
+        public bool ReadMemory(ulong address, byte[] buffer, int bytesRequested, out int bytesRead)
+        {
+            return dataReader.ReadMemory(SignExtend(address), buffer, bytesRequested, out bytesRead);
+        }
+
+        public bool ReadMemory(ulong address, IntPtr buffer, int bytesRequested, out int bytesRead)
+        {
+            return dataReader.ReadMemory(SignExtend(address), buffer, bytesRequested, out bytesRead);
+        }
+
+        public ulong ReadPointerUnsafe(ulong addr)
+        {
+            return dataReader.ReadPointerUnsafe(SignExtend(addr));
+        }
+
+        public bool VirtualQuery(ulong addr, out VirtualQueryData vq)
+        {
+            return dataReader.VirtualQuery(addr, out vq);
+        }
+    }
+
+    private static ulong SignExtend(ulong address)
+    {
+        unsafe
+        {
+            return unchecked((ulong)(long)(nint)address);
+        }
+    }
+
+    private static ulong ZeroExtend(ulong address)
+    {
+        unsafe
+        {
+            return unchecked((nuint)address);
+        }
+    }
+
     private void InitializeClrRuntime(string processDumpFile, out DataTarget target, out ClrRuntime runtime)
     {
-        target = DataTarget.LoadCrashDump(processDumpFile);
+        var reader = (IDataReader)Activator.CreateInstance(typeof(DataTarget).Assembly.GetType("Microsoft.Diagnostics.Runtime.DbgEngDataReader"), processDumpFile);
+        var debugInterface = reader.GetType().GetProperty("DebuggerInterface", BindingFlags.Instance | BindingFlags.NonPublic).GetValue(reader);
+        var wrapper = new DataReaderWrapper(reader);
+        target = (DataTarget)typeof(DataTarget).GetMethod("CreateFromReader", BindingFlags.Static | BindingFlags.NonPublic).Invoke(null, new[] { wrapper, debugInterface });
+
         if (target.PointerSize != IntPtr.Size)
         {
             if (IntPtr.Size == 8)
@@ -818,7 +929,9 @@ public class GCHeapDumper
         {
             var buildPath = Path.Combine(myDir, @"..\..\..\..\ETWClrProfiler\Debug\x86\EtwClrProfiler.dll");
             if (File.Exists(buildPath))
+            {
                 EtwClrProfilerPath = buildPath;
+            }
         }
 #endif
         if (!File.Exists(EtwClrProfilerPath))
@@ -1048,7 +1161,7 @@ public class GCHeapDumper
     private void DumpDotNetHeapData(ClrHeap heap, ref ICorDebugProcess debugProcess, bool isDump)
     {
         // We retry if we run out of memory with smaller MaxNodeCount.  
-        for (double retryScale = 1; ; retryScale = retryScale * 1.5)
+        for (double retryScale = 1; ; retryScale = retryScale * 1.1)
         {
             try
             {
@@ -1085,7 +1198,7 @@ public class GCHeapDumper
 #if DEPENDENT_HANDLE
         m_handles = new Dictionary<Address, NodeIndex>(100);
 #endif
-        m_children = new GrowableArray<NodeIndex>(2000);
+        m_children = new HashSet<NodeIndex>();
         m_graphTypeIdxForArrayType = new Dictionary<string, NodeTypeIndex>(100);
         m_typeIdxToGraphIdx = new GrowableArray<int>();
         m_typeMayHaveHandles = new GrowableArray<bool>();
@@ -1120,17 +1233,17 @@ public class GCHeapDumper
 
         // We have an overhead of about 52 bytes per object (24 for the hash table, 28 for the rest)
         // we have 1GB in a 32 bit process 
-        m_maxNodeCount = 1000000000 / 52;       // 20 Meg objects;
+        m_maxNodeCount = 2000000000 / 52;       // 20 Meg objects;
         if (EnvironmentUtilities.Is64BitOperatingSystem)
         {
             m_maxNodeCount *= 3;                // We have 4GB instead of 2GB, so we 3GB instead of 1GB available for us to use in 32 bit processes = 60Meg objects
         }
 
-        // On 64 bit process we are limited by the fact that the graph node is in a MemoryStream and its byte array is limited to 2 gig.  Most objects will
-        // be represented by 10 bytes in this array and we round this up to 16 = 128Meg
+        // On 64 bit process we are limited by the fact that the graph node is in a MemoryStream and its byte array is limited to 8 gig.  Most objects will
+        // be represented by 10 bytes in this array and we round this up to 16 = 512Meg
         if (EnvironmentUtilities.Is64BitProcess)
         {
-            m_maxNodeCount = int.MaxValue / 16 - 11;      // Limited to 128Meg objects.  (We are limited by the size of the stream)
+            m_maxNodeCount = int.MaxValue / 4 - 11;      // Limited to 512Meg objects.  (We are limited by the size of the stream)
             m_log.WriteLine("In a 64 bit process.  Increasing the max node count to {0:f1} Meg", m_maxNodeCount / 1000000.0);
         }
         m_log.WriteLine("Implicitly limit the number of nodes to {0:f1} Meg to avoid arrays that are too large", m_maxNodeCount / 1000000.0);
@@ -1173,7 +1286,7 @@ public class GCHeapDumper
         var dotNetRoot = new MemoryNodeBuilder(m_gcHeapDump.MemoryGraph, "[.NET Roots]");
 
         ulong total = 0;
-        var ccwChildren = new GrowableArray<NodeIndex>();
+        var ccwChildren = new HashSet<NodeIndex>();
         m_log.WriteLine("DumpDotNetHeapDataWorker: Heap Size of dumper {0:n0} MB", GC.GetTotalMemory(false) / 1000000.0);
 
         m_log.WriteLine("A total of {0} segments.", m_dotNetHeap.Segments.Count);
@@ -1226,6 +1339,12 @@ public class GCHeapDumper
             int numRoots = 0;
             foreach (ClrRoot root in m_dotNetHeap.EnumerateRoots(true))
             {
+                if (root.Object == 0)
+                {
+                    // A rooted reference to null
+                    continue;
+                }
+
                 // If there is a named root already then we assume that that root is the interesting one and we drop this one.  
                 if (m_gcHeapDump.MemoryGraph.IsInGraph(root.Object))
                 {
@@ -1256,7 +1375,7 @@ public class GCHeapDumper
 
                 MemoryNodeBuilder nodeToAddRootTo = dotNetRoot;
 
-                var type = heap.GetObjectType(root.Object);
+                var type = GetObjectType(heap, root.Object);
                 if (type != null && !getCCWDataNotImplemented)
                 {
                     // TODO FIX NOW, try clause is a hack because ccwInfo.* methods sometime throw.  
@@ -1280,7 +1399,7 @@ public class GCHeapDumper
                             // Create a CCW node that represents the COM object that has one child that points at the managed object.  
                             var ccwNode = m_gcHeapDump.MemoryGraph.GetNodeIndex(ccwInfo.Handle);
                             var typeName = "[CCW";
-                            var targetType = m_dotNetHeap.GetObjectType(root.Object);
+                            var targetType = GetObjectType(m_dotNetHeap, root.Object);
                             if (targetType != null)
                             {
                                 typeName += " for " + targetType.Name;
@@ -1431,6 +1550,26 @@ public class GCHeapDumper
         return;
     }
 
+    private static ClrType GetObjectType(ClrHeap heap, Address objRef)
+    {
+        if (IntPtr.Size == 8)
+        {
+            return heap.GetObjectType(objRef);
+        }
+        else
+        {
+            var zeroExtended = ZeroExtend(objRef);
+            if (heap.GetObjectType(zeroExtended) is { } type)
+                return type;
+
+            var signExtended = SignExtend(objRef);
+            if (signExtended != zeroExtended)
+                return heap.GetObjectType(signExtended);
+
+            return null;
+        }
+    }
+
     /// <summary>
     /// Writes the data in the m_gcHeapDump to 'm_outputFileName'
     /// </summary>
@@ -1463,8 +1602,8 @@ public class GCHeapDumper
             m_log.WriteLine("{0,5:f1}s:   Done Sampling.", m_sw.Elapsed.TotalSeconds);
 
             m_gcHeapDump.CountMultipliersByType = graphSampler.CountScalingByType;
-            m_gcHeapDump.AverageCountMultiplier = (float)((double)m_gcHeapDump.MemoryGraph.NodeCount / sampledGraph.NodeCount);
-            m_gcHeapDump.AverageSizeMultiplier = (float)((double)m_gcHeapDump.MemoryGraph.TotalSize / sampledGraph.TotalSize);
+            m_gcHeapDump.AverageCountMultiplier = (double)m_gcHeapDump.MemoryGraph.NodeCount / sampledGraph.NodeCount;
+            m_gcHeapDump.AverageSizeMultiplier = (double)m_gcHeapDump.MemoryGraph.TotalSize / sampledGraph.TotalSize;
             m_log.WriteLine("Average Count Multiplier: {0,6:f2}", m_gcHeapDump.AverageCountMultiplier);
             m_log.WriteLine("Average Size Multiplier:  {0,6:f2}", m_gcHeapDump.AverageSizeMultiplier);
 
@@ -1649,7 +1788,7 @@ public class GCHeapDumper
 
             if (addr != 0)
             {
-                ClrType type = m_dotNetHeap.GetObjectType(addr);
+                ClrType type = GetObjectType(m_dotNetHeap, addr);
 
                 if (type != null)
                 {
@@ -1661,7 +1800,7 @@ public class GCHeapDumper
                     }
                     else
                     {
-                        CcwData ccw = m_dotNetHeap.GetObjectType(addr).GetCCWData(addr);
+                        CcwData ccw = GetObjectType(m_dotNetHeap, addr).GetCCWData(addr);
 
                         if (ccw != null)
                         {
@@ -1714,7 +1853,7 @@ public class GCHeapDumper
             for (Address objAddr = segment.FirstObject; start <= objAddr && objAddr < end; objAddr = segment.NextObject(objAddr))
             {
                 bool resynced = false;
-                type = m_dotNetHeap.GetObjectType(objAddr);
+                type = GetObjectType(m_dotNetHeap, objAddr);
                 if (type == null)
                 {
                     BadObjectCount++;
@@ -1727,7 +1866,7 @@ public class GCHeapDumper
                             objAddr = end;
                             break;
                         }
-                        type = m_dotNetHeap.GetObjectType(objAddr);
+                        type = GetObjectType(m_dotNetHeap, objAddr);
                     } while (type == null);
 
                     resynced = true;
@@ -1740,7 +1879,17 @@ public class GCHeapDumper
                     }
                 }
 
-                m_children.Clear();
+                if (m_children.Count > 32)
+                {
+                    // HashSet<T>.Clear() is not efficient for large-capacity sets. Rather than reusing a large set,
+                    // reset it by creating a new one.
+                    m_children = new HashSet<NodeIndex>();
+                }
+                else
+                {
+                    m_children.Clear();
+                }
+
                 type.EnumerateRefsOfObjectCarefully(objAddr, delegate (Address childObj, int fieldOffset)
                 {
                     m_children.Add(m_gcHeapDump.MemoryGraph.GetNodeIndex(childObj));
@@ -1784,7 +1933,16 @@ public class GCHeapDumper
                     m_children.Add(m_gcHeapDump.MemoryGraph.GetNodeIndex(rcwData.IUnknown));
 
                     var fullTypeName = type.Name;
-                    if (type.Module.FileName != null)
+                    if (fullTypeName == "<UNKNOWN>" && rcwData.Interfaces.Count > 0)
+                    {
+                        fullTypeName = rcwData.Interfaces[0].Type.Name;
+                    }
+
+                    if (type.Module.AssemblyName != null && type.Module.AssemblyName.IndexOfAny(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }) < 0)
+                    {
+                        fullTypeName = type.Module.AssemblyName + "!" + fullTypeName;
+                    }
+                    else if (type.Module.FileName != null)
                     {
                         fullTypeName = Path.GetFileNameWithoutExtension(type.Module.FileName) + "!" + fullTypeName;
                     }
@@ -1805,6 +1963,22 @@ public class GCHeapDumper
                     memoryGraphTypeIdx = GetTypeIndexForName(typeName, null, objSizeAsInt);
                 }
 
+                if (type.Name == "Microsoft.Win32.SafeHandles.SafeMemoryMappedViewHandle")
+                {
+                    // If the handle is not closed, adjust the size
+                    var field = type.GetFieldByName("_state");
+                    var stateObj = field?.GetValue(objAddr);
+                    if (stateObj is int && (((int)stateObj) & 1) != 1)
+                    {
+                        field = type.GetFieldByName("_numBytes");
+                        var mappedSizeObj = field?.GetValue(objAddr);
+                        if (mappedSizeObj is ulong)
+                        {
+                            objSizeAsInt += (int)(ulong)mappedSizeObj;
+                        }
+                    }
+                }
+
 #if DEPENDENT_HANDLE
                 // Add arcs from this node to any live dependent handles.
                 if (m_dependentHandles != null)
@@ -1812,7 +1986,7 @@ public class GCHeapDumper
                     List<NodeIndex> dependentHandles;
                     if (m_dependentHandles.TryGetValue(objNodeIdx, out dependentHandles))
                     {
-                        m_children.AddRange(dependentHandles);
+                        m_children.UnionWith(dependentHandles);
                     }
                 }
 
@@ -1866,7 +2040,7 @@ public class GCHeapDumper
                 sw.Write(addr.ToString("x").PadLeft(8, '0') + ": ");
             }
 
-            int val = (int)FetchIntPtrAt(heap, addr);
+            int val = FetchInt32At(heap, addr);
             sw.Write(val.ToString("x").PadLeft(8, '0') + " ");
             for (int j = 0; j < 4; j++)
             {
@@ -1889,7 +2063,7 @@ public class GCHeapDumper
         return sw.ToString();
     }
 
-    public virtual unsafe Address FetchIntPtrAt(ClrHeap heap, Address address)
+    public unsafe Address FetchIntPtrAt(ClrHeap heap, Address address)
     {
         var buff = new byte[8];
         heap.ReadMemory(address, buff, 0, 8);
@@ -1901,6 +2075,16 @@ public class GCHeapDumper
             }
 
             return *((Address*)ptr);
+        }
+    }
+
+    public unsafe int FetchInt32At(ClrHeap heap, Address address)
+    {
+        var buff = new byte[4];
+        heap.ReadMemory(address, buff, 0, 4);
+        fixed (byte* ptr = buff)
+        {
+            return *(int*)ptr;
         }
     }
 
@@ -1984,7 +2168,7 @@ public class GCHeapDumper
                 // m_log.WriteLine("Trying to resync at {0:x} with value {1:x}", objAddr, val);
 
                 // OK see if we have a valid type. 
-                var type = m_dotNetHeap.GetObjectType(objAddr);
+                var type = GetObjectType(m_dotNetHeap, objAddr);
                 if (type == null)
                 {
                     continue;
@@ -1994,7 +2178,7 @@ public class GCHeapDumper
 
                 // See if the 'next' object has a valid type
                 var objAddr1 = objAddr + type.GetSize(objAddr);
-                var type1 = m_dotNetHeap.GetObjectType(objAddr1);
+                var type1 = GetObjectType(m_dotNetHeap, objAddr1);
                 if (type1 == null)
                 {
                     continue;
@@ -2002,7 +2186,7 @@ public class GCHeapDumper
 
                 // and the object after that.  
                 var objAddr2 = objAddr + type.GetSize(objAddr1);
-                var type2 = m_dotNetHeap.GetObjectType(objAddr2);
+                var type2 = GetObjectType(m_dotNetHeap, objAddr2);
                 if (type2 == null)
                 {
                     continue;
@@ -2358,10 +2542,10 @@ public class GCHeapDumper
 
         // We give more complex names to arrays and strings that are large
         NodeTypeIndex ret;
-        var name = type.Name;
+        var name = GetTypeName(type);
         if (type.IsString || type.IsArray || name == "Free")
         {
-            var typeName = type.Name;
+            var typeName = name;
             var sizeStr = "";
             if (objSize > 1000)
             {
@@ -2423,6 +2607,28 @@ public class GCHeapDumper
             m_typeIdxToGraphIdx[idx] = (int)ret + 1;
         }
         return ret;
+    }
+
+    private string GetTypeName(ClrType type)
+    {
+        if (type.IsArray && type.ComponentType != null)
+        {
+            return GetTypeName(type.ComponentType) + "[]";
+        }
+
+        string result = type.Name;
+        if (result != "<UNKNOWN>")
+        {
+            if (result is null)
+            {
+                return type.MethodTable.ToString("X");
+            }
+
+            return result;
+        }
+
+        result = GetTypeName(type.BaseType);
+        return result + "^" + type.MetadataToken;
     }
 
     private NodeTypeIndex GetTypeIndexForName(string typeName, string moduleName, int defaultSize)
@@ -2534,7 +2740,7 @@ public class GCHeapDumper
 
     private ClrHeap m_dotNetHeap;                  // The .NET GC Heap 
 
-    private GrowableArray<NodeIndex> m_children;
+    private HashSet<NodeIndex> m_children;
     private Dictionary<ClrType, int> m_typeTable = new Dictionary<ClrType, int>();
     private GrowableArray<int> m_typeIdxToGraphIdx;
 

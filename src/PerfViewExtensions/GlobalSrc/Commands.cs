@@ -649,8 +649,8 @@ public class Commands : CommandEnvironment
 
         var baseIdx = myGraph.GetNodeIndex(0);        // Define the NAME (index) for the of the graph (but we have not defined what is in it)
 
-        GrowableArray<NodeIndex> children = new GrowableArray<NodeIndex>(1);            // This array is reused again and again for each child.  
-        GrowableArray<NodeIndex> rootChildren = new GrowableArray<NodeIndex>(100);      // This is used to create the children of the root;
+        HashSet<NodeIndex> children = new HashSet<NodeIndex>();            // This array is reused again and again for each child.  
+        HashSet<NodeIndex> rootChildren = new HashSet<NodeIndex>();      // This is used to create the children of the root;
         //Here I make up a graph of memory addresses at made up locations
         for (Address objAddr = 0x100000; objAddr < 0x200000; objAddr += 0x10000)
         {

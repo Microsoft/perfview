@@ -19,12 +19,12 @@ internal static class ImageFileMemoryGraph
 
         /****** Make a graph out of the symbols ******/
         // Put all nodes under this root.  
-        var rootChildren = new GrowableArray<NodeIndex>(1000);
+        var rootChildren = new HashSet<NodeIndex>();
 
         // Create a node for each symbol 
         uint lastRVA = 0;
         string lastName = "Header";
-        var empty = new GrowableArray<NodeIndex>();
+        var empty = new HashSet<NodeIndex>();
 
         foreach (var symbol in symbols)
         {

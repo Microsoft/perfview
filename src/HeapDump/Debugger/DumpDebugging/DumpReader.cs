@@ -181,7 +181,7 @@ namespace Microsoft.Samples.Debugging.Native
         // Provide a friendly wrapper over a raw pinvoke to RtlMoveMemory.
         // Note that we actually want a copy, but RtlCopyMemory is a macro and compiler intrinisic 
         // that we can't pinvoke to.
-        private static unsafe void RawCopy(MemoryMappedFileStreamReader reader, long offset, IntPtr dest, uint numBytes)
+        private static void RawCopy(MemoryMappedFileStreamReader reader, long offset, IntPtr dest, uint numBytes)
         {
             byte[] buffer = new byte[numBytes];
             reader.Seek(offset);
@@ -1375,6 +1375,15 @@ namespace Microsoft.Samples.Debugging.Native
         /// <returns>Number of contiguous bytes successfully copied into the destination buffer.</returns>
         public virtual uint ReadPartialMemory(ulong targetRequestStart, IntPtr destinationBuffer, uint destinationBufferSizeInBytes)
         {
+            //if (true && IntPtr.Size > 0)
+            //{
+            //    byte[] data = new byte[destinationBufferSizeInBytes];
+            //    m_mappedFileReader.Seek((long)targetRequestStart);
+            //    int bytesRead1 = m_mappedFileReader.Read(data, 0, data.Length);
+            //    Marshal.Copy(data, 0, destinationBuffer, bytesRead1);
+            //    return (uint)bytesRead1;
+            //}
+
             uint bytesRead = ReadPartialMemoryInternal(targetRequestStart,
                                                         destinationBuffer,
                                                         destinationBufferSizeInBytes,
@@ -1557,7 +1566,7 @@ namespace Microsoft.Samples.Debugging.Native
         /// <param name="path">filename to open dump file</param>
         public DumpReader(string path)
         {
-            m_file = File.OpenRead(path);
+            m_file = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.Read);
             long length = m_file.Length;
 
             // The dump file may be many megabytes large, so we don't want to
@@ -1980,7 +1989,7 @@ namespace Microsoft.Samples.Debugging.Native
 
             return (other.m_owner == m_owner) && (other.m_raw.BaseOfImage == m_raw.BaseOfImage);
         }
-
+        
         // Override of GetHashCode
         public override int GetHashCode()
         {

@@ -15,7 +15,7 @@ public class PdbScopeMemoryGraph : MemoryGraph
     public PdbScopeMemoryGraph(string pdbScopeFile)
         : base(10000)
     {
-        var children = new GrowableArray<NodeIndex>(1000);
+        var children = new HashSet<NodeIndex>();
         Dictionary<string, NodeTypeIndex> knownTypes = new Dictionary<string, NodeTypeIndex>(1000);
 
         XmlReaderSettings settings = new XmlReaderSettings() { IgnoreWhitespace = true, IgnoreComments = true };
@@ -109,7 +109,7 @@ public class PdbScopeMemoryGraph : MemoryGraph
                                     string to = reader.GetAttribute("to");
                                     if (to != null)
                                     {
-                                        GetChildrenForAddresses(ref children, to);
+                                        GetChildrenForAddresses(children, to);
                                     }
 
                                     // Get Name, make a type out of it
@@ -345,7 +345,7 @@ public class PdbScopeMemoryGraph : MemoryGraph
             DebugWriteLine(string.Format("UNKNOWN GAP In symbols from {0:x} of size {1:x}", start, size));
         }
 
-        SetNode(GetNodeIndex(start), CreateType(name), (int)size, new GrowableArray<NodeIndex>());
+        SetNode(GetNodeIndex(start), CreateType(name), (int)size, new HashSet<NodeIndex>());
     }
 
     private struct Section
@@ -362,7 +362,7 @@ public class PdbScopeMemoryGraph : MemoryGraph
         PerfView.App.CommandProcessor.LogFile.WriteLine(message);
     }
 
-    private void GetChildrenForAddresses(ref GrowableArray<NodeIndex> children, string to)
+    private void GetChildrenForAddresses(HashSet<NodeIndex> children, string to)
     {
         // TODO inefficient
         foreach (var numStr in to.Split(' '))
@@ -596,7 +596,7 @@ public class ProjectNMetaDataLogReader
                     return null;
                 }
 
-                LineData lineData = new LineData();
+                LineData lineData = new LineData { Children = new HashSet<NodeIndex>() };
                 for (; ; )
                 {
                     line = reader.ReadLine();
@@ -669,7 +669,7 @@ public class ProjectNMetaDataLogReader
         public uint Offset;
         public string Kind;
         public string Name;
-        public GrowableArray<NodeIndex> Children;
+        public HashSet<NodeIndex> Children;
     }
 
     private NodeTypeIndex GetType(string name, int size = -1)

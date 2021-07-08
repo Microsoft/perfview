@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <LangVersion>7.3</LangVersion>
+    <LangVersion>9</LangVersion>
     <Features>strict</Features>
   </PropertyGroup>
 
@@ -31,7 +31,7 @@
     <PerfViewSupportFilesVersion>1.0.7</PerfViewSupportFilesVersion>
     <MicrosoftDiagnosticsTracingTraceEventSupportFilesVersion>1.0.22</MicrosoftDiagnosticsTracingTraceEventSupportFilesVersion>
     <MicrosoftDiagnosticsTracingTraceEventAutomatedAnalysisAnalyzersVersion>0.1.0</MicrosoftDiagnosticsTracingTraceEventAutomatedAnalysisAnalyzersVersion>
-    <MicrosoftDiagnosticsRuntimeVersion>1.1.37504</MicrosoftDiagnosticsRuntimeVersion>
+    <MicrosoftDiagnosticsRuntimeVersion>1.1.126102</MicrosoftDiagnosticsRuntimeVersion>
     <XunitVersion>2.3.0</XunitVersion>
     <XunitRunnerVisualstudioVersion>2.3.0</XunitRunnerVisualstudioVersion>
   </PropertyGroup>

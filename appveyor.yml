@@ -16,7 +16,8 @@ build:
   project: PerfView.sln
   verbosity: minimal
 test_script:
-- .\packages\OpenCover.4.6.519\tools\OpenCover.Console.exe -register:user -target:"%xunit20%\xunit.console.x86.exe" -targetargs:"C:\projects\perfview\src\LinuxEvent.Tests\bin\%configuration%\net46\LinuxTracing.Tests.dll -noshadow -appveyor" -threshold:1 -oldStyle -returntargetcode -filter:"+[*]* -[Xunit*]*" -excludebyattribute:*.ExcludeFromCodeCoverage* -excludebyfile:*\*Designer.cs -hideskipped:All -output:.\PerfView_coverage.xml
+- .\packages\OpenCover.4.6.519\tools\OpenCover.Console.exe -register:user -target:"%xunit20%\xunit.console.x86.exe" -targetargs:"C:\projects\perfview\src\FastSerialization.Tests\bin\%configuration%\net46\FastSerialization.Tests.dll -noshadow -appveyor" -threshold:1 -oldStyle -returntargetcode -filter:"+[*]* -[Xunit*]*" -excludebyattribute:*.ExcludeFromCodeCoverage* -excludebyfile:*\*Designer.cs -hideskipped:All -output:.\PerfView_coverage.xml
+- .\packages\OpenCover.4.6.519\tools\OpenCover.Console.exe -register:user -target:"%xunit20%\xunit.console.x86.exe" -targetargs:"C:\projects\perfview\src\LinuxEvent.Tests\bin\%configuration%\net46\LinuxTracing.Tests.dll -noshadow -appveyor" -threshold:1 -oldStyle -returntargetcode -filter:"+[*]* -[Xunit*]*" -excludebyattribute:*.ExcludeFromCodeCoverage* -excludebyfile:*\*Designer.cs -hideskipped:All -mergebyhash -mergeoutput -output:.\PerfView_coverage.xml
 - .\packages\OpenCover.4.6.519\tools\OpenCover.Console.exe -register:user -target:"%xunit20%\xunit.console.x86.exe" -targetargs:"C:\projects\perfview\src\TraceEvent\Ctf\CtfTracing.Tests\bin\%configuration%\net46\Tests.dll -noshadow -appveyor" -threshold:1 -oldStyle -returntargetcode -filter:"+[*]* -[Xunit*]*" -excludebyattribute:*.ExcludeFromCodeCoverage* -excludebyfile:*\*Designer.cs -hideskipped:All -mergebyhash -mergeoutput -output:.\PerfView_coverage.xml
 - .\packages\OpenCover.4.6.519\tools\OpenCover.Console.exe -register:user -target:"%xunit20%\xunit.console.x86.exe" -targetargs:"C:\projects\perfview\src\TraceEvent\TraceEvent.Tests\bin\%configuration%\net46\TraceEventTests.dll -noshadow -appveyor" -threshold:1 -oldStyle -returntargetcode -filter:"+[*]* -[Xunit*]*" -excludebyattribute:*.ExcludeFromCodeCoverage* -excludebyfile:*\*Designer.cs -hideskipped:All -mergebyhash -mergeoutput -output:.\PerfView_coverage.xml
 - .\packages\OpenCover.4.6.519\tools\OpenCover.Console.exe -register:user -target:"%xunit20%\xunit.console.x86.exe" -targetargs:"C:\projects\perfview\src\PerfView.Tests\bin\%configuration%\net46\PerfViewTests.dll -noshadow -diagnostics -appveyor" -threshold:1 -oldStyle -returntargetcode -filter:"+[*]* -[Xunit*]*" -excludebyattribute:*.ExcludeFromCodeCoverage* -excludebyfile:*\*Designer.cs -hideskipped:All -mergebyhash -mergeoutput -output:.\PerfView_coverage.xml
@@ -26,5 +27,4 @@ cache:
   - packages -> **\packages.config
 artifacts:
 - path: 'src\PerfView\bin\$(configuration)\net45\PerfView.exe'
-- path: 'src\PerfView\bin\$(configuration)\net45\PerfView64.exe'
 - path: 'src\TraceEvent\bin\$(configuration)\*.nupkg'

@@ -126,7 +126,7 @@ namespace PerfView
 
         private void OnPreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
-            float modifier = e.Delta > 0 ? 1.1f : 0.9f;
+            double modifier = e.Delta > 0 ? 1.1 : 0.9;
 
             var relativeMousePosition = scaleTransform.Inverse.Transform(Mouse.GetPosition(this));
 

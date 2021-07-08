@@ -86,6 +86,7 @@ public class DotNetHeapDumpGraphReader
         m_staticVarBlocks = new Queue<GCBulkRootStaticVarTraceData>();
         m_ccwBlocks = new Queue<GCBulkRootCCWTraceData>();
         m_typeIntern = new Dictionary<string, NodeTypeIndex>();
+        m_children = new HashSet<NodeIndex>();
         m_root = new MemoryNodeBuilder(m_graph, "[.NET Roots]");
         m_typeStorage = m_graph.AllocTypeNodeStorage();
 
@@ -602,7 +603,7 @@ public class DotNetHeapDumpGraphReader
         while (m_ccwBlocks.Count > 0)
         {
             GCBulkRootCCWTraceData data = m_ccwBlocks.Dequeue();
-            GrowableArray<NodeIndex> ccwChildren = new GrowableArray<NodeIndex>(1);
+            HashSet<NodeIndex> ccwChildren = new HashSet<NodeIndex>();
             for (int i = 0; i < data.Count; i++)
             {
                 unsafe
@@ -619,7 +620,7 @@ public class DotNetHeapDumpGraphReader
                     // Create a CCW node that represents the COM object that has one child that points at the managed object.  
                     var ccwNode = m_graph.GetNodeIndex(ccwInfo.IUnknown);
 
-                    var ccwTypeIndex = GetTypeIndex(ccwInfo.TypeID, 200);
+                    var ccwTypeIndex = GetTypeIndex(ccwInfo.TypeID, 0);
                     var ccwType = m_graph.GetType(ccwTypeIndex, m_typeStorage);
 
                     var typeName = "[CCW 0x" + ccwInfo.IUnknown.ToString("x") + " for type " + ccwType.Name + "]";
@@ -627,7 +628,7 @@ public class DotNetHeapDumpGraphReader
 
                     ccwChildren.Clear();
                     ccwChildren.Add(m_graph.GetNodeIndex(ccwInfo.ObjectID));
-                    m_graph.SetNode(ccwNode, ccwTypeIndex, 200, ccwChildren);
+                    m_graph.SetNode(ccwNode, ccwTypeIndex, 0, ccwChildren);
                     ccwRoot.AddChild(ccwNode);
                 }
             }
@@ -974,7 +975,7 @@ public class DotNetHeapDumpGraphReader
     private Dictionary<string, NodeTypeIndex> m_typeIntern;
 
     // scratch location for creating nodes. 
-    private GrowableArray<NodeIndex> m_children;
+    private HashSet<NodeIndex> m_children;
 
     // This is a 'scratch location' we use to fetch type information. 
     private NodeType m_typeStorage;
