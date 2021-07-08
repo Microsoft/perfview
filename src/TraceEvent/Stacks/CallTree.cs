@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.IO;                        // For TextWriter.  
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Microsoft.Diagnostics.Tracing.Utilities;
 
 namespace Microsoft.Diagnostics.Tracing.Stacks
 {
@@ -1245,15 +1246,12 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
             var asAgg = this as AggregateCallTreeNode;
             var dir = IsCalleeTree ? RefDirection.From : RefDirection.To;
 
-            bool[] sampleSet = new bool[128];
+            IndexSet sampleSet = new IndexSet();
+
             GetSamples(true, delegate (StackSourceSampleIndex sampleIndex)
             {
-                while (sampleSet.Length <= (int)sampleIndex)
-                {
-                    Array.Resize(ref sampleSet, sampleSet.Length * 2);
-                }
+                sampleSet.Add((uint)sampleIndex);
 
-                sampleSet[(int)sampleIndex] = true;
                 return true;
             });
 
@@ -1283,7 +1281,7 @@ namespace Microsoft.Diagnostics.Tracing.Stacks
                 source.GetReferences(sampleIndex, dir, delegate (StackSourceSampleIndex childIndex)
                 {
                     // Ignore samples to myself.  
-                    if (childIndex < 0 || ((int)childIndex < sampleSet.Length && sampleSet[(int)childIndex]))
+                    if (childIndex < 0 || sampleSet.Contains((uint)childIndex))
                     {
                         return;
                     }
