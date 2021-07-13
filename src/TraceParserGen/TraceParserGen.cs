@@ -299,8 +299,8 @@ internal class TraceParserGen
             var evnt = m_provider.Events[i];
 
             // check if the same event template has not been already defined (different versions of the same event)
-            output.WriteLine("                templates[{0}] = new {1}TraceData(null, {2}, {3}, \"{4}\", {4}TaskGuid, {5}, \"{6}\", ProviderGuid, ProviderName);",
-                                              i, TraceParserGen.ToCSharpName(evnt.EventName),
+            output.WriteLine("                templates[{0}] = new {1}(null, {2}, {3}, \"{4}\", {4}TaskGuid, {5}, \"{6}\", ProviderGuid, ProviderName);",
+                                              i, GetTemplateNameForEvent(evnt, evnt.EventName),
                                               evnt.Id, evnt.Task, TraceParserGen.ToCSharpName(evnt.TaskName), evnt.Opcode, TraceParserGen.ToCSharpName(evnt.OpcodeName)
                                               );
             // as of today, the generated code won't compile because the task GUID is not defined
@@ -346,7 +346,7 @@ internal class TraceParserGen
             var taskName = TraceParserGen.ToCSharpName(evnt.TaskName);
             if (string.IsNullOrEmpty(taskName)) taskName = evntName;
             // Call the *Template() function that does the work
-            output.WriteLine("                RegisterTemplate(new {0}(value, {1}, {2}, \"{3}\", {4}, {5}, \"{6}\", ProviderGuid, ProviderName));",
+            output.WriteLine("                source.RegisterEventTemplate(new {0}(value, {1}, {2}, \"{3}\", {4}, {5}, \"{6}\", ProviderGuid, ProviderName));",
                                               templateClassName, evnt.Id, evnt.Task, taskName, taskGuid,
                                               evnt.Opcode, TraceParserGen.ToCSharpName(evnt.OpcodeName)
                                               );
