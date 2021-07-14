@@ -127,7 +127,7 @@ internal class TraceParserGen
         output.WriteLine("    public sealed class " + ClassNamePrefix + "TraceEventParser : TraceEventParser ");
         output.WriteLine("    {");
         output.WriteLine("        public static string ProviderName = \"" + m_provider.Name + "\";");
-        output.WriteLine("        public static Guid ProviderGuid = " + CodeForGuidLiteral(m_provider.Id) + ";");
+        GenerateGuids(output);
         GenerateKeywords(output);
         output.WriteLine("        public " + ClassNamePrefix + "TraceEventParser(TraceEventSource source) : base(source) {}");
         output.WriteLine("");
@@ -188,6 +188,21 @@ internal class TraceParserGen
         GenerateEnumerations(output);
 
         output.WriteLine("}");
+    }
+
+    private void GenerateGuids(TextWriter output)
+    {
+        output.WriteLine("        public static Guid ProviderGuid = " + CodeForGuidLiteral(m_provider.Id) + ";");
+        foreach (var kv in m_provider.m_tasks)
+        {
+            string taskName = kv.Key;
+            Task task = kv.Value;
+            if(task.EventGuid != Guid.Empty)
+            {
+                string guidName = m_provider.GetGuidName(taskName);
+                output.WriteLine("        public static Guid {0} = {1};", guidName, CodeForGuidLiteral(task.EventGuid));
+            }
+        }
     }
 
     private void GenerateKeywords(TextWriter output)
@@ -297,14 +312,13 @@ internal class TraceParserGen
         for (int i = 0; i < m_provider.Events.Count; i++)
         {
             var evnt = m_provider.Events[i];
+            string guid = m_provider.GetGuidName(evnt.TaskName);
 
             // check if the same event template has not been already defined (different versions of the same event)
-            output.WriteLine("                templates[{0}] = new {1}TraceData(null, {2}, {3}, \"{4}\", {4}TaskGuid, {5}, \"{6}\", ProviderGuid, ProviderName);",
-                                              i, TraceParserGen.ToCSharpName(evnt.EventName),
-                                              evnt.Id, evnt.Task, TraceParserGen.ToCSharpName(evnt.TaskName), evnt.Opcode, TraceParserGen.ToCSharpName(evnt.OpcodeName)
+            output.WriteLine("                templates[{0}] = new {1}(null, {2}, {3}, \"{4}\", {5}, {6}, \"{7}\", ProviderGuid, ProviderName);",
+                                              i, GetTemplateNameForEvent(evnt, evnt.EventName),
+                                              evnt.Id, evnt.Task, TraceParserGen.ToCSharpName(evnt.TaskName), guid, evnt.Opcode, TraceParserGen.ToCSharpName(evnt.OpcodeName)
                                               );
-            // as of today, the generated code won't compile because the task GUID is not defined
-            // TODO: define the xxxTaskGuid based on eventGUID attribute of <task> elements of the .man file
         }
 
         output.WriteLine("                s_templates = templates;");
@@ -314,6 +328,12 @@ internal class TraceParserGen
         output.WriteLine("                    callback(template);");
         output.WriteLine("        }");
         output.WriteLine();
+
+        output.WriteLine("        private void RegisterTemplate(TraceEvent template)");
+        output.WriteLine("        {");
+        output.WriteLine("            Debug.Assert(template.ProviderGuid == " + ClassNamePrefix + "TraceEventParser.ProviderGuid);");
+        output.WriteLine("            source.RegisterEventTemplate(template);");
+        output.WriteLine("        }");
     }
 
     /// <summary>
@@ -340,9 +360,7 @@ internal class TraceParserGen
             output.WriteLine("        {");
             output.WriteLine("            add");
             output.WriteLine("            {");
-            var taskGuid = (string.IsNullOrEmpty(evnt.TaskName))
-                ? "Guid.Empty"
-                : evnt.TaskName + "TaskGuid";
+            var taskGuid = m_provider.GetGuidName(evnt.TaskName);
             var taskName = TraceParserGen.ToCSharpName(evnt.TaskName);
             if (string.IsNullOrEmpty(taskName)) taskName = evntName;
             // Call the *Template() function that does the work

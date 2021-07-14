@@ -56,15 +56,12 @@ namespace ETWManifest
                         }
                     }
 
-                    if (provider.m_taskNames != null)
+                    if (provider.m_tasks != null)
                     {
-                        foreach (var taskId in new List<int>(provider.m_taskNames.Keys))
+                        foreach (var keyValuePair in provider.m_tasks)
                         {
-                            var taskName = provider.m_taskNames[taskId];
-                            if (Provider.Replace(ref taskName, stringMap))
-                            {
-                                provider.m_taskNames[taskId] = taskName;
-                            }
+                            Task task = keyValuePair.Value;
+                            Provider.Replace(ref task.LocalizedMessageOrName, stringMap);
                         }
                     }
 
@@ -176,15 +173,16 @@ namespace ETWManifest
         /* These are relatively rare APIs, normally you only care in the context of an event */
         public string GetTaskName(ushort taskId)
         {
-            if (m_taskNames == null)
+            if (m_tasks == null)
             {
                 return "";
             }
 
-            string ret;
-            if (m_taskNames.TryGetValue(taskId, out ret))
+            foreach(var kv in m_tasks)
             {
-                return ret;
+                Task task = kv.Value;
+                if (task.Value == taskId)
+                    return task.Name;
             }
 
             if (taskId == 0)
@@ -211,6 +209,20 @@ namespace ETWManifest
             }
 
             return "Opcode" + opcodeId;
+        }
+
+        public string GetGuidName(string taskName)
+        {
+            string empty = "Guid.Empty";
+
+            if(string.IsNullOrEmpty(taskName))
+                return empty;
+
+            Task task = m_tasks[taskName];
+            if (task != null && task.EventGuid != Guid.Empty)
+                return $"{taskName}TaskGuid";
+            else
+                return empty;
         }
 
         /// <summary>
@@ -273,25 +285,15 @@ namespace ETWManifest
                                 break;
                             case "task":
                                 {
-                                    if (m_taskNames == null)
+                                    if (m_tasks == null)
                                     {
-                                        m_taskNames = new Dictionary<int, string>();
-                                        m_taskValues = new Dictionary<string, int>();
+                                        m_tasks = new Dictionary<string, Task>();
                                     }
-                                    string name = reader.GetAttribute("name");
-                                    int value = (int)ParseNumber(reader.GetAttribute("value"));
+                                    Task task = new Task(reader, this, lineInfo.LineNumber);
+                                    m_tasks.Add(task.Name, task);
 
-                                    string message = reader.GetAttribute("message");
-                                    if (message == null)
-                                    {
-                                        message = name;
-                                    }
-
-                                    m_taskNames.Add(value, message);
-                                    m_taskValues.Add(name, value);
-
-                                    // Remember enuough to resolve opcodes nested inside this task.
-                                    curTask = value;
+                                    // Remember enough to resolve opcodes nested inside this task.
+                                    curTask = task.Value;
                                     curTaskDepth = reader.Depth;
                                     reader.Read();
                                 }
@@ -358,7 +360,6 @@ namespace ETWManifest
             }
 
             // We are done with these.  Free up some space.
-            m_taskValues = null;
             m_opcodeValues = null;
             m_keywordValues = null;
             m_templateValues = null;
@@ -555,12 +556,10 @@ namespace ETWManifest
 
         private List<Event> m_events = new List<Event>();
         internal string[] m_keywordNames;
-        internal Dictionary<int, string> m_taskNames;
+        internal Dictionary<string, Task> m_tasks;
         // Note that the key is task << 8 + opcode to allow for private opcode names
         internal Dictionary<int, string> m_opcodeNames;
 
-        // These are not used after parsing.
-        internal Dictionary<string, int> m_taskValues;
         // Note that the value is task << 8 + opcode to allow for private opcode names
         // Also the key is taskId : opcodeName again to allow private opcode names or simply opcodeName if it is global.
         internal Dictionary<string, int> m_opcodeValues;
@@ -747,7 +746,7 @@ namespace ETWManifest
                 m_taskId = null;
                 if (id != null)
                 {
-                    Task = (ushort)m_provider.m_taskValues[id];
+                    Task = (ushort)m_provider.m_tasks[id].Value;
                 }
 
                 id = m_opcodeId;
@@ -833,6 +832,29 @@ namespace ETWManifest
         #endregion
     }
 
+    /// <summary>
+    /// A task represents the Task Element in the manifest.
+    /// </summary>
+    public sealed class Task
+    {
+        public int Value { get; internal set; }
+        public string Name { get; internal set; }
+        public string Message { get; internal set; }
+        public string LocalizedMessageOrName;
+        public Guid EventGuid { get; internal set; }
+
+        internal Task(XmlReader reader, Provider provider, int lineNum)
+        {
+            Name = reader.GetAttribute("name");
+            Value = (int)Provider.ParseNumber(reader.GetAttribute("value"));
+
+            Message = reader.GetAttribute("message");
+            LocalizedMessageOrName = Message ?? Name;
+
+            string guid = reader.GetAttribute("eventGUID");
+            EventGuid = (guid != null) ? Guid.Parse(guid) : Guid.Empty;
+        }
+    }
     /// <summary>
     /// A field represents one field in a ETW event
     /// </summary>
